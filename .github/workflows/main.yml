@@ -28,7 +28,7 @@ jobs:
           context: ./book-service
           file: ./book-service/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/clockbox:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/book-service:latest
       -
         name: Build and push author-service
         uses: docker/build-push-action@v4
@@ -36,4 +36,4 @@ jobs:
           context: ./author-service
           file: ./author-service/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/clockbox:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/author-service:latest
