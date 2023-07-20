@@ -26,7 +26,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./book-service
-          file: ./Dockerfile
+          file: ./book-service/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/clockbox:latest
       -
@@ -34,6 +34,6 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./author-service
-          file: ./Dockerfile
+          file: ./author-service/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/clockbox:latest
