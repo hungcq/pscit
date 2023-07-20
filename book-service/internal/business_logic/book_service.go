@@ -1,6 +1,9 @@
 package business_logic
 
-import "book-service/internal/models"
+import (
+	"book-service/internal/models"
+	"log"
+)
 
 type BookService struct {
 	BookRepository BookRepository
@@ -15,7 +18,8 @@ func (service *BookService) GetBook(bookId int) (*models.Book, error) {
 	if len(book.AuthorIds) != 0 {
 		authors, err := service.AuthorService.GetAuthorsByIds(book.AuthorIds)
 		if err != nil {
-			return nil, err
+			log.Printf("get book's author error. book id %d, author ids %v, error %v", bookId, book.AuthorIds, err)
+			return book, nil
 		}
 		book.Authors = authors
 	}

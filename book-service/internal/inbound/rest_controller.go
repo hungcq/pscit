@@ -20,7 +20,7 @@ func (controller *RestController) Init() {
 	router.PUT("/books/:id", controller.updateBook)
 	router.DELETE("/books/:id", controller.deleteBook)
 
-	err := router.Run("localhost:80")
+	err := router.Run(":80")
 	if err != nil {
 		log.Fatalf("%v", err)
 	}

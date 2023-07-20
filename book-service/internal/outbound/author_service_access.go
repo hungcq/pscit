@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -18,7 +19,7 @@ func (service *AuthorServiceAccess) GetAuthorsByIds(authorIds []int) ([]*models.
 	for _, e := range authorIds {
 		idStrings = append(idStrings, strconv.Itoa(e))
 	}
-	url := fmt.Sprintf("http://localhost:81/authors/%s", strings.Join(idStrings, ","))
+	url := fmt.Sprintf("http://%s/authors/%s", os.Getenv("AUTHOR_SERVICE"), strings.Join(idStrings, ","))
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err

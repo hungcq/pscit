@@ -21,7 +21,7 @@ func (controller *RestController) Init() {
 	router.PUT("/authors/:id", controller.updateAuthor)
 	router.DELETE("/authors/:id", controller.deleteAuthor)
 
-	err := router.Run("localhost:81")
+	err := router.Run(":80")
 	if err != nil {
 		log.Fatalf("%v", err)
 	}

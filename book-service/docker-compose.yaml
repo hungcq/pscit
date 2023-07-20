@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  book-service:
+    depends_on:
+      - author-service
+    build:
+      context: .
+    container_name: book-service
+    hostname: book-service
+    networks:
+      - mynet
+    ports:
+      - 80:80
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - AUTHOR_SERVICE=${AUTHOR_SERVICE}
+    deploy:
+      restart_policy:
+        condition: on-failure
+  author-service:
+    image: author-service
+    hostname: author-service
+    networks:
+      - mynet
+    ports:
+      - 81:80
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+networks:
+  mynet:
+    driver: bridge
