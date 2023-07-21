@@ -15,6 +15,9 @@ type RestController struct {
 func (controller *RestController) Init() {
 	router := gin.Default()
 
+	router.GET("/hihi", func (c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"hihi": "hihi"})
+	})
 	router.GET("/books/:id", controller.getBook)
 	router.POST("/books", controller.createBook)
 	router.PUT("/books/:id", controller.updateBook)

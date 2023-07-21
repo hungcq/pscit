@@ -24,6 +24,7 @@ spec:
     metadata:
       labels:
         app: author-service
+        version: v1
     spec:
       containers:
         - name: author-service

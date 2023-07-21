@@ -13,5 +13,22 @@ kubectl scale deployment <deployment name> -n <namespace> --replicas=0
 kubectl create secret generic [name] --from-literal=[secret 1 key]=[secret 1 val] --from-literal=[secret 2 key]=[secret 2 val]
 // get nodes info
 kubectl get nodes -o wide
-// expose NodePort service when running using minikube
-minikube service book-service --url
+// get all namespaces
+kubectl get namespace
+// get object by namespace
+kubectl get [object type] --namespace=[name]
+
+// istio system services
+kubectl get service --namespace=istio-system
+// add addons to kube & istio
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.18/samples/addons/grafana.yaml
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.18/samples/addons/prometheus.yaml
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.18/samples/addons/jaeger.yaml
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.18/samples/addons/kiali.yaml
+// inject envoy sidecar istio
+istioctl kube-inject -f book-service.yaml | kubectl apply -f -
+// request logs from sidecar
+kubectl logs -l app=book-service -c istio-proxy | Select-String GET
+
+// grep in windows
+Select-String
