@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pscit
+  annotations:
+    kubernetes.io/ingressClassName: istio
+spec:
+  rules:
+    - host: pscit
+      http:
+        paths:
+          - path: /books
+            pathType: Prefix
+            backend:
+              service:
+                name: book-service
+                port:
+                  number: 80
+          - path: /authors
+            pathType: Prefix
+            backend:
+              service:
+                name: author-service
+                port:
+                  number: 80

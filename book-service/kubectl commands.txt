@@ -1,0 +1,17 @@
+kubectl logs -f [pod]
+kubectl create deployment --image=[image] [name]
+kubectl set env deployment/[deployment name] [name1]=[value1] [name2]=[value2]
+// expose port to cluster
+kubectl expose deployment [name] --port=[port] --name=[dns name]
+// expose port to outside
+kubectl port-forward [pod name] 80:80
+// debug pod
+kubectl describe pod [pod]
+kubectl rollout restart deployment <deployment_name> -n <namespace>
+kubectl scale deployment <deployment name> -n <namespace> --replicas=0
+// create secret
+kubectl create secret generic [name] --from-literal=[secret 1 key]=[secret 1 val] --from-literal=[secret 2 key]=[secret 2 val]
+// get nodes info
+kubectl get nodes -o wide
+// expose NodePort service when running using minikube
+minikube service book-service --url
