@@ -14,7 +14,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: book-service-deployment
+  name: book-service-deployment-v2
 spec:
   selector:
     matchLabels:
@@ -24,7 +24,7 @@ spec:
     metadata:
       labels:
         app: book-service
-        version: v1
+        version: v2
     spec:
       containers:
         - name: book-service

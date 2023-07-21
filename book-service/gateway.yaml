@@ -28,6 +28,8 @@ spec:
     - match:
         - uri:
             prefix: /books
+        - uri:
+            prefix: /hihi
       route:
         - destination:
             host: book-service
