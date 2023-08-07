@@ -1,0 +1,14 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: logging
+  labels:
+    type: local
+spec:
+  storageClassName: localstorage
+  capacity:
+    storage: 8Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "C:/Users/hungcq/Desktop/programs/kube-volume"

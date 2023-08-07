@@ -14,21 +14,21 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: book-service-deployment-v2
+  name: book-service-deployment
 spec:
   selector:
     matchLabels:
       app: book-service
-  replicas: 2
+  replicas: 1
   template:
     metadata:
       labels:
         app: book-service
-        version: v2
     spec:
       containers:
         - name: book-service
-          image: hungcq/book-service:latest
+          image: book-service
+          imagePullPolicy: Never
           ports:
             - containerPort: 80
           env:
@@ -44,3 +44,20 @@ spec:
                 secretKeyRef:
                   name: db-secret
                   key: DB_PASSWORD
+          volumeMounts:
+            - name: log
+              mountPath: /var/log
+        - name: fluentd
+          image: my-fluentd
+          imagePullPolicy: Never
+          volumeMounts:
+            - name: fluentd-config
+              mountPath: /fluentd/etc
+            - name: log
+              mountPath: /var/log
+      volumes:
+        - name: log
+          emptyDir: { }
+        - name: fluentd-config
+          configMap:
+            name: fluentd-config

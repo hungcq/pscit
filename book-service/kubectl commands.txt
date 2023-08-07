@@ -17,6 +17,8 @@ kubectl get nodes -o wide
 kubectl get namespace
 // get object by namespace
 kubectl get [object type] --namespace=[name]
+// delete all in namespace
+kubectl delete namespace [name]
 
 // istio system services
 kubectl get service --namespace=istio-system
