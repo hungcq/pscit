@@ -1,0 +1,84 @@
+package routes
+
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/hungcq/pscit/backend/handlers"
+	"github.com/hungcq/pscit/backend/middleware"
+	"github.com/hungcq/pscit/backend/services"
+	"gorm.io/gorm"
+)
+
+func SetupRoutes(r *gin.Engine, db *gorm.DB) {
+	// Initialize services
+	authService := services.NewAuthService(db)
+	bookService := services.NewBookService(db)
+	bookCopyService := services.NewBookCopyService(db)
+	reservationService := services.NewReservationService(db)
+	emailService := services.NewEmailService()
+	authorService := services.NewAuthorService(db)
+	categoryService := services.NewCategoryService(db)
+
+	// Initialize handlers
+	authHandler := handlers.NewAuthHandler(authService)
+	bookHandler := handlers.NewBookHandler(bookService)
+	bookCopyHandler := handlers.NewBookCopyHandler(bookCopyService)
+	reservationHandler := handlers.NewReservationHandler(reservationService, emailService)
+	authorHandler := handlers.NewAuthorHandler(authorService)
+	categoryHandler := handlers.NewCategoryHandler(categoryService)
+
+	// Public routes
+	r.GET("/api/auth/google/callback", authHandler.GoogleCallback)
+
+	// Protected routes
+	api := r.Group("/api")
+	api.Use(middleware.AuthMiddleware())
+
+	// Book routes
+	api.GET("/books", bookHandler.GetBooks)
+	api.GET("/books/search", bookHandler.SearchBooks)
+	api.GET("/books/:id", bookHandler.GetBook)
+
+	// Book copy routes
+	api.GET("/books/:id/copies", bookCopyHandler.GetBookCopies)
+	api.GET("/books/copies/:id", bookCopyHandler.GetBookCopy)
+
+	// Reservation routes
+	api.POST("/reservations", reservationHandler.CreateReservation)
+	api.GET("/reservations/user", reservationHandler.GetUserReservations)
+	api.GET("/reservations/:id", reservationHandler.GetReservation)
+
+	// Admin routes
+	admin := api.Use(middleware.AdminMiddleware())
+	{
+		// Book management
+		admin.POST("/books", bookHandler.CreateBook)
+		admin.POST("/books/bulk", bookHandler.BulkCreateBooks)
+		admin.PUT("/books/:id", bookHandler.UpdateBook)
+		admin.DELETE("/books/:id", bookHandler.DeleteBook)
+
+		// Author management
+		admin.GET("/authors", authorHandler.GetAuthors)
+		admin.GET("/authors/:id", authorHandler.GetAuthor)
+		admin.POST("/authors", authorHandler.CreateAuthor)
+		admin.PUT("/authors/:id", authorHandler.UpdateAuthor)
+		admin.DELETE("/authors/:id", authorHandler.DeleteAuthor)
+
+		// Category management
+		admin.GET("/categories", categoryHandler.GetCategories)
+		admin.GET("/categories/:id", categoryHandler.GetCategory)
+		admin.POST("/categories", categoryHandler.CreateCategory)
+		admin.PUT("/categories/:id", categoryHandler.UpdateCategory)
+		admin.DELETE("/categories/:id", categoryHandler.DeleteCategory)
+
+		// Reservation management
+		admin.GET("/reservations", reservationHandler.GetReservations)
+		admin.PATCH("/reservations/:id/status", reservationHandler.UpdateReservationStatus)
+
+		// Book copy management
+		admin.POST("/books/:bookId/copies", bookCopyHandler.CreateBookCopy)
+		admin.POST("/books/:bookId/copies/bulk", bookCopyHandler.BulkCreateBookCopies)
+		admin.PUT("/books/copies/:id", bookCopyHandler.UpdateBookCopy)
+		admin.DELETE("/books/copies/:id", bookCopyHandler.DeleteBookCopy)
+		admin.PUT("/books/copies/:id/availability", bookCopyHandler.UpdateBookCopyAvailability)
+	}
+}

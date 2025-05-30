@@ -1,0 +1,92 @@
+package models
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+// Author represents a book author
+type Author struct {
+	ID        uuid.UUID      `gorm:"type:uuid;primary_key" json:"id"`
+	Name      string         `gorm:"index" json:"name"`
+	Biography string         `json:"biography"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	Books     []Book         `gorm:"many2many:book_authors;" json:"books,omitempty"`
+}
+
+// Category represents a book category
+type Category struct {
+	ID          uuid.UUID      `gorm:"type:uuid;primary_key" json:"id"`
+	Name        string         `gorm:"index" json:"name"`
+	Description string         `json:"description"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	Books       []Book         `gorm:"many2many:book_categories;" json:"books,omitempty"`
+}
+
+type Book struct {
+	ID             uuid.UUID      `gorm:"type:uuid;primary_key" json:"id"`
+	Title          string         `gorm:"index" json:"title"`
+	Subtitle       string         `json:"subtitle"`
+	Description    string         `json:"description"`
+	ISBN10         string         `gorm:"uniqueIndex" json:"isbn_10"`
+	ISBN13         string         `gorm:"uniqueIndex" json:"isbn_13"`
+	PublishedYear  int            `json:"published_year"`
+	PageCount      int            `json:"page_count"`
+	Publisher      string         `json:"publisher"`
+	GoogleVolumeID string         `json:"google_volume_id"`
+	MainImage      string         `json:"main_image"`
+	Available      bool           `gorm:"default:true" json:"available"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`
+	Authors        []Author       `gorm:"many2many:book_authors;" json:"authors"`
+	Categories     []Category     `gorm:"many2many:book_categories;" json:"categories"`
+	Reservations   []Reservation  `json:"reservations,omitempty"`
+}
+
+type CreateBookRequest struct {
+	Title          string   `json:"title" binding:"required"`
+	Subtitle       string   `json:"subtitle"`
+	Description    string   `json:"description" binding:"required"`
+	ISBN10         string   `json:"isbn_10" binding:"required"`
+	ISBN13         string   `json:"isbn_13" binding:"required"`
+	PublishedYear  int      `json:"published_year"`
+	PageCount      int      `json:"page_count"`
+	Publisher      string   `json:"publisher"`
+	GoogleVolumeID string   `json:"google_volume_id"`
+	MainImage      string   `json:"main_image"`
+	AuthorIDs      []string `json:"author_ids" binding:"required"`
+	CategoryIDs    []string `json:"category_ids" binding:"required"`
+}
+
+func (b *Book) BeforeCreate(tx *gorm.DB) error {
+	if b.ID == uuid.Nil {
+		b.ID = uuid.New()
+	}
+	return nil
+}
+
+func (a *Author) BeforeCreate(tx *gorm.DB) error {
+	if a.ID == uuid.Nil {
+		a.ID = uuid.New()
+	}
+	return nil
+}
+
+func (c *Category) BeforeCreate(tx *gorm.DB) error {
+	if c.ID == uuid.Nil {
+		c.ID = uuid.New()
+	}
+	return nil
+}
+
+// GetMainImage returns the main image URL if available
+func (b *Book) GetMainImage() string {
+	return b.MainImage
+}
