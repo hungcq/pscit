@@ -22,29 +22,40 @@ func (s *BookService) GetBooks(query, category, author string, page, limit int) 
 	var books []models.Book
 	var total int64
 
-	// Build query
-	dbQuery := s.db.Model(&models.Book{}).Preload("Authors").Preload("Categories")
+	// Build base query
+	baseQuery := s.db.Model(&models.Book{})
 
 	// Apply filters
 	if query != "" {
 		query = "%" + strings.ToLower(query) + "%"
-		dbQuery = dbQuery.Where(
+		baseQuery = baseQuery.Where(
 			"LOWER(title) LIKE ? OR LOWER(subtitle) LIKE ?",
 			query, query,
 		)
 	}
 
+	// Create subquery for distinct book IDs
+	subQuery := baseQuery.Table("books").Select("books.id")
+
 	if category != "" {
-		dbQuery = dbQuery.Joins("JOIN book_categories ON books.id = book_categories.book_id").
+		subQuery = subQuery.Distinct("books.id").
+			Joins("JOIN book_categories ON books.id = book_categories.book_id").
 			Joins("JOIN categories ON book_categories.category_id = categories.id").
 			Where("LOWER(categories.name) LIKE ?", "%"+strings.ToLower(category)+"%")
 	}
 
 	if author != "" {
-		dbQuery = dbQuery.Joins("JOIN book_authors ON books.id = book_authors.book_id").
+		subQuery = subQuery.Distinct("books.id").
+			Joins("JOIN book_authors ON books.id = book_authors.book_id").
 			Joins("JOIN authors ON book_authors.author_id = authors.id").
 			Where("LOWER(authors.name) LIKE ?", "%"+strings.ToLower(author)+"%")
 	}
+
+	// Build final query with preloading
+	dbQuery := s.db.Model(&models.Book{}).
+		Preload("Authors").
+		Preload("Categories").
+		Where("id IN (?)", subQuery)
 
 	// Get total count
 	if err := dbQuery.Count(&total).Error; err != nil {

@@ -104,6 +104,10 @@ const Home: React.FC = () => {
               size="large"
               onChange={handleCategoryChange}
               value={selectedCategory || undefined}
+              showSearch
+              filterOption={(input, option) =>
+                String(option?.children).toLowerCase().includes(input.toLowerCase())
+              }
             >
               {categories.map(category => (
                 <Option key={category.id} value={category.name}>
@@ -120,6 +124,10 @@ const Home: React.FC = () => {
               size="large"
               onChange={handleAuthorChange}
               value={selectedAuthor || undefined}
+              showSearch
+              filterOption={(input, option) =>
+                String(option?.children).toLowerCase().includes(input.toLowerCase())
+              }
             >
               {authors.map(author => (
                 <Option key={author.id} value={author.name}>

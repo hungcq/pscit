@@ -38,21 +38,35 @@ const AdminDashboard: React.FC = () => {
   const [bookForm] = Form.useForm();
   const [authorForm] = Form.useForm();
   const [categoryForm] = Form.useForm();
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0
+  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedAuthor, setSelectedAuthor] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [authorSearchQuery, setAuthorSearchQuery] = useState('');
+  const [categorySearchQuery, setCategorySearchQuery] = useState('');
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [pagination.current, pagination.pageSize, searchQuery, selectedAuthor, selectedCategory]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [booksResponse, reservationsResponse, authorsResponse, categoriesResponse] = await Promise.all([
-        booksAPI.getBooks(),
+        booksAPI.getBooks(searchQuery, selectedCategory, selectedAuthor, pagination.current, pagination.pageSize),
         reservationsAPI.getReservations(),
         authorsAPI.getAuthors(),
         categoriesAPI.getCategories(),
       ]);
       setBooks(booksResponse.data.books);
+      setPagination(prev => ({
+        ...prev,
+        total: booksResponse.data.total
+      }));
       setReservations(reservationsResponse.data.reservations);
       setAuthors(authorsResponse.data);
       setCategories(categoriesResponse.data);
@@ -62,6 +76,32 @@ const AdminDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTableChange = (pagination: any) => {
+    setPagination(pagination);
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    setPagination(prev => ({ ...prev, current: 1 }));
+  };
+
+  const handleAuthorFilter = (value: string) => {
+    setSelectedAuthor(value);
+    setPagination(prev => ({ ...prev, current: 1 }));
+  };
+
+  const handleCategoryFilter = (value: string) => {
+    setSelectedCategory(value);
+    setPagination(prev => ({ ...prev, current: 1 }));
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setSelectedAuthor('');
+    setSelectedCategory('');
+    setPagination(prev => ({ ...prev, current: 1 }));
   };
 
   // Book management
@@ -223,6 +263,11 @@ const AdminDashboard: React.FC = () => {
       title: 'Title',
       dataIndex: 'title',
       key: 'title',
+    },
+    {
+      title: 'Subtitle',
+      dataIndex: 'subtitle',
+      key: 'Subtitle',
     },
     {
       title: 'Authors',
@@ -411,6 +456,14 @@ const AdminDashboard: React.FC = () => {
     },
   ];
 
+  const filteredAuthors = authors.filter(author =>
+    author.name.toLowerCase().includes(authorSearchQuery.toLowerCase())
+  );
+
+  const filteredCategories = categories.filter(category =>
+    category.name.toLowerCase().includes(categorySearchQuery.toLowerCase())
+  );
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
@@ -426,11 +479,48 @@ const AdminDashboard: React.FC = () => {
                 </Button>
               }
             >
+              <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>
+                <Space wrap>
+                  <Input.Search
+                    placeholder="Search by title or subtitle"
+                    allowClear
+                    onSearch={handleSearch}
+                    style={{ width: 300 }}
+                  />
+                  <Select
+                    placeholder="Filter by author"
+                    allowClear
+                    style={{ width: 200 }}
+                    onChange={handleAuthorFilter}
+                    value={selectedAuthor || undefined}
+                    showSearch
+                    filterOption={(input, option) =>
+                      (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                    }
+                    options={authors.map(a => ({ label: a.name, value: a.id }))}
+                  />
+                  <Select
+                    placeholder="Filter by category"
+                    allowClear
+                    style={{ width: 200 }}
+                    onChange={handleCategoryFilter}
+                    value={selectedCategory || undefined}
+                    showSearch
+                    filterOption={(input, option) =>
+                      (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                    }
+                    options={categories.map(c => ({ label: c.name, value: c.id }))}
+                  />
+                  <Button onClick={handleResetFilters}>Reset Filters</Button>
+                </Space>
+              </Space>
               <Table
                 columns={bookColumns}
                 dataSource={books}
                 rowKey="id"
                 loading={loading}
+                pagination={pagination}
+                onChange={handleTableChange}
               />
             </Card>
           </TabPane>
@@ -444,9 +534,18 @@ const AdminDashboard: React.FC = () => {
                 </Button>
               }
             >
+              <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>
+                <Input.Search
+                  placeholder="Search by name"
+                  allowClear
+                  onSearch={setAuthorSearchQuery}
+                  onChange={(e) => setAuthorSearchQuery(e.target.value)}
+                  style={{ width: 300 }}
+                />
+              </Space>
               <Table
                 columns={authorColumns}
-                dataSource={authors}
+                dataSource={filteredAuthors}
                 rowKey="id"
                 loading={loading}
               />
@@ -462,9 +561,18 @@ const AdminDashboard: React.FC = () => {
                 </Button>
               }
             >
+              <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>
+                <Input.Search
+                  placeholder="Search by name"
+                  allowClear
+                  onSearch={setCategorySearchQuery}
+                  onChange={(e) => setCategorySearchQuery(e.target.value)}
+                  style={{ width: 300 }}
+                />
+              </Space>
               <Table
                 columns={categoryColumns}
-                dataSource={categories}
+                dataSource={filteredCategories}
                 rowKey="id"
                 loading={loading}
               />
@@ -573,6 +681,10 @@ const AdminDashboard: React.FC = () => {
               mode="multiple"
               placeholder="Select authors"
               options={authors.map(a => ({ label: a.name, value: a.id }))}
+              showSearch
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
             />
           </Form.Item>
 
@@ -585,6 +697,10 @@ const AdminDashboard: React.FC = () => {
               mode="multiple"
               placeholder="Select categories"
               options={categories.map(c => ({ label: c.name, value: c.id }))}
+              showSearch
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
             />
           </Form.Item>
 
