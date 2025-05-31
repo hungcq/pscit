@@ -88,12 +88,14 @@ const AdminDashboard: React.FC = () => {
   };
 
   const handleAuthorFilter = (value: string) => {
-    setSelectedAuthor(value);
+    const selectedAuthor = authors.find(a => a.id === value);
+    setSelectedAuthor(selectedAuthor?.name || '');
     setPagination(prev => ({ ...prev, current: 1 }));
   };
 
   const handleCategoryFilter = (value: string) => {
-    setSelectedCategory(value);
+    const selectedCategory = categories.find(c => c.id === value);
+    setSelectedCategory(selectedCategory?.name || '');
     setPagination(prev => ({ ...prev, current: 1 }));
   };
 
