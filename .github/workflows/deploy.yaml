@@ -1,0 +1,47 @@
+name: Deploy to Kubernetes
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout public repo (YAMLs)
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+      - name: Build image
+        run: docker build -t pscit/backend:latest ./backend
+
+      - name: Tag image
+        run: docker tag pscit/backend:latest ${{ secrets.DOCKERHUB_USERNAME }}/pscit-backend:latest
+
+      - name: Push image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/pscit-backend:latest
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Set up KUBECONFIG
+        run: |
+          echo "${{ secrets.KUBECONFIG_BASE64 }}" | base64 -d > kubeconfig
+          export KUBECONFIG=$PWD/kubeconfig
+
+      - name: Decrypt secrets (if using SOPS)
+        run: |
+          sudo apt-get install -y gnupg
+          gpg --import <(echo "${{ secrets.SOPS_PRIVATE_KEY }}")
+          sops -d k8s/secret.enc.yaml > k8s/secret.yaml
+
+      - name: Apply manifests
+        run: |
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/secret.yaml
+          kubectl apply -f k8s/backend-deployment.yaml
+          kubectl apply -f k8s/backend-ingress.yaml

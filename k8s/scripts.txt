@@ -1,0 +1,1 @@
+sops -e -p 057F63E3A483038960E2F647C34298C3E7776045 -e k8s/secret.yaml > k8s/secret.enc.yaml

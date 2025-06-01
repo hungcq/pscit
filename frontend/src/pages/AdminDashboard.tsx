@@ -709,7 +709,6 @@ const AdminDashboard: React.FC = () => {
           <Form.Item
             name="main_image"
             label="Main Image URL"
-            rules={[{ required: true, message: 'Please enter the main image URL' }]}
           >
             <Input placeholder="https://example.com/image.jpg" />
           </Form.Item>

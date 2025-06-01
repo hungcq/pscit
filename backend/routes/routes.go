@@ -27,6 +27,11 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
 
 	// Public routes
+	r.GET("/api/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status": "healthy",
+		})
+	})
 	r.GET("/api/auth/google/callback", authHandler.GoogleCallback)
 
 	// Protected routes

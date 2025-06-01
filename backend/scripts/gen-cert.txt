@@ -1,0 +1,3 @@
+brew install certbot
+# point domain to machine public IP
+sudo certbot certonly -d *.hungcq.xyz  --manual --preferred-challenges dns
