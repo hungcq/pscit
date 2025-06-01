@@ -6,10 +6,6 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
-  tls:
-    - hosts:
-        - api.pscit.hungcq.xyz
-      secretName: backend-tls
   rules:
     - host: api.pscit.hungcq.xyz
       http:
