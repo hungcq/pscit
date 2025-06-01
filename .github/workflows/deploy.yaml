@@ -40,8 +40,12 @@ jobs:
 
       - name: Set up KUBECONFIG
         run: |
-          echo "${{ secrets.KUBECONFIG_BASE64 }}" | base64 -d > kubeconfig
-          export KUBECONFIG=$PWD/kubeconfig
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG_BASE64 }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+          export KUBECONFIG=$HOME/.kube/config
+          kubectl config view
+          kubectl cluster-info
 
       - name: Install SOPS
         run: |
@@ -56,16 +60,16 @@ jobs:
           SOPS_AGE_KEY_FILE=age.key sops -d k8s/secret.enc.yaml > k8s/secret.yaml
           rm age.key
 
+      - name: Apply manifests
+        run: |
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/secret.yaml
+          kubectl apply -f k8s/backend-deployment.yaml
+          kubectl apply -f k8s/backend-ingress.yaml
+
       - name: Update deployment image
         run: |
           kubectl set image deployment/backend backend=${{ secrets.DOCKERHUB_USERNAME }}/pscit-backend:${{ steps.version.outputs.VERSION }}
 
       - name: Wait for rollout
         run: kubectl rollout status deployment/backend --timeout=300s
-
-      - name: Cleanup old pods
-        run: |
-          kubectl apply -f k8s/configmap.yaml
-          kubectl apply -f k8s/secret.yaml
-          kubectl apply -f k8s/backend-deployment.yaml
-          kubectl apply -f k8s/backend-ingress.yaml
