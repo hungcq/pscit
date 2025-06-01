@@ -43,9 +43,9 @@ jobs:
 
       - name: Install SOPS
         run: |
-          wget -O sops https://github.com/mozilla/sops/releases/download/v3.8.0/sops-v3.8.0.linux
-          chmod +x sops
-          sudo mv sops /usr/local/bin/
+          curl -LO https://github.com/getsops/sops/releases/download/v3.10.2/sops-v3.10.2.linux.amd64
+          mv sops-v3.10.2.linux.amd64 /usr/local/bin/sops
+          chmod +x /usr/local/bin/sops
 
       - name: Decrypt secrets
         run: |
