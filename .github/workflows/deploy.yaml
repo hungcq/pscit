@@ -33,11 +33,18 @@ jobs:
           echo "${{ secrets.KUBECONFIG_BASE64 }}" | base64 -d > kubeconfig
           export KUBECONFIG=$PWD/kubeconfig
 
-      - name: Decrypt secrets (if using SOPS)
+      - name: Install SOPS
         run: |
-          sudo apt-get install -y gnupg
-          gpg --import <(echo "${{ secrets.SOPS_PRIVATE_KEY }}")
-          sops -d k8s/secret.enc.yaml > k8s/secret.yaml
+          wget -O sops https://github.com/mozilla/sops/releases/download/v3.8.0/sops-v3.8.0.linux
+          chmod +x sops
+          sudo mv sops /usr/local/bin/
+
+      - name: Decrypt secrets
+        run: |
+          echo "${{ secrets.SOPS_AGE_KEY }}" > age.key
+          chmod 600 age.key
+          SOPS_AGE_KEY_FILE=age.key sops -d k8s/secret.enc.yaml > k8s/secret.yaml
+          rm age.key
 
       - name: Apply manifests
         run: |
