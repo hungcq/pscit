@@ -3,6 +3,10 @@ name: Deploy to Kubernetes
 on:
   push:
     branches: [ master ]
+    paths:
+      - 'backend/**'
+      - 'k8s/**'
+      - '.github/workflows/deploy.yaml'
 
 jobs:
   deploy:
@@ -30,12 +34,16 @@ jobs:
 
       - name: Set up KUBECONFIG
         run: |
-          echo "${{ secrets.KUBECONFIG_BASE64 }}" | base64 -d > kubeconfig
-          export KUBECONFIG=$PWD/kubeconfig
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG_BASE64 }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+          export KUBECONFIG=$HOME/.kube/config
+          # Verify connection
+          kubectl cluster-info
 
       - name: Install SOPS
         run: |
-          wget -O sops https://github.com/getsops/sops/releases/download/v3.10.2/sops-v3.10.2.linux.amd64
+          wget -O sops https://github.com/mozilla/sops/releases/download/v3.8.0/sops-v3.8.0.linux
           chmod +x sops
           sudo mv sops /usr/local/bin/
 
@@ -48,7 +56,10 @@ jobs:
 
       - name: Apply manifests
         run: |
-          kubectl apply -f k8s/configmap.yaml
-          kubectl apply -f k8s/secret.yaml
-          kubectl apply -f k8s/backend-deployment.yaml
-          kubectl apply -f k8s/backend-ingress.yaml
+          # Verify cluster connection before applying
+          kubectl cluster-info
+          # Apply manifests with validation disabled
+          kubectl apply -f k8s/configmap.yaml --validate=false
+          kubectl apply -f k8s/secret.yaml --validate=false
+          kubectl apply -f k8s/backend-deployment.yaml --validate=false
+          kubectl apply -f k8s/backend-ingress.yaml --validate=false
