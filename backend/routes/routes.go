@@ -26,6 +26,15 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	authorHandler := handlers.NewAuthorHandler(authorService)
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
 
+	// Custom 404 handler
+	r.NoRoute(func(c *gin.Context) {
+		c.JSON(404, gin.H{
+			"error":   "Route not found",
+			"message": "The requested endpoint does not exist",
+			"path":    c.Request.URL.Path,
+		})
+	})
+
 	// Public routes
 	r.GET("/api/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
