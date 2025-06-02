@@ -100,10 +100,11 @@ const BookDetails: React.FC = () => {
                         <br/>
                         <Text strong>Categories:</Text> {book.categories.map(c => c.name).join(', ')}
                         <br/>
-                        <Text strong>ISBN:</Text> {book.isbn}
+                        <Text strong>ISBN10:</Text> {book.isbn_10}
                         <br/>
-                        <Text strong>Description:</Text>
-                        <p>{book.description}</p>
+                        <Text strong>ISBN13:</Text> {book.isbn_13}
+                        <br/>
+                        <Text strong>Description:</Text> {book.description}
                         <br/>
                         <Text strong>Available Copies:</Text> {availableCopies.length}
                         <br/>

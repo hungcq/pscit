@@ -10,7 +10,8 @@ export interface Book {
   title: string;
   subtitle: string;
   description: string;
-  isbn: string;
+  isbn_10: string;
+  isbn_13: string;
   main_image: string;
   available: boolean;
   authors: Author[];

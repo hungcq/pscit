@@ -100,6 +100,3 @@ aws s3 sync $DIST_DIR s3://$BUCKET_NAME \
 
 echo -e "${GREEN}✅ Deployment completed successfully!${NC}"
 echo -e "${GREEN}🌐 Your website is available at: http://$BUCKET_NAME.s3-website-$REGION.amazonaws.com${NC}"
-
-# Clean up
-rm .env 
