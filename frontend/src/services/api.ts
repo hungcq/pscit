@@ -79,7 +79,10 @@ export const reservationsAPI = {
         api.get<{ reservations: Reservation[]; total: number }>('/reservations', {
             params: { page, limit },
         }),
-    getUserReservations: () => api.get<Reservation[]>('/reservations/user'),
+    getUserReservations: (page = 1, limit = 10) => 
+        api.get<{ reservations: Reservation[]; total: number }>('/reservations/user', {
+            params: { page, limit },
+        }),
     getReservation: (id: string) => api.get<Reservation>(`/reservations/${id}`),
     createReservation: (reservation: CreateReservationRequest) =>
         api.post<Reservation>('/reservations', reservation),

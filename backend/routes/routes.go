@@ -41,7 +41,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 			"status": "healthy",
 		})
 	})
-	r.GET("/api/auth/google/callback", authHandler.GoogleCallback)
+	r.POST("/api/auth/google/callback", authHandler.GoogleCallback)
 
 	// Protected routes
 	api := r.Group("/api")

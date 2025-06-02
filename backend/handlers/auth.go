@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"github.com/hungcq/pscit/backend/config"
 	"log"
 	"net/http"
+
+	"github.com/hungcq/pscit/backend/config"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hungcq/pscit/backend/services"
@@ -14,6 +15,10 @@ type AuthHandler struct {
 	authService *services.AuthService
 }
 
+type GoogleCallbackRequest struct {
+	Credential string `json:"credential" binding:"required"`
+}
+
 func NewAuthHandler(authService *services.AuthService) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
@@ -21,8 +26,15 @@ func NewAuthHandler(authService *services.AuthService) *AuthHandler {
 }
 
 func (h *AuthHandler) GoogleCallback(c *gin.Context) {
+	var req GoogleCallbackRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("GoogleCallback: Invalid request body: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_request"})
+		return
+	}
+
 	ctx := c.Request.Context()
-	payload, err := idtoken.Validate(ctx, c.Query("code"), config.AppConfig.GoogleClientID)
+	payload, err := idtoken.Validate(ctx, req.Credential, config.AppConfig.GoogleClientID)
 	if err != nil {
 		log.Printf("GoogleCallback: Token exchange failed: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "token_exchange_failed"})
