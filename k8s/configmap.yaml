@@ -5,7 +5,7 @@ metadata:
 data:
   DB_HOST: "postgres.default.svc.cluster.local"
   DB_PORT: "5432"
-  DB_USER: "dbmasteruser"
+  DB_USER: "postgres"
   DB_NAME: "pscit"
 
   GOOGLE_CLIENT_ID: "83685543235-7rt7dc891ofvu7kat3m6ikutg06r7af2.apps.googleusercontent.com"
