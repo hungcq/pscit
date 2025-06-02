@@ -56,6 +56,14 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	api.GET("/books/:id/copies", bookCopyHandler.GetBookCopies)
 	api.GET("/books/copies/:id", bookCopyHandler.GetBookCopy)
 
+	// Author routes
+	api.GET("/authors", authorHandler.GetAuthors)
+	api.GET("/authors/:id", authorHandler.GetAuthor)
+
+	// Categories routes
+	api.GET("/categories", categoryHandler.GetCategories)
+	api.GET("/categories/:id", categoryHandler.GetCategory)
+
 	// Reservation routes
 	api.POST("/reservations", reservationHandler.CreateReservation)
 	api.GET("/reservations/user", reservationHandler.GetUserReservations)
@@ -71,15 +79,11 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		admin.DELETE("/books/:id", bookHandler.DeleteBook)
 
 		// Author management
-		admin.GET("/authors", authorHandler.GetAuthors)
-		admin.GET("/authors/:id", authorHandler.GetAuthor)
 		admin.POST("/authors", authorHandler.CreateAuthor)
 		admin.PUT("/authors/:id", authorHandler.UpdateAuthor)
 		admin.DELETE("/authors/:id", authorHandler.DeleteAuthor)
 
 		// Category management
-		admin.GET("/categories", categoryHandler.GetCategories)
-		admin.GET("/categories/:id", categoryHandler.GetCategory)
 		admin.POST("/categories", categoryHandler.CreateCategory)
 		admin.PUT("/categories/:id", categoryHandler.UpdateCategory)
 		admin.DELETE("/categories/:id", categoryHandler.DeleteCategory)

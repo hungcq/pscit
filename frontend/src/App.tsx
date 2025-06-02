@@ -1,11 +1,10 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ConfigProvider, Layout, theme } from 'antd';
-import { AuthProvider } from './contexts/AuthContext';
+import {BrowserRouter as Router, Route, Routes} from 'react-router-dom';
+import {ConfigProvider, Layout, theme} from 'antd';
+import {AuthProvider} from './contexts/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import Login from './pages/Login';
-import Register from './pages/Register';
 import Home from './pages/Home';
 import BookDetails from './pages/BookDetails';
 import AdminDashboard from './pages/AdminDashboard';
@@ -29,7 +28,6 @@ const App: React.FC = () => {
             <Content style={{ padding: '24px' }}>
               <Routes>
                 <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
                 <Route path="/" element={<Home />} />
                 <Route path="/books/:id" element={<BookDetails />} />
                 <Route

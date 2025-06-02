@@ -43,7 +43,7 @@ const Reservations: React.FC = () => {
                 description={
                   <>
                     <div>
-                      <Text strong>Author:</Text> {reservation.book.author}
+                      <Text strong>Authors:</Text> {reservation.book.authors.map(a => a.name).join(', ')}
                     </div>
                     <div>
                       <Text strong>Start Date:</Text>{' '}
