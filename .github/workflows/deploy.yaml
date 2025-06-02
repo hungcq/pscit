@@ -64,6 +64,8 @@ jobs:
         run: |
           kubectl apply -f k8s/configmap.yaml
           kubectl apply -f k8s/secret.yaml
+          kubectl apply -f k8s/traefik.yaml
+          kubectl apply -f k8s/postgres.yaml
           kubectl apply -f k8s/backend-deployment.yaml
           kubectl apply -f k8s/backend-ingress.yaml
 

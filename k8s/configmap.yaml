@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: backend-config
 data:
-  DB_HOST: "ls-1e265f3a19d1b83ef315e53f29c3e82bf5813a85.cdu94gowb31r.ap-southeast-1.rds.amazonaws.com"
+  DB_HOST: "postgres.default.svc.cluster.local"
   DB_PORT: "5432"
   DB_USER: "dbmasteruser"
   DB_NAME: "pscit"
