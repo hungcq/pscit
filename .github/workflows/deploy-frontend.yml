@@ -42,7 +42,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Create environment file
-        run: cp ../.env.prod .env
+        run: cp .env.prod .env
 
       - name: Build application
         run: npm run build
