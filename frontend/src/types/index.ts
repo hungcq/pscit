@@ -20,6 +20,8 @@ export interface Book {
   authors: Author[];
   categories: Category[];
   published_year: number;
+  // publisher: string;
+  page_count: number;
 }
 
 export interface Author {
