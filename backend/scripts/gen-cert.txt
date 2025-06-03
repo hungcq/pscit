@@ -1,3 +1,20 @@
 brew install certbot
 # point domain to machine public IP
 sudo certbot certonly -d *.hungcq.xyz  --manual --preferred-challenges dns
+
+# setup instance Debian
+# install k3s
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--tls-san 13.215.136.18 --write-kubeconfig-mode 644" sh -
+# -> setup github secret
+base64 -i k3s.yaml | pbcopy
+
+# setup haproxy
+frontend https-in
+    bind *:443 ssl crt /etc/letsencrypt/live/hungcq.xyz/fullchain_and_privkey.pem
+    mode http
+    acl host_api hdr(host) -i api.pscit.hungcq.xyz
+    use_backend traefik-api if host_api
+
+backend traefik-api
+    mode http
+    server traefik 127.0.0.1:30000
