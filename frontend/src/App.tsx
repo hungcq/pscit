@@ -18,7 +18,7 @@ const App: React.FC = () => {
   return (
     <ConfigProvider
       theme={{
-        algorithm: theme.defaultAlgorithm,
+        algorithm: theme.darkAlgorithm,
       }}
     >
       <AuthProvider>

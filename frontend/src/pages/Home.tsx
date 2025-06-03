@@ -1,13 +1,14 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {Card, Col, Input, message, Pagination, Row, Select, Spin, Typography} from 'antd';
+import {Card, Col, Empty, Input, message, Pagination, Row, Select, Space, Spin, Typography} from 'antd';
 import {SearchOutlined} from '@ant-design/icons';
-import {booksAPI, categoriesAPI, authorsAPI} from '../services/api';
-import {Book, Category, Author} from '../types';
+import {authorsAPI, booksAPI, categoriesAPI} from '../services/api';
+import {Author, Book, Category} from '../types';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
 const { Option } = Select;
+const { Meta } = Card;
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -81,15 +82,27 @@ const Home: React.FC = () => {
     setCurrentPage(page);
   };
 
+  const filteredBooks = books.filter(book =>
+    book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      book.subtitle.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <Space direction="vertical" align="center" style={{ width: '100%', marginTop: '100px' }}>
+        <Spin size="large" />
+      </Space>
+    );
+  }
+
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
+    <Space direction="vertical" size="large" style={{ width: '100%', marginBottom: '24px' }}>
       <Title level={2}>Library Catalog</Title>
 
-      <div style={{ marginBottom: '24px' }}>
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={12} md={8}>
             <Search
-              placeholder="Search books..."
+              placeholder="Search by title or subtitle..."
               allowClear
               enterButton={<SearchOutlined />}
               size="large"
@@ -137,40 +150,32 @@ const Home: React.FC = () => {
             </Select>
           </Col>
         </Row>
-      </div>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '48px' }}>
-          <Spin size="large" />
-        </div>
+      {filteredBooks.length === 0 ? (
+        <Empty description="No books found" />
       ) : (
         <>
           <Row gutter={[24, 24]}>
-            {books.map((book) => (
-              <Col xs={24} sm={12} md={8} lg={6} key={book.id}>
+            {filteredBooks.map((book) => (
+              <Col xs={12} sm={8} md={6} lg={4} key={book.id}>
                 <Card
                   hoverable
                   cover={
                     <img
                       alt={book.title}
                       src={book.main_image}
-                      style={{ height: '200px', objectFit: 'cover' }}
+                      style={{ height: '300px', objectFit: 'contain' }}
                     />
                   }
                   onClick={() => navigate(`/books/${book.id}`)}
                 >
-                  <Card.Meta
+                  <Meta
                     title={book.title}
                     description={
-                      <>
-                        <Text type="secondary">
-                          {book.authors.map(a => a.name).join(', ')}
-                        </Text>
-                        <br />
-                        <Text type="secondary">
-                          {book.categories.map(c => c.name).join(', ')}
-                        </Text>
-                      </>
+                      <Space direction="vertical">
+                        <Text>By {book.authors.map(a => a.name).join(', ')}</Text>
+                        <Text type="secondary">{book.published_year}</Text>
+                      </Space>
                     }
                   />
                 </Card>
@@ -189,7 +194,7 @@ const Home: React.FC = () => {
           </div>
         </>
       )}
-    </div>
+    </Space>
   );
 };
 

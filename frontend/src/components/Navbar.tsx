@@ -1,56 +1,80 @@
 import React from 'react';
-import {Button, Layout, Menu, Space} from 'antd';
-import {Link, useNavigate} from 'react-router-dom';
-import {HomeOutlined, LogoutOutlined, UserOutlined,} from '@ant-design/icons';
+import {Layout, Menu} from 'antd';
+import {useNavigate} from 'react-router-dom';
 import {useAuth} from '../contexts/AuthContext';
+import {
+    BookOutlined,
+    DashboardOutlined,
+    HomeOutlined,
+    LoginOutlined,
+    LogoutOutlined,
+    UserOutlined
+} from '@ant-design/icons';
+import type {MenuProps} from 'antd';
 
-const { Header } = Layout;
+const {Header} = Layout;
 
 const Navbar: React.FC = () => {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
+    const navigate = useNavigate();
+    const {logout, isAuthenticated, isAdmin} = useAuth();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
 
-  return (
-    <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <Menu
-        theme="dark"
-        mode="horizontal"
-        style={{ flex: 1 }}
-        items={[
-          {
-            key: 'home',
-            icon: <HomeOutlined />,
-            label: <Link to="/">Home</Link>,
-          },
-        ]}
-      />
-      <Space>
-        {user ? (
-          <>
-            {user.role === 'admin' && (
-              <Button type="primary" onClick={() => navigate('/admin')}>
-                Admin Dashboard
-              </Button>
-            )}
-            <Button icon={<UserOutlined />} onClick={() => navigate('/profile')}>
-              Profile
-            </Button>
-            <Button icon={<LogoutOutlined />} onClick={handleLogout}>
-              Logout
-            </Button>
-          </>
-        ) : (
-          <>
-          </>
-        )}
-      </Space>
-    </Header>
-  );
+    const menuItems: MenuProps['items'] = [
+        {
+            key: '/',
+            icon: <HomeOutlined/>,
+            label: 'Home',
+            onClick: () => navigate('/')
+        },
+        ...(isAuthenticated ? [
+            {
+                key: '/profile',
+                icon: <UserOutlined/>,
+                label: 'Profile',
+                onClick: () => navigate('/profile')
+            },
+            {
+                key: '/reservations',
+                icon: <BookOutlined/>,
+                label: 'My Reservations',
+                onClick: () => navigate('/reservations')
+            }
+        ] : []),
+        ...(isAdmin ? [
+            {
+                key: '/admin',
+                icon: <DashboardOutlined/>,
+                label: 'Admin Dashboard',
+                onClick: () => navigate('/admin')
+            }
+        ] : []),
+        isAuthenticated ? {
+            key: 'logout',
+            icon: <LogoutOutlined/>,
+            label: 'Logout',
+            onClick: handleLogout
+        } : {
+            key: '/login',
+            icon: <LoginOutlined/>,
+            label: 'Login',
+            onClick: () => navigate('/login')
+        }
+    ];
+
+    return (
+        <Header>
+            <Menu
+                theme="dark"
+                mode="horizontal"
+                selectedKeys={[window.location.pathname]}
+                items={menuItems}
+            />
+        </Header>
+    );
 };
 
 export default Navbar; 

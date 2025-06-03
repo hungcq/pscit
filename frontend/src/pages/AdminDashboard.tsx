@@ -484,7 +484,7 @@ const AdminDashboard: React.FC = () => {
               <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>
                 <Space wrap>
                   <Input.Search
-                    placeholder="Search by title or subtitle"
+                    placeholder="Search by title or subtitle..."
                     allowClear
                     onSearch={handleSearch}
                     style={{ width: 300 }}

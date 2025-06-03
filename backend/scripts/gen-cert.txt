@@ -3,6 +3,9 @@ brew install certbot
 sudo certbot certonly -d *.hungcq.xyz  --manual --preferred-challenges dns
 
 # setup instance Debian
+# allow ports
+sudo ufw allow 443/tcp
+sudo ufw allow 6443/tcp
 # install k3s
 curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--tls-san 13.215.136.18 --write-kubeconfig-mode 644" sh -
 # -> setup github secret
@@ -18,3 +21,6 @@ frontend https-in
 backend traefik-api
     mode http
     server traefik 127.0.0.1:30000
+
+# check traefik port
+get svc -n kube-system

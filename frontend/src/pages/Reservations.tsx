@@ -1,31 +1,30 @@
-import React, { useEffect, useState } from 'react';
-import { Card, Typography, List, Tag, Spin, message, Pagination } from 'antd';
-import { reservationsAPI } from '../services/api';
-import { Reservation } from '../types';
+import React, {useEffect, useState} from 'react';
+import {message, Space, Spin, Table, Tag, Typography} from 'antd';
+import {useAuth} from '../contexts/AuthContext';
+import {reservationsAPI} from '../services/api';
+import {Reservation} from '../types';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 const Reservations: React.FC = () => {
+  const { user } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const loadReservations = async (page: number, size: number) => {
+  useEffect(() => {
+    fetchReservations();
+  }, [currentPage]);
+
+  const fetchReservations = async () => {
     try {
-      const response = await reservationsAPI.getUserReservations();
-      if (response.data && Array.isArray(response.data.reservations)) {
-        setReservations(response.data.reservations);
-        setTotal(response.data.total);
-      } else {
-        console.error('Invalid response format:', response.data);
-        setReservations([]);
-        setTotal(0);
-      }
+      const response = await reservationsAPI.getUserReservations(currentPage);
+      setReservations(response.data.reservations);
+      setTotal(response.data.total);
     } catch (error) {
-      console.error('Failed to load reservations:', error);
-      message.error('Failed to load your reservations');
+      console.error('Error fetching reservations:', error);
+      message.error('Failed to load reservations');
       setReservations([]);
       setTotal(0);
     } finally {
@@ -33,79 +32,66 @@ const Reservations: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    loadReservations(currentPage, pageSize);
-  }, [currentPage, pageSize]);
+  const columns = [
+    {
+      title: 'Book',
+      dataIndex: ['book', 'title'],
+      key: 'book',
+      render: (text: string, record: Reservation) => record.book?.title || 'N/A',
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => (
+        <Tag color={
+          status === 'pending' ? 'orange' :
+          status === 'approved' ? 'green' :
+          status === 'rejected' ? 'red' :
+          'default'
+        }>
+          {status?.toUpperCase() || 'UNKNOWN'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Requested At',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (date: string) => date ? new Date(date).toLocaleDateString() : 'N/A',
+    },
+    {
+      title: 'Updated At',
+      dataIndex: 'updated_at',
+      key: 'updated_at',
+      render: (date: string) => date ? new Date(date).toLocaleDateString() : 'N/A',
+    },
+  ];
 
-  const handlePageChange = (page: number, size?: number) => {
-    setCurrentPage(page);
-    if (size) {
-      setPageSize(size);
-    }
-  };
+  if (loading) {
+    return (
+      <Space direction="vertical" align="center" style={{ width: '100%', marginTop: '100px' }}>
+        <Spin size="large" />
+      </Space>
+    );
+  }
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '24px' }}>
+    <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <Title level={2}>My Reservations</Title>
-
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '48px' }}>
-          <Spin size="large" />
-        </div>
-      ) : (
-        <>
-          <List
-            dataSource={reservations}
-            renderItem={(reservation) => (
-              <Card style={{ marginBottom: '16px' }}>
-                <List.Item.Meta
-                  title={reservation.book.title}
-                  description={
-                    <>
-                      <div>
-                        <Text strong>Authors:</Text> {reservation.book.authors.map(a => a.name).join(', ')}
-                      </div>
-                      <div>
-                        <Text strong>Start Date:</Text>{' '}
-                        {new Date(reservation.startDate).toLocaleDateString()}
-                      </div>
-                      <div>
-                        <Text strong>End Date:</Text>{' '}
-                        {new Date(reservation.endDate).toLocaleDateString()}
-                      </div>
-                      <div>
-                        <Text strong>Status:</Text>{' '}
-                        <Tag
-                          color={
-                            reservation.status === 'approved'
-                              ? 'green'
-                              : reservation.status === 'pending'
-                              ? 'orange'
-                              : 'red'
-                          }
-                        >
-                          {reservation.status.toUpperCase()}
-                        </Tag>
-                      </div>
-                    </>
-                  }
-                />
-              </Card>
-            )}
-          />
-          <div style={{ textAlign: 'center', marginTop: '24px' }}>
-            <Pagination
-              current={currentPage}
-              pageSize={pageSize}
-              total={total}
-              onChange={handlePageChange}
-              showSizeChanger
-              showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
-            />
-          </div>
-        </>
-      )}
-    </div>
+      <Table
+        dataSource={reservations}
+        columns={columns}
+        rowKey="id"
+        pagination={{
+          current: currentPage,
+          total: total,
+          pageSize: 10,
+          onChange: (page) => setCurrentPage(page),
+        }}
+        locale={{ emptyText: 'No reservations found' }}
+      />
+    </Space>
   );
 };
 

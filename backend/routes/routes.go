@@ -36,16 +36,13 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	})
 
 	// Public routes
-	r.GET("/api/health", func(c *gin.Context) {
+	api := r.Group("/api")
+	api.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status": "healthy",
 		})
 	})
-	r.POST("/api/auth/google/callback", authHandler.GoogleCallback)
-
-	// Protected routes
-	api := r.Group("/api")
-	api.Use(middleware.AuthMiddleware())
+	api.POST("/auth/google/callback", authHandler.GoogleCallback)
 
 	// Book routes
 	api.GET("/books", bookHandler.GetBooks)
@@ -64,13 +61,16 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	api.GET("/categories", categoryHandler.GetCategories)
 	api.GET("/categories/:id", categoryHandler.GetCategory)
 
+	// Protected routes
+	authenticatedApi := api.Use(middleware.AuthMiddleware())
+
 	// Reservation routes
-	api.POST("/reservations", reservationHandler.CreateReservation)
-	api.GET("/reservations/user", reservationHandler.GetUserReservations)
-	api.GET("/reservations/:id", reservationHandler.GetReservation)
+	authenticatedApi.POST("/reservations", reservationHandler.CreateReservation)
+	authenticatedApi.GET("/reservations/user", reservationHandler.GetUserReservations)
+	authenticatedApi.GET("/reservations/:id", reservationHandler.GetReservation)
 
 	// Admin routes
-	admin := api.Use(middleware.AdminMiddleware())
+	admin := authenticatedApi.Use(middleware.AdminMiddleware())
 	{
 		// Book management
 		admin.POST("/books", bookHandler.CreateBook)

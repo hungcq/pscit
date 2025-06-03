@@ -1,19 +1,17 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
-import {Button, DatePicker, Layout, message, Modal, Space, Typography,} from 'antd';
-import {ArrowLeftOutlined} from '@ant-design/icons';
+import {Card, Typography, Button, Space, Spin, message, Descriptions, Tag} from 'antd';
+import {BookOutlined, UserOutlined} from '@ant-design/icons';
 import type {Book, BookCopy} from '../types';
 import {bookCopiesAPI, booksAPI, reservationsAPI} from '../services/api';
 import {useAuth} from '../contexts/AuthContext';
 
-const {Content} = Layout;
-const {Title, Text} = Typography;
-const {RangePicker} = DatePicker;
+const {Title, Text, Paragraph} = Typography;
 
 const BookDetails: React.FC = () => {
     const {id} = useParams<{id: string}>();
     const navigate = useNavigate();
-    const {user} = useAuth();
+    const {isAuthenticated} = useAuth();
     const [book, setBook] = useState<Book | null>(null);
     const [copies, setCopies] = useState<BookCopy[]>([]);
     const [loading, setLoading] = useState(true);
@@ -48,8 +46,17 @@ const BookDetails: React.FC = () => {
         loadBook();
     }, [id]);
 
-    const handleReservation = async () => {
-        if (!selectedDates || !selectedCopy) return;
+    const handleReserve = async () => {
+        if (!isAuthenticated) {
+            message.warning('Please login to reserve books');
+            navigate('/login');
+            return;
+        }
+
+        if (!selectedCopy || !selectedDates) {
+            message.error('Please select a copy and dates');
+            return;
+        }
 
         try {
             await reservationsAPI.createReservation({
@@ -67,103 +74,80 @@ const BookDetails: React.FC = () => {
         }
     };
 
-    if (loading || !book) {
-        return null;
+    if (loading) {
+        return (
+            <Space direction="vertical" align="center" style={{width: '100%', marginTop: '100px'}}>
+                <Spin size="large"/>
+            </Space>
+        );
+    }
+
+    if (!book) {
+        return (
+            <Space direction="vertical" align="center" style={{width: '100%', marginTop: '100px'}}>
+                <Title level={3}>Book not found</Title>
+                <Button type="primary" onClick={() => navigate('/')}>
+                    Back to Home
+                </Button>
+            </Space>
+        );
     }
 
     const availableCopies = copies.filter((copy) => copy.available);
 
     return (
-        <Layout>
-            <Content style={{padding: '24px'}}>
-                <Button
-                    icon={<ArrowLeftOutlined/>}
-                    onClick={() => navigate(-1)}
-                    style={{marginBottom: '24px'}}
-                >
-                    Back
-                </Button>
-
-                <div style={{display: 'flex', gap: '24px', flexWrap: 'wrap'}}>
-                    <div style={{flex: '0 0 300px'}}>
+        <Space direction="vertical" size="large" style={{width: '100%'}}>
+            <Card>
+                <Space direction="vertical" size="large" style={{width: '100%'}}>
+                    <Space align="start">
                         <img
                             src={book.main_image}
                             alt={book.title}
-                            style={{width: '100%', borderRadius: '8px'}}
+                            style={{width: '200px', height: 'auto'}}
                         />
-                    </div>
-
-                    <div style={{flex: '1'}}>
-                        <Title level={2}>{book.title}</Title>
-                        {book.subtitle && <Title level={4}>{book.subtitle}</Title>}
-                        <Text strong>Authors:</Text> {book.authors.map(a => a.name).join(', ')}
-                        <br/>
-                        <Text strong>Categories:</Text> {book.categories.map(c => c.name).join(', ')}
-                        <br/>
-                        <Text strong>ISBN10:</Text> {book.isbn_10}
-                        <br/>
-                        <Text strong>ISBN13:</Text> {book.isbn_13}
-                        <br/>
-                        <Text strong>Description:</Text> {book.description}
-                        <br/>
-                        <Text strong>Available Copies:</Text> {availableCopies.length}
-                        <br/>
-                        {user && availableCopies.length > 0 && (
-                            <Button
-                                type="primary"
-                                onClick={() => setReservationModalVisible(true)}
-                                style={{marginTop: '16px'}}
-                            >
-                                Reserve a Copy
-                            </Button>
-                        )}
-                    </div>
-                </div>
-
-                <Modal
-                    title="Reserve a Copy"
-                    open={reservationModalVisible}
-                    onOk={handleReservation}
-                    onCancel={() => {
-                        setReservationModalVisible(false);
-                        setSelectedDates(null);
-                        setSelectedCopy(null);
-                    }}
-                    okButtonProps={{disabled: !selectedDates || !selectedCopy}}
-                >
-                    <Space direction="vertical" style={{width: '100%'}}>
-                        <div>
-                            <Text strong>Select Dates:</Text>
-                            <br/>
-                            <RangePicker
-                                onChange={(dates) => {
-                                    if (dates) {
-                                        setSelectedDates([dates[0]!.toDate(), dates[1]!.toDate()]);
-                                    } else {
-                                        setSelectedDates(null);
-                                    }
-                                }}
-                            />
-                        </div>
-                        <div>
-                            <Text strong>Select Copy:</Text>
-                            <br/>
+                        <Space direction="vertical">
+                            <Title level={2}>{book.title}</Title>
+                            <Text type="secondary">{book.subtitle}</Text>
                             <Space>
-                                {availableCopies.map((copy) => (
-                                    <Button
-                                        key={copy.id}
-                                        type={selectedCopy?.id === copy.id ? 'primary' : 'default'}
-                                        onClick={() => setSelectedCopy(copy)}
-                                    >
-                                        Copy #{copy.id}
-                                    </Button>
-                                ))}
+                                <UserOutlined/>
+                                <Text>{book.authors.map(a => a.name).join(', ')}</Text>
                             </Space>
-                        </div>
+                            <Space>
+                                <BookOutlined/>
+                                <Text>{book.categories.map(c => c.name).join(', ')}</Text>
+                            </Space>
+                        </Space>
                     </Space>
-                </Modal>
-            </Content>
-        </Layout>
+
+                    <Descriptions title="Book Details" bordered>
+                        <Descriptions.Item label="ISBN-10">{book.isbn_10}</Descriptions.Item>
+                        <Descriptions.Item label="ISBN-13">{book.isbn_13}</Descriptions.Item>
+                        <Descriptions.Item label="Publisher">{book.publisher}</Descriptions.Item>
+                        <Descriptions.Item label="Published Year">{book.published_year}</Descriptions.Item>
+                        <Descriptions.Item label="Page Count">{book.page_count}</Descriptions.Item>
+                        <Descriptions.Item label="Status">
+                            <Tag color={book.available ? 'green' : 'red'}>
+                                {book.available ? 'Available' : 'Not Available'}
+                            </Tag>
+                        </Descriptions.Item>
+                    </Descriptions>
+
+                    <Space direction="vertical">
+                        <Title level={3}>Description</Title>
+                        <Paragraph>{book.description}</Paragraph>
+                    </Space>
+
+                    <Button
+                        type="primary"
+                        size="large"
+                        onClick={() => setReservationModalVisible(true)}
+                        disabled={!book.available}
+                    >
+                        {book.available ? 'Reserve Book' : 'Not Available'}
+                    </Button>
+                </Space>
+            </Card>
+        </Space>
     );
 };
 

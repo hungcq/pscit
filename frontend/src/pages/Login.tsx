@@ -3,7 +3,7 @@ import {useNavigate} from 'react-router-dom';
 import {GoogleLogin, GoogleOAuthProvider} from '@react-oauth/google';
 import {useAuth} from '../contexts/AuthContext';
 import api from '../services/api';
-import {Card, message, Typography} from 'antd';
+import {Card, message, Space, Typography} from 'antd';
 
 const { Title } = Typography;
 
@@ -31,15 +31,10 @@ const Login: React.FC = () => {
     };
 
     return (
-        <div style={{ 
-            maxWidth: '400px', 
-            margin: '100px auto', 
-            padding: '24px',
-            textAlign: 'center'
-        }}>
+        <Space direction="vertical" align="center" style={{ width: '100%', marginTop: '100px' }}>
             <Card>
                 <Title level={2}>Login</Title>
-                <div style={{ marginTop: '24px' }}>
+                <Space direction="vertical" align="center" style={{ width: '100%', marginTop: '24px' }}>
                     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
                         <GoogleLogin
                             onSuccess={handleGoogleSuccess}
@@ -52,9 +47,9 @@ const Login: React.FC = () => {
                             size="large"
                         />
                     </GoogleOAuthProvider>
-                </div>
+                </Space>
             </Card>
-        </div>
+        </Space>
     );
 };
 

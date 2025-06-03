@@ -1,8 +1,11 @@
 export interface User {
+  name: string;
   id: string;
   username: string;
   email: string;
   role: 'user' | 'admin';
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Book {
@@ -16,6 +19,7 @@ export interface Book {
   available: boolean;
   authors: Author[];
   categories: Category[];
+  published_year: number;
 }
 
 export interface Author {
