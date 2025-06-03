@@ -21,7 +21,7 @@ export interface Book {
   categories: Category[];
   published_year: number;
   // publisher: string;
-  page_count: number;
+  // page_count: number;
 }
 
 export interface Author {
