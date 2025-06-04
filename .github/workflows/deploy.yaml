@@ -5,6 +5,10 @@ on:
     workflows: ["Build Backend Docker Image"]
     types:
       - completed
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/deploy.yaml'
 
 jobs:
   deploy:
