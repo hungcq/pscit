@@ -6,6 +6,7 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/build.yaml'
+      - '.github/workflows/deploy.yaml'
 
 jobs:
   build:
