@@ -38,7 +38,7 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 		<p>Your reservation for the book "%s" has been confirmed.</p>
 		<p>Please pick up the book before: %s</p>
 		<p>Thank you for using our library service!</p>
-	`, reservation.User.Name, reservation.Book.Title, reservation.EndDate.Format("2006-01-02 15:04:05")))
+	`, reservation.User.Name, reservation.BookCopy.Book.Title, reservation.EndDate.Format("2006-01-02 15:04:05")))
 
 	// Send to admin
 	adminMsg := gomail.NewMessage()
@@ -53,7 +53,7 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 			<li>Book: %s</li>
 			<li>Expires: %s</li>
 		</ul>
-	`, reservation.User.Name, reservation.User.Email, reservation.Book.Title, reservation.EndDate.Format("2006-01-02 15:04:05")))
+	`, reservation.User.Name, reservation.User.Email, reservation.BookCopy.Book.Title, reservation.EndDate.Format("2006-01-02 15:04:05")))
 
 	// Send both emails
 	if err := s.dialer.DialAndSend(userMsg, adminMsg); err != nil {

@@ -71,7 +71,6 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 		Publisher:      req.Publisher,
 		GoogleVolumeID: req.GoogleVolumeID,
 		MainImage:      req.MainImage,
-		Available:      true,
 	}
 
 	// Load authors

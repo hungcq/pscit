@@ -17,27 +17,27 @@ const (
 )
 
 type Reservation struct {
-	ID        uuid.UUID      `gorm:"type:uuid;primary_key" json:"id"`
-	UserID    uuid.UUID      `gorm:"type:uuid;index" json:"user_id"`
-	BookID    uuid.UUID      `gorm:"type:uuid;index" json:"book_id"`
-	StartDate time.Time      `json:"start_date"`
-	EndDate   time.Time      `json:"end_date"`
-	Status    string         `gorm:"index" json:"status"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	User      User           `json:"user,omitempty"`
-	Book      Book           `json:"book,omitempty"`
+	ID         uuid.UUID         `gorm:"type:uuid;primary_key" json:"id"`
+	UserID     uuid.UUID         `gorm:"type:uuid;index:idx_reservations_user_id" json:"user_id"`
+	BookCopyID uuid.UUID         `gorm:"type:uuid;index:idx_reservations_book_copy_id" json:"book_copy_id"`
+	StartDate  time.Time         `gorm:"index:idx_reservations_dates" json:"start_date"`
+	EndDate    time.Time         `gorm:"index:idx_reservations_dates" json:"end_date"`
+	Status     ReservationStatus `gorm:"type:varchar(20);index:idx_reservations_status" json:"status"`
+	CreatedAt  time.Time         `json:"created_at"`
+	UpdatedAt  time.Time         `json:"updated_at"`
+	DeletedAt  gorm.DeletedAt    `gorm:"index" json:"-"`
+	User       User              `json:"user,omitempty"`
+	BookCopy   BookCopy          `json:"book_copy,omitempty"`
 }
 
 type CreateReservationRequest struct {
-	BookID    uuid.UUID `json:"book_id" binding:"required"`
-	StartDate time.Time `json:"start_date" binding:"required"`
-	EndDate   time.Time `json:"end_date" binding:"required"`
+	BookCopyID string `json:"bookCopyId" binding:"required"`
+	StartDate  string `json:"startDate" binding:"required"`
+	EndDate    string `json:"endDate" binding:"required"`
 }
 
 type UpdateReservationStatusRequest struct {
-	Status string `json:"status" binding:"required"`
+	Status ReservationStatus `json:"status" binding:"required"`
 }
 
 func (r *Reservation) BeforeCreate(tx *gorm.DB) error {

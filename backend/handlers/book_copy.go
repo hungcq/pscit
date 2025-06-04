@@ -90,25 +90,29 @@ func (h *BookCopyHandler) DeleteBookCopy(c *gin.Context) {
 // BulkCreateBookCopies creates multiple copies of a book
 func (h *BookCopyHandler) BulkCreateBookCopies(c *gin.Context) {
 	bookID := c.Param("bookId")
-	count, err := strconv.Atoi(c.PostForm("count"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid count"})
+
+	var request struct {
+		Count     int                  `json:"count"`
+		Condition models.BookCondition `json:"condition"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	condition := models.BookCondition(c.PostForm("condition"))
-	if condition == "" {
-		condition = models.ConditionNew
+	if request.Condition == "" {
+		request.Condition = models.ConditionNew
 	}
 
-	if err := h.bookCopyService.BulkCreateBookCopies(bookID, count, condition); err != nil {
+	if err := h.bookCopyService.BulkCreateBookCopies(bookID, request.Count, request.Condition); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Book copies created successfully",
-		"count":   count,
+		"count":   request.Count,
 	})
 }
 

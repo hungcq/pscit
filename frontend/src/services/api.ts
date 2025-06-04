@@ -69,8 +69,6 @@ export const bookCopiesAPI = {
     deleteBookCopy: (id: string) => api.delete(`/book-copies/${id}`),
     bulkCreateBookCopies: (bookId: string, count: number, condition: BookCopy['condition']) =>
         api.post<BookCopy[]>(`/books/${bookId}/copies/bulk`, { count, condition }),
-    updateBookCopyAvailability: (id: string, available: boolean) =>
-        api.patch<BookCopy>(`/book-copies/${id}/availability`, { available }),
 };
 
 // Reservations API
@@ -87,7 +85,7 @@ export const reservationsAPI = {
     createReservation: (reservation: CreateReservationRequest) =>
         api.post<Reservation>('/reservations', reservation),
     updateReservation: (id: string, status: Reservation['status']) =>
-        api.patch<Reservation>(`/reservations/${id}`, { status }),
+        api.patch<Reservation>(`/reservations/${id}/status`, { status }),
     deleteReservation: (id: string) => api.delete(`/reservations/${id}`),
 };
 

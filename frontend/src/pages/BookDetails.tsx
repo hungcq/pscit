@@ -1,10 +1,25 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
-import {Card, Typography, Button, Space, Spin, message, Descriptions, Tag} from 'antd';
+import {
+    Button,
+    Card,
+    Col,
+    DatePicker,
+    Descriptions,
+    message,
+    Modal,
+    Row,
+    Space,
+    Spin,
+    Table,
+    Tag,
+    Typography
+} from 'antd';
 import {BookOutlined, UserOutlined} from '@ant-design/icons';
 import type {Book, BookCopy} from '../types';
 import {bookCopiesAPI, booksAPI, reservationsAPI} from '../services/api';
 import {useAuth} from '../contexts/AuthContext';
+import dayjs, {Dayjs} from 'dayjs';
 
 const {Title, Text, Paragraph} = Typography;
 
@@ -16,8 +31,18 @@ const BookDetails: React.FC = () => {
     const [copies, setCopies] = useState<BookCopy[]>([]);
     const [loading, setLoading] = useState(true);
     const [reservationModalVisible, setReservationModalVisible] = useState(false);
-    const [selectedDates, setSelectedDates] = useState<[Date, Date] | null>(null);
+    const [selectedDates, setSelectedDates] = useState<[Dayjs, Dayjs] | null>(null);
     const [selectedCopy, setSelectedCopy] = useState<BookCopy | null>(null);
+
+    const loadCopies = async () => {
+        try {
+            const response = await bookCopiesAPI.getBookCopies(id!);
+            setCopies(response.data);
+        } catch (error) {
+            console.error('Failed to load book copies:', error);
+            message.error('Failed to load book copies');
+        }
+    };
 
     useEffect(() => {
         const loadBook = async () => {
@@ -30,16 +55,6 @@ const BookDetails: React.FC = () => {
                 message.error('Failed to load book details');
             } finally {
                 setLoading(false);
-            }
-        };
-
-        const loadCopies = async () => {
-            try {
-                const response = await bookCopiesAPI.getBookCopies(id!);
-                setCopies(response.data);
-            } catch (error) {
-                console.error('Failed to load book copies:', error);
-                message.error('Failed to load book copies');
             }
         };
 
@@ -61,17 +76,23 @@ const BookDetails: React.FC = () => {
         try {
             await reservationsAPI.createReservation({
                 bookCopyId: selectedCopy.id,
-                startDate: selectedDates[0],
-                endDate: selectedDates[1],
+                startDate: selectedDates[0].toISOString(),
+                endDate: selectedDates[1].toISOString(),
             });
             message.success('Reservation created successfully!');
             setReservationModalVisible(false);
             setSelectedDates(null);
             setSelectedCopy(null);
-        } catch (error) {
+            await loadCopies(); // Reload copies to update availability
+        } catch (error: any) {
             console.error('Failed to create reservation:', error);
-            message.error('Failed to create reservation');
+            message.error(error.response?.data?.error || 'Failed to create reservation');
         }
+    };
+
+    const showReservationModal = (copy: BookCopy) => {
+        setSelectedCopy(copy);
+        setReservationModalVisible(true);
     };
 
     if (loading) {
@@ -94,59 +115,140 @@ const BookDetails: React.FC = () => {
     }
 
     const availableCopies = copies.filter((copy) => copy.available);
+    const isBookAvailable = availableCopies.length > 0;
 
     return (
         <Space direction="vertical" size="large" style={{width: '100%'}}>
             <Card>
-                <Space direction="vertical" size="large" style={{width: '100%'}}>
-                    <Space align="start">
-                        <img
-                            src={book.main_image}
-                            alt={book.title}
-                            style={{width: '200px', height: 'auto'}}
-                        />
-                        <Space direction="vertical">
-                            <Title level={2}>{book.title}</Title>
-                            <Text type="secondary">{book.subtitle}</Text>
-                            <Space>
-                                <UserOutlined/>
-                                <Text>{book.authors.map(a => a.name).join(', ')}</Text>
-                            </Space>
-                            <Space>
-                                <BookOutlined/>
-                                <Text>{book.categories.map(c => c.name).join(', ')}</Text>
+                <Row gutter={[32, 32]}>
+                    {/* Left Column - Book Image and Basic Info */}
+                    <Col xs={24} md={8}>
+                        <Space direction="vertical" size="large" style={{width: '100%'}}>
+                            <img
+                                src={book.main_image}
+                                alt={book.title}
+                                style={{
+                                    width: '100%',
+                                    height: 'auto',
+                                    maxHeight: '500px',
+                                    objectFit: 'contain',
+                                    borderRadius: '8px'
+                                }}
+                            />
+                            <Space direction="vertical" style={{width: '100%'}}>
+                                <Title level={2}>{book.title}</Title>
+                                <Text type="secondary">{book.subtitle}</Text>
+                                <Space>
+                                    <UserOutlined/>
+                                    <Text>{book.authors.map(a => a.name).join(', ')}</Text>
+                                </Space>
+                                <Space>
+                                    <BookOutlined/>
+                                    <Text>{book.categories.map(c => c.name).join(', ')}</Text>
+                                </Space>
                             </Space>
                         </Space>
-                    </Space>
+                    </Col>
 
-                    <Descriptions title="Book Details" bordered>
-                        <Descriptions.Item label="ISBN-10">{book.isbn_10}</Descriptions.Item>
-                        <Descriptions.Item label="ISBN-13">{book.isbn_13}</Descriptions.Item>
-                        <Descriptions.Item label="Publisher">{book.publisher}</Descriptions.Item>
-                        <Descriptions.Item label="Published Year">{book.published_year}</Descriptions.Item>
-                        <Descriptions.Item label="Page Count">{book.page_count}</Descriptions.Item>
-                        <Descriptions.Item label="Status">
-                            <Tag color={book.available ? 'green' : 'red'}>
-                                {book.available ? 'Available' : 'Not Available'}
-                            </Tag>
-                        </Descriptions.Item>
-                    </Descriptions>
+                    {/* Right Column - Book Details and Description */}
+                    <Col xs={24} md={16}>
+                        <Space direction="vertical" size="large" style={{width: '100%'}}>
+                            <Descriptions 
+                                title="Book Details" 
+                                bordered 
+                                column={{ xs: 1, sm: 2 }}
+                                size="small"
+                            >
+                                <Descriptions.Item label="ISBN-10">{book.isbn10}</Descriptions.Item>
+                                <Descriptions.Item label="ISBN-13">{book.isbn13}</Descriptions.Item>
+                                <Descriptions.Item label="Publisher">{book.publisher}</Descriptions.Item>
+                                <Descriptions.Item label="Published Year">{book.published_year}</Descriptions.Item>
+                                <Descriptions.Item label="Page Count">{book.page_count}</Descriptions.Item>
+                                <Descriptions.Item label="Status">
+                                    <Tag color={isBookAvailable ? 'green' : 'red'}>
+                                        {isBookAvailable ? 'Available' : 'Not Available'}
+                                    </Tag>
+                                </Descriptions.Item>
+                            </Descriptions>
 
-                    <Space direction="vertical">
-                        <Title level={3}>Description</Title>
-                        <Paragraph>{book.description}</Paragraph>
-                    </Space>
+                            <div>
+                                <Title level={3}>Description</Title>
+                                <Paragraph>{book.description}</Paragraph>
+                            </div>
 
-                    <Button
-                        type="primary"
-                        size="large"
-                        onClick={() => setReservationModalVisible(true)}
-                        disabled={!book.available}
-                    >
-                        {book.available ? 'Reserve Book' : 'Not Available'}
-                    </Button>
-                </Space>
+                            <div>
+                                <Title level={3}>Available Copies</Title>
+                                {availableCopies.length === 0 ? (
+                                    <Text type="secondary">No copies available for reservation</Text>
+                                ) : (
+                                    <Table
+                                        dataSource={availableCopies}
+                                        columns={[
+                                            {
+                                                title: 'Condition',
+                                                dataIndex: 'condition',
+                                                key: 'condition',
+                                                render: (condition: BookCopy['condition']) => (
+                                                    <Tag color={
+                                                        condition === 'new' ? 'green' :
+                                                        condition === 'like_new' ? 'lime' :
+                                                        condition === 'good' ? 'blue' :
+                                                        condition === 'fair' ? 'orange' :
+                                                        'red'
+                                                    }>
+                                                        {condition.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                                    </Tag>
+                                                ),
+                                            },
+                                            {
+                                                title: 'Notes',
+                                                dataIndex: 'notes',
+                                                key: 'notes',
+                                            },
+                                            {
+                                                title: 'Action',
+                                                key: 'action',
+                                                render: (_, record) => (
+                                                    <Button
+                                                        type="primary"
+                                                        onClick={() => showReservationModal(record)}
+                                                    >
+                                                        Reserve
+                                                    </Button>
+                                                ),
+                                            },
+                                        ]}
+                                        rowKey="id"
+                                        pagination={false}
+                                    />
+                                )}
+                            </div>
+                        </Space>
+                    </Col>
+                </Row>
             </Card>
+
+            <Modal
+                title="Reserve Book Copy"
+                open={reservationModalVisible}
+                onCancel={() => {
+                    setReservationModalVisible(false);
+                    setSelectedCopy(null);
+                    setSelectedDates(null);
+                }}
+                onOk={handleReserve}
+                okText="Reserve"
+                cancelText="Cancel"
+            >
+                <Space direction="vertical" style={{width: '100%'}}>
+                    <Text>Selected Copy: {selectedCopy?.condition}</Text>
+                    <DatePicker.RangePicker
+                        onChange={(dates) => setSelectedDates(dates as [Dayjs, Dayjs])}
+                        value={selectedDates}
+                        style={{width: '100%'}}
+                    />
+                </Space>
+            </Modal>
         </Space>
     );
 };

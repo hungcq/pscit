@@ -112,10 +112,9 @@ func (s *BookService) UpdateBook(id string, book *models.Book) error {
 			"title":       book.Title,
 			"subtitle":    book.Subtitle,
 			"description": book.Description,
-			"isbn_10":     book.ISBN10,
-			"isbn_13":     book.ISBN13,
+			"isbn10":      book.ISBN10,
+			"isbn13":      book.ISBN13,
 			"main_image":  book.MainImage,
-			"available":   book.Available,
 		}).Error; err != nil {
 			return err
 		}

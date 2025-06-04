@@ -25,43 +25,61 @@ func (s *ReservationService) CreateReservation(userID string, req models.CreateR
 		return nil, errors.New("invalid user ID")
 	}
 
-	// Check if book exists and is available
-	var book models.Book
-	if err := s.db.First(&book, "id = ?", req.BookID).Error; err != nil {
-		return nil, errors.New("book not found")
+	// Parse book copy ID
+	bookCopyUUID, err := uuid.Parse(req.BookCopyID)
+	if err != nil {
+		return nil, errors.New("invalid book copy ID")
 	}
 
-	if !book.Available {
-		return nil, errors.New("book is not available")
+	// Parse dates
+	startDate, err := time.Parse(time.RFC3339, req.StartDate)
+	if err != nil {
+		return nil, errors.New("invalid start date format")
+	}
+
+	endDate, err := time.Parse(time.RFC3339, req.EndDate)
+	if err != nil {
+		return nil, errors.New("invalid end date format")
+	}
+
+	// Check if book copy exists and is available
+	var bookCopy models.BookCopy
+	if err := s.db.First(&bookCopy, "id = ?", bookCopyUUID).Error; err != nil {
+		return nil, errors.New("book copy not found")
+	}
+
+	if !bookCopy.Available {
+		return nil, errors.New("book copy is not available")
 	}
 
 	// Check for overlapping reservations
 	var overlappingReservations int64
 	s.db.Model(&models.Reservation{}).
-		Where("book_id = ? AND status IN ? AND ((start_date <= ? AND end_date >= ?) OR (start_date <= ? AND end_date >= ?))",
-			req.BookID, []string{"pending", "approved"}, req.EndDate, req.StartDate, req.StartDate, req.EndDate).
+		Where("book_copy_id = ? AND status IN ? AND ((start_date <= ? AND end_date >= ?) OR (start_date <= ? AND end_date >= ?))",
+			bookCopyUUID, []models.ReservationStatus{models.ReservationStatusPending, models.ReservationStatusApproved},
+			endDate, startDate, startDate, endDate).
 		Count(&overlappingReservations)
 
 	if overlappingReservations > 0 {
-		return nil, errors.New("book is already reserved for the selected dates")
+		return nil, errors.New("book copy is already reserved for the selected dates")
 	}
 
 	// Create reservation
 	reservation := &models.Reservation{
-		UserID:    userUUID,
-		BookID:    req.BookID,
-		StartDate: req.StartDate,
-		EndDate:   req.EndDate,
-		Status:    "pending",
+		UserID:     userUUID,
+		BookCopyID: bookCopyUUID,
+		StartDate:  startDate,
+		EndDate:    endDate,
+		Status:     models.ReservationStatusPending,
 	}
 
 	if err := s.db.Create(reservation).Error; err != nil {
 		return nil, err
 	}
 
-	// Update book availability
-	book.Available = false
-	if err := s.db.Save(&book).Error; err != nil {
+	// Update book copy availability
+	bookCopy.Available = false
+	if err := s.db.Save(&bookCopy).Error; err != nil {
 		return nil, err
 	}
 
@@ -81,7 +99,7 @@ func (s *ReservationService) GetReservations(page, limit int) ([]models.Reservat
 	}
 
 	// Get paginated reservations with preloaded relations
-	if err := s.db.Preload("Book").Preload("User").
+	if err := s.db.Preload("BookCopy.Book").Preload("User").
 		Offset(offset).Limit(limit).
 		Order("created_at DESC").
 		Find(&reservations).Error; err != nil {
@@ -110,7 +128,7 @@ func (s *ReservationService) GetUserReservations(userID string, page, limit int)
 	}
 
 	// Get paginated reservations with preloaded relations
-	if err := s.db.Preload("Book").Preload("User").
+	if err := s.db.Preload("BookCopy.Book").Preload("User").
 		Where("user_id = ?", userUUID).
 		Offset(offset).Limit(limit).
 		Order("created_at DESC").
@@ -122,7 +140,7 @@ func (s *ReservationService) GetUserReservations(userID string, page, limit int)
 }
 
 // UpdateReservationStatus updates a reservation's status
-func (s *ReservationService) UpdateReservationStatus(id string, status string) (*models.Reservation, error) {
+func (s *ReservationService) UpdateReservationStatus(id string, status models.ReservationStatus) (*models.Reservation, error) {
 	// Parse reservation ID
 	reservationUUID, err := uuid.Parse(id)
 	if err != nil {
@@ -137,14 +155,14 @@ func (s *ReservationService) UpdateReservationStatus(id string, status string) (
 	// Update status
 	reservation.Status = status
 
-	// If book is returned, make it available again
-	if status == "returned" {
-		var book models.Book
-		if err := s.db.First(&book, "id = ?", reservation.BookID).Error; err != nil {
+	// If reservation is returned or rejected, make the book copy available again
+	if status == models.ReservationStatusReturned || status == models.ReservationStatusRejected {
+		var bookCopy models.BookCopy
+		if err := s.db.First(&bookCopy, "id = ?", reservation.BookCopyID).Error; err != nil {
 			return nil, err
 		}
-		book.Available = true
-		if err := s.db.Save(&book).Error; err != nil {
+		bookCopy.Available = true
+		if err := s.db.Save(&bookCopy).Error; err != nil {
 			return nil, err
 		}
 	}
@@ -165,7 +183,7 @@ func (s *ReservationService) GetReservation(id string) (*models.Reservation, err
 	}
 
 	var reservation models.Reservation
-	if err := s.db.Preload("Book").Preload("User").First(&reservation, "id = ?", reservationUUID).Error; err != nil {
+	if err := s.db.Preload("BookCopy.Book").Preload("User").First(&reservation, "id = ?", reservationUUID).Error; err != nil {
 		return nil, err
 	}
 	return &reservation, nil
@@ -188,12 +206,12 @@ func (s *ReservationService) CheckExpiredReservations() error {
 		}
 
 		// Make book available again
-		var book models.Book
-		if err := s.db.First(&book, "id = ?", reservation.BookID).Error; err != nil {
+		var bookCopy models.BookCopy
+		if err := s.db.First(&bookCopy, "id = ?", reservation.BookCopyID).Error; err != nil {
 			return err
 		}
-		book.Available = true
-		if err := s.db.Save(&book).Error; err != nil {
+		bookCopy.Available = true
+		if err := s.db.Save(&bookCopy).Error; err != nil {
 			return err
 		}
 	}

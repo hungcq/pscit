@@ -13,10 +13,9 @@ export interface Book {
   title: string;
   subtitle: string;
   description: string;
-  isbn_10: string;
-  isbn_13: string;
+  isbn10: string;
+  isbn13: string;
   main_image: string;
-  available: boolean;
   authors: Author[];
   categories: Category[];
   published_year: number;
@@ -39,9 +38,10 @@ export interface Category {
 export interface BookCopy {
   id: string;
   bookId: string;
-  condition: 'new' | 'good' | 'fair' | 'poor';
+  condition: 'new' | 'like_new' | 'good' | 'fair' | 'poor';
   available: boolean;
   notes?: string;
+  book?: Book;
 }
 
 export interface Reservation {
@@ -51,12 +51,12 @@ export interface Reservation {
   startDate: string;
   endDate: string;
   status: 'pending' | 'approved' | 'rejected' | 'returned';
-  book: Book;
+  user: User;
   bookCopy: BookCopy;
 }
 
 export interface CreateReservationRequest {
   bookCopyId: string;
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
 }

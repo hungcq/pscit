@@ -29,9 +29,9 @@ func InitDB() *gorm.DB {
 		&models.Author{},
 		&models.Category{},
 		&models.Book{},
+		&models.BookCopy{},
 		&models.Reservation{},
 		&models.FAQ{},
-		&models.BookCopy{},
 	)
 
 	return db

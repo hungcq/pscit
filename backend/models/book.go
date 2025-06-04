@@ -31,31 +31,29 @@ type Category struct {
 
 type Book struct {
 	ID             uuid.UUID      `gorm:"type:uuid;primary_key" json:"id"`
-	Title          string         `gorm:"index" json:"title"`
+	Title          string         `gorm:"index:idx_books_title;type:gin" json:"title"`
 	Subtitle       string         `json:"subtitle"`
 	Description    string         `json:"description"`
-	ISBN10         string         `gorm:"uniqueIndex" json:"isbn_10"`
-	ISBN13         string         `gorm:"uniqueIndex" json:"isbn_13"`
-	PublishedYear  int            `json:"published_year"`
+	ISBN10         string         `gorm:"uniqueIndex:idx_books_isbn10" json:"isbn10"`
+	ISBN13         string         `gorm:"uniqueIndex:idx_books_isbn13" json:"isbn13"`
+	PublishedYear  int            `gorm:"index:idx_books_published_year" json:"published_year"`
 	PageCount      int            `json:"page_count"`
-	Publisher      string         `json:"publisher"`
-	GoogleVolumeID string         `json:"google_volume_id"`
+	Publisher      string         `gorm:"index:idx_books_publisher" json:"publisher"`
+	GoogleVolumeID string         `gorm:"uniqueIndex:idx_books_google_volume_id" json:"google_volume_id"`
 	MainImage      string         `json:"main_image"`
-	Available      bool           `gorm:"default:true" json:"available"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`
 	Authors        []Author       `gorm:"many2many:book_authors;" json:"authors"`
 	Categories     []Category     `gorm:"many2many:book_categories;" json:"categories"`
-	Reservations   []Reservation  `json:"reservations,omitempty"`
 }
 
 type CreateBookRequest struct {
 	Title          string   `json:"title" binding:"required"`
 	Subtitle       string   `json:"subtitle"`
 	Description    string   `json:"description" binding:"required"`
-	ISBN10         string   `json:"isbn_10" binding:"required"`
-	ISBN13         string   `json:"isbn_13" binding:"required"`
+	ISBN10         string   `json:"isbn10" binding:"required"`
+	ISBN13         string   `json:"isbn13" binding:"required"`
 	PublishedYear  int      `json:"published_year"`
 	PageCount      int      `json:"page_count"`
 	Publisher      string   `json:"publisher"`

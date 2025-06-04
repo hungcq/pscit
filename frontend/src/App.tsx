@@ -1,6 +1,6 @@
 import React from 'react';
 import {BrowserRouter as Router, Route, Routes} from 'react-router-dom';
-import {ConfigProvider, Layout, theme} from 'antd';
+import {App as AntApp, ConfigProvider, Layout, theme} from 'antd';
 import {AuthProvider} from './contexts/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
@@ -21,44 +21,46 @@ const App: React.FC = () => {
         algorithm: theme.darkAlgorithm,
       }}
     >
-      <AuthProvider>
-        <Router>
-          <Layout style={{ minHeight: '100vh' }}>
-            <Navbar />
-            <Content style={{ padding: '24px' }}>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/" element={<Home />} />
-                <Route path="/books/:id" element={<BookDetails />} />
-                <Route
-                  path="/admin"
-                  element={
-                    <AdminRoute>
-                      <AdminDashboard />
-                    </AdminRoute>
-                  }
-                />
-                <Route
-                  path="/profile"
-                  element={
-                    <PrivateRoute>
-                      <UserProfile />
-                    </PrivateRoute>
-                  }
-                />
-                <Route
-                  path="/reservations"
-                  element={
-                    <PrivateRoute>
-                      <Reservations />
-                    </PrivateRoute>
-                  }
-                />
-              </Routes>
-            </Content>
-          </Layout>
-        </Router>
-      </AuthProvider>
+      <AntApp>
+        <AuthProvider>
+          <Router>
+            <Layout style={{ minHeight: '100vh' }}>
+              <Navbar />
+              <Content style={{ padding: '24px' }}>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/" element={<Home />} />
+                  <Route path="/books/:id" element={<BookDetails />} />
+                  <Route
+                    path="/admin"
+                    element={
+                      <AdminRoute>
+                        <AdminDashboard />
+                      </AdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <PrivateRoute>
+                        <UserProfile />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/reservations"
+                    element={
+                      <PrivateRoute>
+                        <Reservations />
+                      </PrivateRoute>
+                    }
+                  />
+                </Routes>
+              </Content>
+            </Layout>
+          </Router>
+        </AuthProvider>
+      </AntApp>
     </ConfigProvider>
   );
 };

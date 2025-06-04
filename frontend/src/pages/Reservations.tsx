@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {message, Space, Spin, Table, Tag, Typography} from 'antd';
+import {App, Space, Spin, Table, Tag, Typography} from 'antd';
 import {useAuth} from '../contexts/AuthContext';
 import {reservationsAPI} from '../services/api';
 import {Reservation} from '../types';
@@ -7,6 +7,7 @@ import {Reservation} from '../types';
 const { Title } = Typography;
 
 const Reservations: React.FC = () => {
+  const { message } = App.useApp();
   const { user } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,9 +36,9 @@ const Reservations: React.FC = () => {
   const columns = [
     {
       title: 'Book',
-      dataIndex: ['book', 'title'],
+      dataIndex: ['bookCopy', 'book', 'title'],
       key: 'book',
-      render: (text: string, record: Reservation) => record.book?.title || 'N/A',
+      render: (text: string, record: Reservation) => record.bookCopy?.book?.title || 'N/A',
     },
     {
       title: 'Status',
