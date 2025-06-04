@@ -96,4 +96,4 @@ const Reservations: React.FC = () => {
   );
 };
 
-export default Reservations; 
+export default Reservations;

@@ -2,7 +2,7 @@ name: Deploy Backend to Kubernetes
 
 on:
   workflow_run:
-    workflows: ["Build Docker Image"]
+    workflows: ["Build Backend Docker Image"]
     types:
       - completed
 

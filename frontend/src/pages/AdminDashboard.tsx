@@ -153,16 +153,30 @@ const AdminDashboard: React.FC = () => {
 
     const handleBookSubmit = async (values: BookFormData) => {
         try {
+            let updatedBook: Book;
             if (editingBook) {
-                await booksAPI.updateBook(editingBook.id, values);
+                const response = await booksAPI.updateBook(editingBook.id, values);
+                updatedBook = response.data;
                 message.success('Book updated successfully');
             } else {
-                await booksAPI.createBook(values);
+                const response = await booksAPI.createBook(values);
+                updatedBook = response.data;
                 message.success('Book created successfully');
             }
 
             handleBookCancel();
-            loadData();
+            // Update the book in the list
+            setBooks(prevBooks => {
+                if (editingBook) {
+                    // Update existing book
+                    return prevBooks.map(book => 
+                        book.id === updatedBook.id ? updatedBook : book
+                    );
+                } else {
+                    // Add new book to the beginning of the list
+                    return [updatedBook, ...prevBooks];
+                }
+            });
         } catch (error) {
             console.error('Failed to save book:', error);
             message.error('Failed to save book');
