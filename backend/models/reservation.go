@@ -22,6 +22,7 @@ type Reservation struct {
 	BookCopyID uuid.UUID         `gorm:"type:uuid;index:idx_reservations_book_copy_id" json:"book_copy_id"`
 	StartDate  time.Time         `gorm:"index:idx_reservations_dates" json:"start_date"`
 	EndDate    time.Time         `gorm:"index:idx_reservations_dates" json:"end_date"`
+	PickupSlot time.Time         `gorm:"index:idx_reservations_pickup" json:"pickup_slot"`
 	Status     ReservationStatus `gorm:"type:varchar(20);index:idx_reservations_status" json:"status"`
 	CreatedAt  time.Time         `json:"created_at"`
 	UpdatedAt  time.Time         `json:"updated_at"`
@@ -34,6 +35,7 @@ type CreateReservationRequest struct {
 	BookCopyID string `json:"bookCopyId" binding:"required"`
 	StartDate  string `json:"startDate" binding:"required"`
 	EndDate    string `json:"endDate" binding:"required"`
+	PickupSlot string `json:"pickupSlot" binding:"required"`
 }
 
 type UpdateReservationStatusRequest struct {

@@ -42,6 +42,34 @@ func (s *ReservationService) CreateReservation(userID string, req models.CreateR
 		return nil, errors.New("invalid end date format")
 	}
 
+	pickupSlot, err := time.Parse(time.RFC3339, req.PickupSlot)
+	if err != nil {
+		return nil, errors.New("invalid pickup slot format")
+	}
+
+	// Set seconds to 0 for pickup slot
+	pickupSlot = time.Date(
+		pickupSlot.Year(),
+		pickupSlot.Month(),
+		pickupSlot.Day(),
+		pickupSlot.Hour(),
+		pickupSlot.Minute(),
+		0, // Set seconds to 0
+		0, // Set nanoseconds to 0
+		pickupSlot.Location(),
+	)
+
+	// Validate start date is not in the past
+	now := time.Now()
+	if startDate.Before(now) {
+		return nil, errors.New("start date cannot be in the past")
+	}
+
+	// Validate pickup slot is in 30-minute blocks
+	if pickupSlot.Minute() != 0 && pickupSlot.Minute() != 30 {
+		return nil, errors.New("pickup slot must be in 30-minute blocks")
+	}
+
 	// Check if book copy exists and is available
 	var bookCopy models.BookCopy
 	if err := s.db.First(&bookCopy, "id = ?", bookCopyUUID).Error; err != nil {
@@ -64,12 +92,24 @@ func (s *ReservationService) CreateReservation(userID string, req models.CreateR
 		return nil, errors.New("book copy is already reserved for the selected dates")
 	}
 
+	// Check for overlapping pickup slots (30-minute window)
+	var overlappingPickupSlots int64
+	s.db.Model(&models.Reservation{}).
+		Where("pickup_slot = ? AND status IN ?",
+			pickupSlot, []models.ReservationStatus{models.ReservationStatusPending, models.ReservationStatusApproved}).
+		Count(&overlappingPickupSlots)
+
+	if overlappingPickupSlots > 0 {
+		return nil, errors.New("this pickup slot is already taken")
+	}
+
 	// Create reservation
 	reservation := &models.Reservation{
 		UserID:     userUUID,
 		BookCopyID: bookCopyUUID,
 		StartDate:  startDate,
 		EndDate:    endDate,
+		PickupSlot: pickupSlot,
 		Status:     models.ReservationStatusPending,
 	}
 

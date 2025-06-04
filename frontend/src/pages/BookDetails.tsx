@@ -13,6 +13,7 @@ import {
     Spin,
     Table,
     Tag,
+    TimePicker,
     Typography
 } from 'antd';
 import {BookOutlined, UserOutlined} from '@ant-design/icons';
@@ -33,6 +34,7 @@ const BookDetails: React.FC = () => {
     const [reservationModalVisible, setReservationModalVisible] = useState(false);
     const [selectedDates, setSelectedDates] = useState<[Dayjs, Dayjs] | null>(null);
     const [selectedCopy, setSelectedCopy] = useState<BookCopy | null>(null);
+    const [selectedPickupSlot, setSelectedPickupSlot] = useState<Dayjs | null>(null);
 
     const loadCopies = async () => {
         try {
@@ -68,8 +70,8 @@ const BookDetails: React.FC = () => {
             return;
         }
 
-        if (!selectedCopy || !selectedDates) {
-            message.error('Please select a copy and dates');
+        if (!selectedCopy || !selectedDates || !selectedPickupSlot) {
+            message.error('Please select a copy, dates, and pickup time');
             return;
         }
 
@@ -78,11 +80,13 @@ const BookDetails: React.FC = () => {
                 bookCopyId: selectedCopy.id,
                 startDate: selectedDates[0].toISOString(),
                 endDate: selectedDates[1].toISOString(),
+                pickupSlot: selectedPickupSlot.toISOString(),
             });
             message.success('Reservation created successfully!');
             setReservationModalVisible(false);
             setSelectedDates(null);
             setSelectedCopy(null);
+            setSelectedPickupSlot(null);
             await loadCopies(); // Reload copies to update availability
         } catch (error: any) {
             console.error('Failed to create reservation:', error);
@@ -235,17 +239,31 @@ const BookDetails: React.FC = () => {
                     setReservationModalVisible(false);
                     setSelectedCopy(null);
                     setSelectedDates(null);
+                    setSelectedPickupSlot(null);
                 }}
                 onOk={handleReserve}
                 okText="Reserve"
                 cancelText="Cancel"
             >
                 <Space direction="vertical" style={{width: '100%'}}>
-                    <Text>Selected Copy: {selectedCopy?.condition}</Text>
+                    <Text>From - To:</Text>
                     <DatePicker.RangePicker
                         onChange={(dates) => setSelectedDates(dates as [Dayjs, Dayjs])}
                         value={selectedDates}
                         style={{width: '100%'}}
+                        disabledDate={(current) => current && current < dayjs().startOf('day')}
+                        format="DD-MM-YYYY"
+                    />
+                    <Text>{selectedDates?.[0] ? `Pickup Time (on ${selectedDates?.[0].format('DD-MM-YYYY')}):` : 'Select date first'}</Text>
+                    <TimePicker
+                        value={selectedPickupSlot}
+                        onChange={(time) => setSelectedPickupSlot(time)}
+                        format="HH:mm"
+                        minuteStep={30}
+                        style={{width: '100%'}}
+                        disabled={!selectedDates}
+                        showNow={false}
+                        needConfirm={false}
                     />
                 </Space>
             </Modal>

@@ -1,9 +1,10 @@
 export interface User {
-  name: string;
   id: string;
-  username: string;
   email: string;
+  name: string;
+  google_id: string;
   role: 'user' | 'admin';
+  subscribed: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -46,17 +47,20 @@ export interface BookCopy {
 
 export interface Reservation {
   id: string;
-  userId: string;
-  bookCopyId: string;
-  startDate: string;
-  endDate: string;
+  user_id: string;
+  book_copy_id: string;
+  start_date: string;
+  end_date: string;
   status: 'pending' | 'approved' | 'rejected' | 'returned';
+  created_at: string;
+  updated_at: string;
   user: User;
-  bookCopy: BookCopy;
+  book_copy: BookCopy;
 }
 
 export interface CreateReservationRequest {
   bookCopyId: string;
   startDate: string;
   endDate: string;
+  pickupSlot: string;
 }

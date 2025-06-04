@@ -602,25 +602,41 @@ const AdminDashboard: React.FC = () => {
     const reservationColumns = [
         {
             title: 'Book',
-            dataIndex: ['book', 'title'],
+            dataIndex: ['book_copy', 'book', 'title'],
             key: 'book',
         },
         {
             title: 'User',
-            dataIndex: ['user', 'username'],
+            dataIndex: ['user', 'name'],
             key: 'user',
         },
         {
+            title: 'Email',
+            dataIndex: ['user', 'email'],
+            key: 'user_email',
+        },
+        {
             title: 'Start Date',
-            dataIndex: 'startDate',
-            key: 'startDate',
-            render: (date: string) => new Date(date).toLocaleDateString(),
+            dataIndex: 'start_date',
+            key: 'start_date',
+            render: (date: string) => new Date(date).toLocaleDateString('en-GB'),
         },
         {
             title: 'End Date',
-            dataIndex: 'endDate',
-            key: 'endDate',
-            render: (date: string) => new Date(date).toLocaleDateString(),
+            dataIndex: 'end_date',
+            key: 'end_date',
+            render: (date: string) => new Date(date).toLocaleDateString('en-GB'),
+        },
+        {
+            title: 'Pickup Time',
+            dataIndex: 'pickup_slot',
+            key: 'pickup_slot',
+            render: (date: string) => {
+                if (!date) return 'N/A';
+                const pickupTime = new Date(date);
+                const endTime = new Date(pickupTime.getTime() + 30 * 60000); // Add 30 minutes
+                return `${pickupTime.toLocaleDateString('en-GB')} ${pickupTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+            },
         },
         {
             title: 'Status',
@@ -639,6 +655,12 @@ const AdminDashboard: React.FC = () => {
                     {status.toUpperCase()}
                 </Tag>
             ),
+        },
+        {
+            title: 'Created At',
+            dataIndex: 'created_at',
+            key: 'created_at',
+            render: (date: string) => new Date(date).toLocaleString('en-GB'),
         },
         {
             title: 'Actions',

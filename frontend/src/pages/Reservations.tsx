@@ -36,9 +36,9 @@ const Reservations: React.FC = () => {
   const columns = [
     {
       title: 'Book',
-      dataIndex: ['bookCopy', 'book', 'title'],
+      dataIndex: ['book_copy', 'book', 'title'],
       key: 'book',
-      render: (text: string, record: Reservation) => record.bookCopy?.book?.title || 'N/A',
+      render: (text: string, record: Reservation) => record.book_copy?.book?.title || 'N/A',
     },
     {
       title: 'Status',
@@ -56,16 +56,39 @@ const Reservations: React.FC = () => {
       ),
     },
     {
-      title: 'Requested At',
+      title: 'Start Date',
+      dataIndex: 'start_date',
+      key: 'start_date',
+      render: (date: string) => date ? new Date(date).toLocaleDateString('en-GB') : 'N/A',
+    },
+    {
+      title: 'End Date',
+      dataIndex: 'end_date',
+      key: 'end_date',
+      render: (date: string) => date ? new Date(date).toLocaleDateString('en-GB') : 'N/A',
+    },
+    {
+      title: 'Pickup Time',
+      dataIndex: 'pickup_slot',
+      key: 'pickup_slot',
+      render: (date: string) => {
+        if (!date) return 'N/A';
+        const pickupTime = new Date(date);
+        const endTime = new Date(pickupTime.getTime() + 30 * 60000); // Add 30 minutes
+        return `${pickupTime.toLocaleDateString('en-GB')} ${pickupTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+      },
+    },
+    {
+      title: 'Created At',
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => date ? new Date(date).toLocaleDateString() : 'N/A',
+      render: (date: string) => date ? new Date(date).toLocaleString('en-GB') : 'N/A',
     },
     {
       title: 'Updated At',
       dataIndex: 'updated_at',
       key: 'updated_at',
-      render: (date: string) => date ? new Date(date).toLocaleDateString() : 'N/A',
+      render: (date: string) => date ? new Date(date).toLocaleString('en-GB') : 'N/A',
     },
   ];
 
