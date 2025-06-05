@@ -76,7 +76,7 @@ func (s *BookCopyService) BulkCreateBookCopies(bookID string, count int, conditi
 			copy := &models.BookCopy{
 				BookID:    bookUUID,
 				Condition: condition,
-				Available: true,
+				Status:    models.BookCopyStatusAvailable,
 			}
 			if err := tx.Create(copy).Error; err != nil {
 				return err

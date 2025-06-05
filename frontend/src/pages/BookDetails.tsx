@@ -6,6 +6,7 @@ import {
     Col,
     DatePicker,
     Descriptions,
+    Form,
     message,
     Modal,
     Row,
@@ -16,15 +17,17 @@ import {
     TimePicker,
     Typography
 } from 'antd';
-import {BookOutlined, EditOutlined, UserOutlined} from '@ant-design/icons';
-import type {Book, BookCopy, Author, Category} from '../types';
-import {bookCopiesAPI, booksAPI, reservationsAPI, authorsAPI, categoriesAPI} from '../services/api';
+import {BookOutlined, DeleteOutlined, EditOutlined, PlusOutlined, UserOutlined} from '@ant-design/icons';
+import type {Author, Book, BookCopy, Category} from '../types';
+import {authorsAPI, bookCopiesAPI, booksAPI, categoriesAPI, reservationsAPI} from '../services/api';
 import {useAuth} from '../contexts/AuthContext';
 import dayjs, {Dayjs} from 'dayjs';
 import {getBookImageUrl} from '../utils/imageUtils';
-import BookForm, { BookFormData } from '../components/admin/BookForm';
+import BookForm, {BookFormData} from '../components/admin/BookForm';
 
 const {Title, Text, Paragraph} = Typography;
+
+const MAX_SUGGESTED_TIMESLOTS = 5;
 
 const BookDetails: React.FC = () => {
     const {id} = useParams<{id: string}>();
@@ -36,7 +39,7 @@ const BookDetails: React.FC = () => {
     const [reservationModalVisible, setReservationModalVisible] = useState(false);
     const [selectedDates, setSelectedDates] = useState<[Dayjs, Dayjs] | null>(null);
     const [selectedCopy, setSelectedCopy] = useState<BookCopy | null>(null);
-    const [selectedPickupSlot, setSelectedPickupSlot] = useState<Dayjs | null>(null);
+    const [selectedTimeslots, setSelectedTimeslots] = useState<Dayjs[]>([]);
     const [imageUrl, setImageUrl] = useState<string>('');
     const [imageError, setImageError] = useState(false);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
@@ -87,15 +90,23 @@ const BookDetails: React.FC = () => {
         loadImageUrl();
     }, [book]);
 
-    const handleReserve = async () => {
-        if (!isAuthenticated) {
-            message.warning('Please login to reserve books');
-            navigate('/login');
+    const handleAddTimeslot = () => {
+        if (!selectedDates) return;
+        if (selectedTimeslots.length >= MAX_SUGGESTED_TIMESLOTS) {
+            message.warning(`You can only suggest up to ${MAX_SUGGESTED_TIMESLOTS} pickup times`);
             return;
         }
+        const newTimeslot = selectedDates[0].hour(9).minute(0).second(0);
+        setSelectedTimeslots([...selectedTimeslots, newTimeslot]);
+    };
 
-        if (!selectedCopy || !selectedDates || !selectedPickupSlot) {
-            message.error('Please select a copy, dates, and pickup time');
+    const handleRemoveTimeslot = (index: number) => {
+        setSelectedTimeslots(selectedTimeslots.filter((_, i) => i !== index));
+    };
+
+    const handleReserve = async () => {
+        if (!selectedDates || selectedTimeslots.length === 0 || !selectedCopy) {
+            message.error('Please select a date, at least one pickup time, and a book copy');
             return;
         }
 
@@ -104,17 +115,15 @@ const BookDetails: React.FC = () => {
                 bookCopyId: selectedCopy.id,
                 startDate: selectedDates[0].toISOString(),
                 endDate: selectedDates[1].toISOString(),
-                pickupSlot: selectedPickupSlot.toISOString(),
+                suggestedTimeslots: selectedTimeslots.map(slot => slot.toISOString()),
             });
-            message.success('Reservation created successfully!');
+
+            message.success('Reservation request submitted successfully');
             setReservationModalVisible(false);
             setSelectedDates(null);
-            setSelectedCopy(null);
-            setSelectedPickupSlot(null);
-            await loadCopies(); // Reload copies to update availability
-        } catch (error: any) {
-            console.error('Failed to create reservation:', error);
-            message.error(error.response?.data?.error || 'Failed to create reservation');
+            setSelectedTimeslots([]);
+        } catch (error) {
+            message.error('Failed to submit reservation request');
         }
     };
 
@@ -174,7 +183,7 @@ const BookDetails: React.FC = () => {
         );
     }
 
-    const availableCopies = copies.filter((copy) => copy.available);
+    const availableCopies = copies.filter((copy) => copy.status === 'available');
     const isBookAvailable = availableCopies.length > 0;
 
     return (
@@ -301,19 +310,18 @@ const BookDetails: React.FC = () => {
             </Card>
 
             <Modal
-                title="Reserve Book Copy"
+                title="Reserve Book"
                 open={reservationModalVisible}
+                onOk={handleReserve}
                 onCancel={() => {
                     setReservationModalVisible(false);
-                    setSelectedCopy(null);
                     setSelectedDates(null);
-                    setSelectedPickupSlot(null);
+                    setSelectedTimeslots([]);
                 }}
-                onOk={handleReserve}
-                okText="Reserve"
+                okText="Submit Request"
                 cancelText="Cancel"
             >
-                <Space direction="vertical" style={{width: '100%'}}>
+                <Form layout="vertical">
                     <Text>From - To:</Text>
                     <DatePicker.RangePicker
                         onChange={(dates) => setSelectedDates(dates as [Dayjs, Dayjs])}
@@ -322,18 +330,51 @@ const BookDetails: React.FC = () => {
                         disabledDate={(current) => current && current < dayjs().startOf('day')}
                         format="DD-MM-YYYY"
                     />
-                    <Text>{selectedDates?.[0] ? `Pickup Time (on ${selectedDates?.[0].format('DD-MM-YYYY')}):` : 'Select date first'}</Text>
-                    <TimePicker
-                        value={selectedPickupSlot}
-                        onChange={(time) => setSelectedPickupSlot(time)}
-                        format="HH:mm"
-                        minuteStep={30}
-                        style={{width: '100%'}}
-                        disabled={!selectedDates}
-                        showNow={false}
-                        needConfirm={false}
-                    />
-                </Space>
+
+                    <Form.Item
+                        label={`Suggested Pickup Times (on ${selectedDates?.[0]?.format('DD-MM-YYYY')})`}
+                        required
+                        validateStatus={selectedTimeslots.length > 0 ? '' : 'error'}
+                        help={
+                            selectedTimeslots.length > 0 
+                                ? `You can suggest up to ${MAX_SUGGESTED_TIMESLOTS} times (${selectedTimeslots.length}/${MAX_SUGGESTED_TIMESLOTS})`
+                                : 'Please add at least one pickup time'
+                        }
+                    >
+                        <Space direction="vertical" style={{ width: '100%' }}>
+                            {selectedTimeslots.map((slot, index) => (
+                                <Space key={index}>
+                                    <TimePicker
+                                        value={slot}
+                                        onChange={(time) => {
+                                            const newTimeslots = [...selectedTimeslots];
+                                            newTimeslots[index] = time || slot;
+                                            setSelectedTimeslots(newTimeslots);
+                                        }}
+                                        format="HH:mm"
+                                        minuteStep={30}
+                                        needConfirm={false}
+                                        showNow={false}
+                                    />
+                                    <Button
+                                        type="text"
+                                        danger
+                                        icon={<DeleteOutlined />}
+                                        onClick={() => handleRemoveTimeslot(index)}
+                                    />
+                                </Space>
+                            ))}
+                            <Button
+                                type="dashed"
+                                onClick={handleAddTimeslot}
+                                icon={<PlusOutlined />}
+                                disabled={!selectedDates || selectedTimeslots.length >= MAX_SUGGESTED_TIMESLOTS}
+                            >
+                                Add Pickup Time
+                            </Button>
+                        </Space>
+                    </Form.Item>
+                </Form>
             </Modal>
 
             <BookForm

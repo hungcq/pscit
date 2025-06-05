@@ -256,12 +256,17 @@ const BooksTab: React.FC<BooksTabProps> = ({
                 ),
             },
             {
-                title: 'Available',
-                dataIndex: 'available',
-                key: 'available',
-                render: (available: boolean) => (
-                    <Tag color={available ? 'green' : 'red'}>
-                        {available ? 'YES' : 'NO'}
+                title: 'Status',
+                dataIndex: 'status',
+                key: 'status',
+                render: (status: BookCopy['status']) => (
+                    <Tag color={
+                        status === 'reserved' ? 'orange' :
+                            status === 'available' ? 'green' :
+                                status === 'borrowed' ? 'red' :
+                                    'default'
+                    }>
+                        {status?.toUpperCase() || 'UNKNOWN'}
                     </Tag>
                 ),
             },
@@ -488,7 +493,7 @@ const BooksTab: React.FC<BooksTabProps> = ({
                             {type: 'number', min: 1, message: 'Must be at least 1'}
                         ]}
                     >
-                        <InputNumber min={1}/>
+                        <InputNumber min={1}  style={{ width: '100%' }}/>
                     </Form.Item>
 
                     <Form.Item

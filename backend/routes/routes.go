@@ -90,7 +90,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 
 		// Reservation management
 		admin.GET("/reservations", reservationHandler.GetReservations)
-		admin.PATCH("/reservations/:id/status", reservationHandler.UpdateReservationStatus)
+		admin.PUT("/reservations/:id/status", reservationHandler.UpdateReservationStatus)
 
 		// Book copy management
 		admin.POST("/books/:bookId/copies", bookCopyHandler.CreateBookCopy)

@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { Button, Card, Space, Table, Tag } from 'antd';
-import { reservationsAPI } from '../../services/api';
-import { Reservation } from '../../types';
+import React, {useEffect, useState} from 'react';
+import {Button, Card, Form, message, Modal, Select, Space, Table, Tag} from 'antd';
+import {reservationsAPI} from '../../services/api';
+import {Reservation} from '../../types';
+import dayjs from 'dayjs';
+import {ColumnsType} from 'antd/es/table';
 
 interface ReservationsTabProps {
     onDataReload?: () => void;
@@ -12,6 +14,9 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
 }) => {
     const [reservations, setReservations] = useState<Reservation[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+    const [selectedTimeslot, setSelectedTimeslot] = useState<string>('');
+    const [approveModalVisible, setApproveModalVisible] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -29,21 +34,49 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
         }
     };
 
-    const handleUpdateReservationStatus = async (id: string, status: Reservation['status']) => {
+    const handleUpdateReservationStatus = async (id: string, status: string) => {
         try {
+            if (status === 'approved') {
+                const reservation = reservations.find(r => r.id === id);
+                if (!reservation) return;
+                setSelectedReservation(reservation);
+                setSelectedTimeslot(reservation.suggested_timeslots?.[0] || '');
+                setApproveModalVisible(true);
+                return;
+            }
+
             await reservationsAPI.updateReservation(id, status);
-            onDataReload?.();
+            message.success(`Reservation ${status} successfully`);
             loadData();
         } catch (error) {
-            console.error('Failed to update reservation status:', error);
+            message.error('Failed to update reservation status');
         }
     };
 
-    const reservationColumns = [
+    const handleApprove = async () => {
+        if (!selectedReservation || !selectedTimeslot) {
+            message.error('Please select a pickup time');
+            return;
+        }
+
+        try {
+            await reservationsAPI.updateReservation(selectedReservation.id, 'approved', selectedTimeslot);
+            message.success('Reservation approved successfully');
+            setApproveModalVisible(false);
+            setSelectedReservation(null);
+            setSelectedTimeslot('');
+            loadData();
+        } catch (error) {
+            message.error('Failed to approve reservation');
+        }
+    };
+
+    const reservationColumns: ColumnsType<Reservation> = [
         {
             title: 'Book',
             dataIndex: ['book_copy', 'book', 'title'],
             key: 'book',
+            width: '80',
             render: (text: string, record: Reservation) => record.book_copy?.book?.title || 'N/A',
         },
         {
@@ -69,9 +102,25 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
             render: (date: string) => date ? new Date(date).toLocaleDateString('en-GB') : 'N/A',
         },
         {
+            title: 'Suggested Timeslots',
+            dataIndex: 'suggested_timeslots',
+            key: 'suggested_timeslots',
+            width: '50',
+            render: (timeslots: string[]) => (
+                <Space direction="vertical">
+                    {timeslots?.map((slot, index) => (
+                        <Tag key={index} color="blue">
+                            {`${dayjs(slot).format('hh:mm A')} - ${dayjs(new Date(slot).getTime() + 30 * 60000).format('hh:mm A')}`}
+                        </Tag>
+                    ))}
+                </Space>
+            ),
+        },
+        {
             title: 'Pickup Time',
             dataIndex: 'pickup_slot',
             key: 'pickup_slot',
+            width: '50',
             render: (date: string) => {
                 if (!date) return 'N/A';
                 const pickupTime = new Date(date);
@@ -98,13 +147,14 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
             title: 'Created At',
             dataIndex: 'created_at',
             key: 'created_at',
+            width: '100',
             render: (date: string) => date ? new Date(date).toLocaleString('en-GB') : 'N/A',
         },
         {
             title: 'Actions',
             key: 'actions',
             render: (_: any, record: Reservation) => (
-                <Space>
+                <Space direction="vertical" size="small">
                     {record.status === 'pending' && (
                         <>
                             <Button
@@ -127,14 +177,50 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
     ];
 
     return (
-        <Card title="Reservations">
-            <Table
-                columns={reservationColumns}
-                dataSource={reservations}
-                rowKey="id"
-                loading={loading}
-            />
-        </Card>
+        <>
+            <Card title="Reservations">
+                <Table
+                    columns={reservationColumns}
+                    dataSource={reservations}
+                    rowKey="id"
+                    loading={loading}
+                />
+            </Card>
+
+            <Modal
+                title="Approve Reservation"
+                open={approveModalVisible}
+                onOk={handleApprove}
+                onCancel={() => {
+                    setApproveModalVisible(false);
+                    setSelectedReservation(null);
+                    setSelectedTimeslot('');
+                }}
+                okText="Approve"
+                cancelText="Cancel"
+            >
+                <Form layout="vertical">
+                    <Form.Item
+                        label="Select Pickup Time"
+                        required
+                        validateStatus={selectedTimeslot ? '' : 'error'}
+                        help={selectedTimeslot ? '' : 'Please select a pickup time'}
+                    >
+                        <Select
+                            value={selectedTimeslot}
+                            onChange={setSelectedTimeslot}
+                            style={{ width: '100%' }}
+                        >
+                            {selectedReservation?.suggested_timeslots?.map((slot, index) => (
+                                <Select.Option key={index} value={slot}>
+                                    {`${dayjs(slot).format('hh:mm A')} - ${dayjs(new Date(slot).getTime() + 30 * 60000).format('hh:mm A')}`}
+                                </Select.Option>
+                            ))}
+                        </Select>
+                    </Form.Item>
+                </Form>
+            </Modal>
+        </>
     );
 };
 

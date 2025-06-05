@@ -17,11 +17,19 @@ const (
 	ConditionPoor    BookCondition = "poor"
 )
 
+type BookCopyStatus string
+
+const (
+	BookCopyStatusAvailable BookCopyStatus = "available"
+	BookCopyStatusBorrowed  BookCopyStatus = "borrowed"
+	BookCopyStatusReserved  BookCopyStatus = "reserved"
+)
+
 type BookCopy struct {
 	ID        uuid.UUID      `gorm:"type:uuid;primary_key" json:"id"`
 	BookID    uuid.UUID      `gorm:"type:uuid;index:idx_book_copies_book_id" json:"book_id"`
 	Condition BookCondition  `gorm:"type:varchar(20);index:idx_book_copies_condition" json:"condition"`
-	Available bool           `gorm:"default:true;index:idx_book_copies_available" json:"available"`
+	Status    BookCopyStatus `gorm:"type:varchar(20);index:idx_book_copies_status;default:'available'" json:"status"`
 	Notes     string         `json:"notes"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`

@@ -40,7 +40,7 @@ export interface BookCopy {
   id: string;
   bookId: string;
   condition: 'new' | 'like_new' | 'good' | 'fair' | 'poor';
-  available: boolean;
+  status: 'available' | 'borrowed' | 'reserved';
   notes?: string;
   book?: Book;
 }
@@ -51,16 +51,18 @@ export interface Reservation {
   book_copy_id: string;
   start_date: string;
   end_date: string;
+  pickup_slot: string;
   status: 'pending' | 'approved' | 'rejected' | 'returned';
   created_at: string;
   updated_at: string;
-  user: User;
-  book_copy: BookCopy;
+  user?: User;
+  book_copy?: BookCopy;
+  suggested_timeslots?: string[];
 }
 
 export interface CreateReservationRequest {
   bookCopyId: string;
   startDate: string;
   endDate: string;
-  pickupSlot: string;
+  suggestedTimeslots: string;
 }

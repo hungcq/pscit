@@ -1,5 +1,5 @@
 import axios from 'axios';
-import {Author, Book, BookCopy, Category, CreateReservationRequest, Reservation, User} from '../types';
+import {Author, Book, BookCopy, Category, Reservation, User} from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -77,16 +77,19 @@ export const reservationsAPI = {
         api.get<{ reservations: Reservation[]; total: number }>('/reservations', {
             params: { page, limit },
         }),
-    getUserReservations: (page = 1, limit = 10) => 
+    getUserReservations: (page = 1, limit = 10) =>
         api.get<{ reservations: Reservation[]; total: number }>('/reservations/user', {
             params: { page, limit },
         }),
-    getReservation: (id: string) => api.get<Reservation>(`/reservations/${id}`),
-    createReservation: (reservation: CreateReservationRequest) =>
-        api.post<Reservation>('/reservations', reservation),
-    updateReservation: (id: string, status: Reservation['status']) =>
-        api.patch<Reservation>(`/reservations/${id}/status`, { status }),
-    deleteReservation: (id: string) => api.delete(`/reservations/${id}`),
+    createReservation: (data: { bookCopyId: string; startDate: string; endDate: string; suggestedTimeslots: string[] }) =>
+        api.post<Reservation>('/reservations', {
+            book_copy_id: data.bookCopyId,
+            start_date: data.startDate,
+            end_date: data.endDate,
+            suggested_timeslots: data.suggestedTimeslots,
+        }),
+    updateReservation: (id: string, status: string, pickupSlot?: string) =>
+        api.put<Reservation>(`/reservations/${id}/status`, { status, pickup_slot: pickupSlot }),
 };
 
 // User API

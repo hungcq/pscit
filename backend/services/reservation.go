@@ -18,112 +18,89 @@ func NewReservationService(db *gorm.DB) *ReservationService {
 }
 
 // CreateReservation creates a new reservation
-func (s *ReservationService) CreateReservation(userID string, req models.CreateReservationRequest) (*models.Reservation, error) {
-	// Parse user ID
-	userUUID, err := uuid.Parse(userID)
+func (s *ReservationService) CreateReservation(userID string, bookCopyID string, startDate time.Time, endDate time.Time, suggestedTimeslots []string) (*models.Reservation, error) {
+	var reservation models.Reservation
+
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		// Check if book copy exists and is available
+		var bookCopy models.BookCopy
+		if err := tx.First(&bookCopy, "id = ?", bookCopyID).Error; err != nil {
+			return err
+		}
+
+		if bookCopy.Status != models.BookCopyStatusAvailable {
+			return errors.New("book copy is not available")
+		}
+
+		// Check if user has any active reservations for this book copy
+		var existingReservation models.Reservation
+		if err := tx.Where("book_copy_id = ? AND user_id = ? AND status = ?", bookCopyID, userID, models.ReservationStatusPending).First(&existingReservation).Error; err == nil {
+			return errors.New("user already has a pending reservation for this book")
+		}
+
+		// Validate that suggested timeslots don't overlap
+		for i := 0; i < len(suggestedTimeslots); i++ {
+			slot1, err := time.Parse(time.RFC3339, suggestedTimeslots[i])
+			if err != nil {
+				return errors.New("invalid timeslot format")
+			}
+			// Check against all other slots
+			for j := i + 1; j < len(suggestedTimeslots); j++ {
+				slot2, err := time.Parse(time.RFC3339, suggestedTimeslots[j])
+				if err != nil {
+					return errors.New("invalid timeslot format")
+				}
+				// If slots are within 30 minutes of each other, they overlap
+				if slot1.Sub(slot2).Abs() < 30*time.Minute {
+					return errors.New("suggested timeslots cannot overlap")
+				}
+			}
+		}
+
+		// Parse UUIDs
+		userUUID, err := uuid.Parse(userID)
+		if err != nil {
+			return errors.New("invalid user ID")
+		}
+
+		bookCopyUUID, err := uuid.Parse(bookCopyID)
+		if err != nil {
+			return errors.New("invalid book copy ID")
+		}
+
+		// Create reservation
+		reservation = models.Reservation{
+			UserID:             userUUID,
+			BookCopyID:         bookCopyUUID,
+			StartDate:          startDate,
+			EndDate:            endDate,
+			PickupSlot:         nil, // Will be set when approved
+			SuggestedTimeslots: suggestedTimeslots,
+			Status:             models.ReservationStatusPending,
+		}
+
+		if err := tx.Create(&reservation).Error; err != nil {
+			return err
+		}
+
+		// Update book copy status
+		if err := tx.Model(&bookCopy).Update("status", models.BookCopyStatusReserved).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
 	if err != nil {
-		return nil, errors.New("invalid user ID")
-	}
-
-	// Parse book copy ID
-	bookCopyUUID, err := uuid.Parse(req.BookCopyID)
-	if err != nil {
-		return nil, errors.New("invalid book copy ID")
-	}
-
-	// Parse dates
-	startDate, err := time.Parse(time.RFC3339, req.StartDate)
-	if err != nil {
-		return nil, errors.New("invalid start date format")
-	}
-
-	endDate, err := time.Parse(time.RFC3339, req.EndDate)
-	if err != nil {
-		return nil, errors.New("invalid end date format")
-	}
-
-	pickupSlot, err := time.Parse(time.RFC3339, req.PickupSlot)
-	if err != nil {
-		return nil, errors.New("invalid pickup slot format")
-	}
-
-	// Set seconds to 0 for pickup slot
-	pickupSlot = time.Date(
-		pickupSlot.Year(),
-		pickupSlot.Month(),
-		pickupSlot.Day(),
-		pickupSlot.Hour(),
-		pickupSlot.Minute(),
-		0, // Set seconds to 0
-		0, // Set nanoseconds to 0
-		pickupSlot.Location(),
-	)
-
-	// Validate start date is not in the past
-	now := time.Now()
-	if startDate.Before(now) {
-		return nil, errors.New("start date cannot be in the past")
-	}
-
-	// Validate pickup slot is in 30-minute blocks
-	if pickupSlot.Minute() != 0 && pickupSlot.Minute() != 30 {
-		return nil, errors.New("pickup slot must be in 30-minute blocks")
-	}
-
-	// Check if book copy exists and is available
-	var bookCopy models.BookCopy
-	if err := s.db.First(&bookCopy, "id = ?", bookCopyUUID).Error; err != nil {
-		return nil, errors.New("book copy not found")
-	}
-
-	if !bookCopy.Available {
-		return nil, errors.New("book copy is not available")
-	}
-
-	// Check for overlapping reservations
-	var overlappingReservations int64
-	s.db.Model(&models.Reservation{}).
-		Where("book_copy_id = ? AND status IN ? AND ((start_date <= ? AND end_date >= ?) OR (start_date <= ? AND end_date >= ?))",
-			bookCopyUUID, []models.ReservationStatus{models.ReservationStatusPending, models.ReservationStatusApproved},
-			endDate, startDate, startDate, endDate).
-		Count(&overlappingReservations)
-
-	if overlappingReservations > 0 {
-		return nil, errors.New("book copy is already reserved for the selected dates")
-	}
-
-	// Check for overlapping pickup slots (30-minute window)
-	var overlappingPickupSlots int64
-	s.db.Model(&models.Reservation{}).
-		Where("pickup_slot = ? AND status IN ?",
-			pickupSlot, []models.ReservationStatus{models.ReservationStatusPending, models.ReservationStatusApproved}).
-		Count(&overlappingPickupSlots)
-
-	if overlappingPickupSlots > 0 {
-		return nil, errors.New("this pickup slot is already taken")
-	}
-
-	// Create reservation
-	reservation := &models.Reservation{
-		UserID:     userUUID,
-		BookCopyID: bookCopyUUID,
-		StartDate:  startDate,
-		EndDate:    endDate,
-		PickupSlot: pickupSlot,
-		Status:     models.ReservationStatusPending,
-	}
-
-	if err := s.db.Create(reservation).Error; err != nil {
 		return nil, err
 	}
 
-	// Update book copy availability
-	bookCopy.Available = false
-	if err := s.db.Save(&bookCopy).Error; err != nil {
+	// Load related data
+	if err := s.db.Preload("User").Preload("BookCopy.Book").First(&reservation, reservation.ID).Error; err != nil {
 		return nil, err
 	}
 
-	return reservation, nil
+	return &reservation, nil
 }
 
 // GetReservations gets all reservations with pagination
@@ -180,34 +157,61 @@ func (s *ReservationService) GetUserReservations(userID string, page, limit int)
 }
 
 // UpdateReservationStatus updates a reservation's status
-func (s *ReservationService) UpdateReservationStatus(id string, status models.ReservationStatus) (*models.Reservation, error) {
-	// Parse reservation ID
-	reservationUUID, err := uuid.Parse(id)
-	if err != nil {
-		return nil, errors.New("invalid reservation ID")
-	}
-
+func (s *ReservationService) UpdateReservationStatus(id string, status models.ReservationStatus, pickupSlot time.Time) (*models.Reservation, error) {
 	var reservation models.Reservation
-	if err := s.db.First(&reservation, "id = ?", reservationUUID).Error; err != nil {
-		return nil, errors.New("reservation not found")
-	}
 
-	// Update status
-	reservation.Status = status
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.First(&reservation, "id = ?", id).Error; err != nil {
+			return err
+		}
 
-	// If reservation is returned or rejected, make the book copy available again
-	if status == models.ReservationStatusReturned || status == models.ReservationStatusRejected {
+		// If status is approved, require a pickup slot
+		if status == models.ReservationStatusApproved && pickupSlot.IsZero() {
+			return errors.New("pickup slot is required when approving a reservation")
+		}
+
+		// Update reservation
+		updates := map[string]interface{}{
+			"status": status,
+		}
+
+		if status == models.ReservationStatusApproved {
+			updates["pickup_slot"] = pickupSlot
+		}
+
+		if err := tx.Model(&reservation).Updates(updates).Error; err != nil {
+			return err
+		}
+
+		// Update book copy status
 		var bookCopy models.BookCopy
-		if err := s.db.First(&bookCopy, "id = ?", reservation.BookCopyID).Error; err != nil {
-			return nil, err
+		if err := tx.First(&bookCopy, "id = ?", reservation.BookCopyID).Error; err != nil {
+			return err
 		}
-		bookCopy.Available = true
-		if err := s.db.Save(&bookCopy).Error; err != nil {
-			return nil, err
+
+		bookCopyStatus := models.BookCopyStatusAvailable
+		switch status {
+		case models.ReservationStatusApproved:
+			bookCopyStatus = models.BookCopyStatusBorrowed
+		case models.ReservationStatusPending:
+			bookCopyStatus = models.BookCopyStatusReserved
+		case models.ReservationStatusRejected, models.ReservationStatusReturned:
+			bookCopyStatus = models.BookCopyStatusAvailable
 		}
+
+		if err := tx.Model(&bookCopy).Update("status", bookCopyStatus).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
-	if err := s.db.Save(&reservation).Error; err != nil {
+	// Load related data
+	if err := s.db.Preload("User").Preload("BookCopy.Book").First(&reservation, reservation.ID).Error; err != nil {
 		return nil, err
 	}
 
@@ -250,7 +254,7 @@ func (s *ReservationService) CheckExpiredReservations() error {
 		if err := s.db.First(&bookCopy, "id = ?", reservation.BookCopyID).Error; err != nil {
 			return err
 		}
-		bookCopy.Available = true
+		bookCopy.Status = models.BookCopyStatusAvailable
 		if err := s.db.Save(&bookCopy).Error; err != nil {
 			return err
 		}
