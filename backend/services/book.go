@@ -109,12 +109,16 @@ func (s *BookService) UpdateBook(id string, book *models.Book) error {
 
 		// Update book fields
 		if err := tx.Model(&existingBook).Updates(map[string]interface{}{
-			"title":       book.Title,
-			"subtitle":    book.Subtitle,
-			"description": book.Description,
-			"isbn10":      book.ISBN10,
-			"isbn13":      book.ISBN13,
-			"main_image":  book.MainImage,
+			"title":            book.Title,
+			"subtitle":         book.Subtitle,
+			"description":      book.Description,
+			"isbn10":           book.ISBN10,
+			"isbn13":           book.ISBN13,
+			"published_year":   book.PublishedYear,
+			"page_count":       book.PageCount,
+			"publisher":        book.Publisher,
+			"google_volume_id": book.GoogleVolumeID,
+			"main_image":       book.MainImage,
 		}).Error; err != nil {
 			return err
 		}

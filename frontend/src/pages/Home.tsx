@@ -4,6 +4,7 @@ import {Card, Col, Empty, Input, message, Pagination, Row, Select, Space, Spin, 
 import {SearchOutlined} from '@ant-design/icons';
 import {authorsAPI, booksAPI, categoriesAPI} from '../services/api';
 import {Author, Book, Category} from '../types';
+import {getBookImageUrl} from '../utils/imageUtils';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -21,6 +22,8 @@ const Home: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedAuthor, setSelectedAuthor] = useState<string>('');
+  const [imageUrls, setImageUrls] = useState<{ [key: string]: string }>({});
+  const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
 
   const loadData = async () => {
     try {
@@ -63,6 +66,17 @@ const Home: React.FC = () => {
     loadBooks(currentPage);
   }, [currentPage, searchQuery, selectedCategory, selectedAuthor]);
 
+  useEffect(() => {
+    const loadImageUrls = async () => {
+      const newImageUrls: { [key: string]: string } = {};
+      for (const book of books) {
+        newImageUrls[book.id] = getBookImageUrl(book.id);
+      }
+      setImageUrls(newImageUrls);
+    };
+    loadImageUrls();
+  }, [books]);
+
   const handleSearch = (value: string) => {
     setSearchQuery(value);
     setCurrentPage(1);
@@ -80,6 +94,10 @@ const Home: React.FC = () => {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleImageError = (bookId: string) => {
+    setImageErrors(prev => ({ ...prev, [bookId]: true }));
   };
 
   const filteredBooks = books.filter(book =>
@@ -163,7 +181,8 @@ const Home: React.FC = () => {
                   cover={
                     <img
                       alt={book.title}
-                      src={book.main_image}
+                      src={imageErrors[book.id] ? book.main_image : getBookImageUrl(book.id)}
+                      onError={() => handleImageError(book.id)}
                       style={{ height: '300px', objectFit: 'contain' }}
                     />
                   }

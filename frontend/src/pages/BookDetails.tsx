@@ -16,18 +16,20 @@ import {
     TimePicker,
     Typography
 } from 'antd';
-import {BookOutlined, UserOutlined} from '@ant-design/icons';
-import type {Book, BookCopy} from '../types';
-import {bookCopiesAPI, booksAPI, reservationsAPI} from '../services/api';
+import {BookOutlined, EditOutlined, UserOutlined} from '@ant-design/icons';
+import type {Book, BookCopy, Author, Category} from '../types';
+import {bookCopiesAPI, booksAPI, reservationsAPI, authorsAPI, categoriesAPI} from '../services/api';
 import {useAuth} from '../contexts/AuthContext';
 import dayjs, {Dayjs} from 'dayjs';
+import {getBookImageUrl} from '../utils/imageUtils';
+import BookForm, { BookFormData } from '../components/admin/BookForm';
 
 const {Title, Text, Paragraph} = Typography;
 
 const BookDetails: React.FC = () => {
     const {id} = useParams<{id: string}>();
     const navigate = useNavigate();
-    const {isAuthenticated} = useAuth();
+    const {isAuthenticated, user} = useAuth();
     const [book, setBook] = useState<Book | null>(null);
     const [copies, setCopies] = useState<BookCopy[]>([]);
     const [loading, setLoading] = useState(true);
@@ -35,6 +37,12 @@ const BookDetails: React.FC = () => {
     const [selectedDates, setSelectedDates] = useState<[Dayjs, Dayjs] | null>(null);
     const [selectedCopy, setSelectedCopy] = useState<BookCopy | null>(null);
     const [selectedPickupSlot, setSelectedPickupSlot] = useState<Dayjs | null>(null);
+    const [imageUrl, setImageUrl] = useState<string>('');
+    const [imageError, setImageError] = useState(false);
+    const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+    const [authors, setAuthors] = useState<Author[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [submitting, setSubmitting] = useState(false);
 
     const loadCopies = async () => {
         try {
@@ -47,21 +55,37 @@ const BookDetails: React.FC = () => {
     };
 
     useEffect(() => {
-        const loadBook = async () => {
+        const loadData = async () => {
             try {
-                const response = await booksAPI.getBook(id!);
-                setBook(response.data);
+                const [bookResponse, authorsResponse, categoriesResponse] = await Promise.all([
+                    booksAPI.getBook(id!),
+                    authorsAPI.getAuthors(),
+                    categoriesAPI.getCategories(),
+                ]);
+                setBook(bookResponse.data);
+                setAuthors(authorsResponse.data);
+                setCategories(categoriesResponse.data);
                 await loadCopies();
             } catch (error) {
-                console.error('Failed to load book:', error);
+                console.error('Failed to load data:', error);
                 message.error('Failed to load book details');
             } finally {
                 setLoading(false);
             }
         };
 
-        loadBook();
+        loadData();
     }, [id]);
+
+    useEffect(() => {
+        const loadImageUrl = async () => {
+            if (book) {
+                const url = getBookImageUrl(book.id);
+                setImageUrl(url);
+            }
+        };
+        loadImageUrl();
+    }, [book]);
 
     const handleReserve = async () => {
         if (!isAuthenticated) {
@@ -99,6 +123,38 @@ const BookDetails: React.FC = () => {
         setReservationModalVisible(true);
     };
 
+    const handleImageError = () => {
+        setImageError(true);
+    };
+
+    const handleEdit = () => {
+        setIsEditModalVisible(true);
+    };
+
+    const handleEditCancel = () => {
+        setIsEditModalVisible(false);
+    };
+
+    const handleEditSubmit = async (values: BookFormData) => {
+        if (!book) return;
+        
+        try {
+            setSubmitting(true);
+            await booksAPI.updateBook(book.id, values);
+            message.success('Book updated successfully');
+            setIsEditModalVisible(false);
+            
+            // Reload book data
+            const response = await booksAPI.getBook(book.id);
+            setBook(response.data);
+        } catch (error) {
+            console.error('Failed to update book:', error);
+            message.error('Failed to update book');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     if (loading) {
         return (
             <Space direction="vertical" align="center" style={{width: '100%', marginTop: '100px'}}>
@@ -129,8 +185,9 @@ const BookDetails: React.FC = () => {
                     <Col xs={24} md={8}>
                         <Space direction="vertical" size="large" style={{width: '100%'}}>
                             <img
-                                src={book.main_image}
-                                alt={book.title}
+                                src={imageError ? book?.main_image : getBookImageUrl(book?.id || '')}
+                                alt={book?.title}
+                                onError={handleImageError}
                                 style={{
                                     width: '100%',
                                     height: 'auto',
@@ -140,7 +197,18 @@ const BookDetails: React.FC = () => {
                                 }}
                             />
                             <Space direction="vertical" style={{width: '100%'}}>
-                                <Title level={2}>{book.title}</Title>
+                                <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+                                    <Title level={2}>{book.title}</Title>
+                                    {user?.role === 'admin' && (
+                                        <Button 
+                                            type="primary" 
+                                            icon={<EditOutlined />}
+                                            onClick={handleEdit}
+                                        >
+                                            Edit Book
+                                        </Button>
+                                    )}
+                                </Space>
                                 <Text type="secondary">{book.subtitle}</Text>
                                 <Space>
                                     <UserOutlined/>
@@ -267,6 +335,16 @@ const BookDetails: React.FC = () => {
                     />
                 </Space>
             </Modal>
+
+            <BookForm
+                visible={isEditModalVisible}
+                onCancel={handleEditCancel}
+                onSubmit={handleEditSubmit}
+                initialValues={book}
+                authors={authors}
+                categories={categories}
+                loading={submitting}
+            />
         </Space>
     );
 };
