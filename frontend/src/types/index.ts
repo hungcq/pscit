@@ -57,7 +57,8 @@ export interface Reservation {
   updated_at: string;
   user?: User;
   book_copy?: BookCopy;
-  suggested_timeslots?: string[];
+  suggested_pickup_timeslots?: string[];
+  suggested_return_timeslots?: string[];
 }
 
 export interface CreateReservationRequest {

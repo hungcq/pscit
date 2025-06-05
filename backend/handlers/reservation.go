@@ -32,10 +32,11 @@ func (h *ReservationHandler) CreateReservation(c *gin.Context) {
 	}
 
 	var req struct {
-		BookCopyID         string   `json:"book_copy_id" binding:"required"`
-		StartDate          string   `json:"start_date" binding:"required"`
-		EndDate            string   `json:"end_date" binding:"required"`
-		SuggestedTimeslots []string `json:"suggested_timeslots" binding:"required,min=1"`
+		BookCopyID               string   `json:"book_copy_id" binding:"required"`
+		StartDate                string   `json:"start_date" binding:"required"`
+		EndDate                  string   `json:"end_date" binding:"required"`
+		SuggestedPickupTimeslots []string `json:"suggested_pickup_timeslots" binding:"required,min=1"`
+		SuggestedReturnTimeslots []string `json:"suggested_return_timeslots" binding:"required,min=1"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -57,7 +58,7 @@ func (h *ReservationHandler) CreateReservation(c *gin.Context) {
 	}
 
 	// Validate timeslots
-	for _, slot := range req.SuggestedTimeslots {
+	for _, slot := range req.SuggestedPickupTimeslots {
 		timeslot, err := time.Parse(time.RFC3339, slot)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid timeslot format"})
@@ -70,7 +71,23 @@ func (h *ReservationHandler) CreateReservation(c *gin.Context) {
 		}
 	}
 
-	reservation, err := h.reservationService.CreateReservation(userID.(string), req.BookCopyID, startDate, endDate, req.SuggestedTimeslots)
+	// Validate timeslots
+	for _, slot := range req.SuggestedReturnTimeslots {
+		timeslot, err := time.Parse(time.RFC3339, slot)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid timeslot format"})
+			return
+		}
+		// Validate timeslot is in 30-minute blocks
+		if timeslot.Minute() != 0 && timeslot.Minute() != 30 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "timeslots must be in 30-minute blocks"})
+			return
+		}
+	}
+
+	reservation, err := h.reservationService.CreateReservation(
+		userID.(string), req.BookCopyID, startDate, endDate, req.SuggestedPickupTimeslots, req.SuggestedReturnTimeslots,
+	)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -94,7 +111,14 @@ func (h *ReservationHandler) GetReservations(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	reservations, total, err := h.reservationService.GetReservations(page, limit)
+	// Get filter parameters
+	filters := map[string]string{
+		"email":      c.Query("email"),
+		"status":     c.Query("status"),
+		"book_title": c.Query("book_title"),
+	}
+
+	reservations, total, err := h.reservationService.GetReservations(page, limit, filters)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -143,7 +167,8 @@ func (h *ReservationHandler) UpdateReservationStatus(c *gin.Context) {
 
 	var req struct {
 		Status     models.ReservationStatus `json:"status" binding:"required,oneof=pending approved rejected returned"`
-		PickupSlot string                   `json:"pickup_slot,omitempty"`
+		PickupTime string                   `json:"pickup_time,omitempty"`
+		ReturnTime string                   `json:"return_time,omitempty"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -152,7 +177,7 @@ func (h *ReservationHandler) UpdateReservationStatus(c *gin.Context) {
 	}
 
 	// If status is approved, require a pickup slot
-	if req.Status == models.ReservationStatusApproved && req.PickupSlot == "" {
+	if req.Status == models.ReservationStatusApproved && (req.PickupTime == "" || req.ReturnTime == "") {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "pickup slot is required when approving a reservation"})
 		return
 	}
@@ -160,15 +185,25 @@ func (h *ReservationHandler) UpdateReservationStatus(c *gin.Context) {
 	// Parse pickup slot if provided
 	var pickupSlot time.Time
 	var err error
-	if req.PickupSlot != "" {
-		pickupSlot, err = time.Parse(time.RFC3339, req.PickupSlot)
+	if req.PickupTime != "" {
+		pickupSlot, err = time.Parse(time.RFC3339, req.PickupTime)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid pickup slot format"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid pickup time format"})
 			return
 		}
 	}
 
-	reservation, err := h.reservationService.UpdateReservationStatus(id, req.Status, pickupSlot)
+	// Parse pickup slot if provided
+	var returnSlot time.Time
+	if req.ReturnTime != "" {
+		returnSlot, err = time.Parse(time.RFC3339, req.ReturnTime)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid return time format"})
+			return
+		}
+	}
+
+	reservation, err := h.reservationService.UpdateReservationStatus(id, req.Status, pickupSlot, returnSlot)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

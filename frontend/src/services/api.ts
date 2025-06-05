@@ -73,23 +73,40 @@ export const bookCopiesAPI = {
 
 // Reservations API
 export const reservationsAPI = {
-    getReservations: (page = 1, limit = 10) =>
+    getReservations: (page = 1, limit = 10, filters?: { email?: string; status?: string; bookTitle?: string }) =>
         api.get<{ reservations: Reservation[]; total: number }>('/reservations', {
-            params: { page, limit },
+            params: { 
+                page, 
+                limit,
+                email: filters?.email,
+                status: filters?.status,
+                book_title: filters?.bookTitle
+            },
         }),
     getUserReservations: (page = 1, limit = 10) =>
         api.get<{ reservations: Reservation[]; total: number }>('/reservations/user', {
             params: { page, limit },
         }),
-    createReservation: (data: { bookCopyId: string; startDate: string; endDate: string; suggestedTimeslots: string[] }) =>
+    createReservation: (data: { 
+        bookCopyId: string; 
+        startDate: string; 
+        endDate: string; 
+        suggestedPickupTimeslots: string[];
+        suggestedReturnTimeslots: string[];
+    }) =>
         api.post<Reservation>('/reservations', {
             book_copy_id: data.bookCopyId,
             start_date: data.startDate,
             end_date: data.endDate,
-            suggested_timeslots: data.suggestedTimeslots,
+            suggested_pickup_timeslots: data.suggestedPickupTimeslots,
+            suggested_return_timeslots: data.suggestedReturnTimeslots,
         }),
-    updateReservation: (id: string, status: string, pickupSlot?: string) =>
-        api.put<Reservation>(`/reservations/${id}/status`, { status, pickup_slot: pickupSlot }),
+    updateReservation: (id: string, status: string, pickupTime?: string, returnTime?: string) =>
+        api.put<Reservation>(`/reservations/${id}/status`, { 
+            status, 
+            pickup_time: pickupTime,
+            return_time: returnTime 
+        }),
 };
 
 // User API

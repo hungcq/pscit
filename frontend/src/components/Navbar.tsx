@@ -1,4 +1,5 @@
 import React from 'react';
+import type {MenuProps} from 'antd';
 import {Layout, Menu} from 'antd';
 import {useNavigate} from 'react-router-dom';
 import {useAuth} from '../contexts/AuthContext';
@@ -6,11 +7,11 @@ import {
     BookOutlined,
     DashboardOutlined,
     HomeOutlined,
+    InfoCircleOutlined,
     LoginOutlined,
     LogoutOutlined,
     UserOutlined
 } from '@ant-design/icons';
-import type {MenuProps} from 'antd';
 
 const {Header} = Layout;
 
@@ -23,7 +24,7 @@ const Navbar: React.FC = () => {
         navigate('/login');
     };
 
-    const menuItems: MenuProps['items'] = [
+    const leftMenuItems: MenuProps['items'] = [
         {
             key: '/',
             icon: <HomeOutlined/>,
@@ -31,12 +32,6 @@ const Navbar: React.FC = () => {
             onClick: () => navigate('/')
         },
         ...(isAuthenticated ? [
-            {
-                key: '/profile',
-                icon: <UserOutlined/>,
-                label: 'Profile',
-                onClick: () => navigate('/profile')
-            },
             {
                 key: '/reservations',
                 icon: <BookOutlined/>,
@@ -52,26 +47,54 @@ const Navbar: React.FC = () => {
                 onClick: () => navigate('/admin')
             }
         ] : []),
-        isAuthenticated ? {
-            key: 'logout',
-            icon: <LogoutOutlined/>,
-            label: 'Logout',
-            onClick: handleLogout
-        } : {
-            key: '/login',
-            icon: <LoginOutlined/>,
-            label: 'Login',
-            onClick: () => navigate('/login')
-        }
+        {
+            key: '/about',
+            icon: <InfoCircleOutlined/>,
+            label: 'About',
+            onClick: () => navigate('/about')
+        },
+    ];
+
+    const rightMenuItems: MenuProps['items'] = [
+        ...(isAuthenticated ? [
+            {
+                key: '/profile',
+                icon: <UserOutlined/>,
+                label: 'Profile',
+                onClick: () => navigate('/profile')
+            },
+            {
+                key: 'logout',
+                icon: <LogoutOutlined/>,
+                label: 'Logout',
+                onClick: handleLogout
+            }
+        ] : [
+            {
+                key: '/login',
+                icon: <LoginOutlined/>,
+                label: 'Login',
+                onClick: () => navigate('/login')
+            }
+        ])
     ];
 
     return (
-        <Header>
+        <Header style={{ display: 'flex', alignItems: 'center', padding: '0 24px' }}>
             <Menu
                 theme="dark"
                 mode="horizontal"
                 selectedKeys={[window.location.pathname]}
-                items={menuItems}
+                items={leftMenuItems}
+                style={{ flex: 1 }}
+            />
+            <Menu
+                theme="dark"
+                mode="horizontal"
+                selectedKeys={[window.location.pathname]}
+                items={rightMenuItems}
+                style={{ minWidth: 'auto' }}
+                overflowedIndicator={<UserOutlined />}
             />
         </Header>
     );

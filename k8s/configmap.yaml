@@ -11,7 +11,7 @@ data:
   GOOGLE_CLIENT_ID: "83685543235-7rt7dc891ofvu7kat3m6ikutg06r7af2.apps.googleusercontent.com"
 
   # Admin Configuration
-  ADMIN_EMAIL: "admin@pscit.hungcq.xyz"
+  ADMIN_EMAIL: "hungcqrt@gmail.com"
 
   # Server Configuration
   PORT: "8000"
@@ -20,4 +20,4 @@ data:
   # SMTP Configuration for Email Notifications
   SMTP_HOST: "smtp.gmail.com"
   SMTP_PORT: "587"
-  SMTP_USERNAME: "your-email@gmail.com"
+  SMTP_USERNAME: "hungcqrt@gmail.com"

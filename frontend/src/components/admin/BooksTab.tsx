@@ -317,7 +317,6 @@ const BooksTab: React.FC<BooksTabProps> = ({
         {
             title: '',
             key: 'image',
-            width: 80,
             render: (record: Book) => (
                 <img 
                     src={imageErrors[record.id] ? record.main_image : getBookImageUrl(record.id)}
@@ -326,7 +325,6 @@ const BooksTab: React.FC<BooksTabProps> = ({
                     style={{ 
                         width: '100px',
                         objectFit: 'contain',
-                        borderRadius: '4px'
                     }}
                 />
             ),
@@ -335,6 +333,11 @@ const BooksTab: React.FC<BooksTabProps> = ({
             title: 'Title',
             dataIndex: 'title',
             key: 'title',
+            render: (text: string) => (
+                <span style={{ fontWeight: 'bold' }}>
+                    {text || 'N/A'}
+                </span>
+            ),
         },
         {
             title: 'Subtitle',

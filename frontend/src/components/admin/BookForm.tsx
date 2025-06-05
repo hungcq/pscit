@@ -94,7 +94,11 @@ const BookForm: React.FC<BookFormProps> = ({
                     label="Description"
                     rules={[{required: true, message: 'Please enter the book description'}]}
                 >
-                    <TextArea rows={4}/>
+                    <TextArea 
+                        rows={4} 
+                        autoSize={{ minRows: 4, maxRows: 8 }}
+                        style={{ whiteSpace: 'pre-wrap' }}
+                    />
                 </Form.Item>
 
                 <Form.Item

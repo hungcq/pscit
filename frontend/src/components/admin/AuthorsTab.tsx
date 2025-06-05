@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Button, Card, Form, Input, Modal, Space, Table } from 'antd';
-import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
-import { authorsAPI } from '../../services/api';
-import { Author } from '../../types';
+import React, {useEffect, useState} from 'react';
+import {Button, Card, Form, Input, Modal, Space, Table} from 'antd';
+import {DeleteOutlined, EditOutlined, PlusOutlined} from '@ant-design/icons';
+import {authorsAPI} from '../../services/api';
+import {Author} from '../../types';
 
 const { TextArea } = Input;
 
@@ -139,6 +139,9 @@ const AuthorsTab: React.FC<AuthorsTabProps> = ({
                 dataSource={filteredAuthors}
                 rowKey="id"
                 loading={loading}
+                pagination={{
+                    pageSize: 5,
+                }}
             />
 
             {/* Author Modal */}

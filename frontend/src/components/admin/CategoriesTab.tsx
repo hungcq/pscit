@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Button, Card, Form, Input, Modal, Space, Table } from 'antd';
-import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
-import { categoriesAPI } from '../../services/api';
-import { Category } from '../../types';
+import React, {useEffect, useState} from 'react';
+import {Button, Card, Form, Input, Modal, Space, Table} from 'antd';
+import {DeleteOutlined, EditOutlined, PlusOutlined} from '@ant-design/icons';
+import {categoriesAPI} from '../../services/api';
+import {Category} from '../../types';
 
 const { TextArea } = Input;
 
@@ -139,6 +139,9 @@ const CategoriesTab: React.FC<CategoriesTabProps> = ({
                 dataSource={filteredCategories}
                 rowKey="id"
                 loading={loading}
+                pagination={{
+                    pageSize: 5,
+                }}
             />
 
             {/* Category Modal */}

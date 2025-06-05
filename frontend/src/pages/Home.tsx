@@ -1,13 +1,11 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {Card, Col, Empty, Input, message, Pagination, Row, Select, Space, Spin, Typography} from 'antd';
-import {SearchOutlined} from '@ant-design/icons';
 import {authorsAPI, booksAPI, categoriesAPI} from '../services/api';
 import {Author, Book, Category} from '../types';
 import {getBookImageUrl} from '../utils/imageUtils';
 
 const { Title, Text } = Typography;
-const { Search } = Input;
 const { Option } = Select;
 const { Meta } = Card;
 
@@ -17,54 +15,21 @@ const Home: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [authors, setAuthors] = useState<Author[]>([]);
   const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 12,
+    total: 0,
+  });
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedAuthor, setSelectedAuthor] = useState<string>('');
   const [imageUrls, setImageUrls] = useState<{ [key: string]: string }>({});
   const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
 
-  const loadData = async () => {
-    try {
-      const [categoriesResponse, authorsResponse] = await Promise.all([
-        categoriesAPI.getCategories(),
-        authorsAPI.getAuthors(),
-      ]);
-      setCategories(categoriesResponse.data);
-      setAuthors(authorsResponse.data);
-    } catch (error) {
-      console.error('Failed to load filters:', error);
-      message.error('Failed to load filters');
-    }
-  };
-
-  const loadBooks = async (page = 1) => {
-    try {
-      setLoading(true);
-      const response = await booksAPI.getBooks(
-        searchQuery,
-        selectedCategory,
-        selectedAuthor,
-        page
-      );
-      setBooks(response.data.books);
-      setTotal(response.data.total);
-    } catch (error) {
-      console.error('Failed to load books:', error);
-      message.error('Failed to load books');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     loadData();
-  }, []);
-
-  useEffect(() => {
-    loadBooks(currentPage);
-  }, [currentPage, searchQuery, selectedCategory, selectedAuthor]);
+  }, [pagination.current, pagination.pageSize, searchQuery, selectedCategory, selectedAuthor]);
 
   useEffect(() => {
     const loadImageUrls = async () => {
@@ -77,33 +42,57 @@ const Home: React.FC = () => {
     loadImageUrls();
   }, [books]);
 
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [booksResponse, categoriesResponse, authorsResponse] = await Promise.all([
+        booksAPI.getBooks(
+          searchQuery,
+          selectedCategory,
+          selectedAuthor,
+          pagination.current,
+          pagination.pageSize
+        ),
+        categoriesAPI.getCategories(),
+        authorsAPI.getAuthors(),
+      ]);
+      setBooks(booksResponse.data.books);
+      setPagination(prev => ({
+        ...prev,
+        total: booksResponse.data.total
+      }));
+      setCategories(categoriesResponse.data);
+      setAuthors(authorsResponse.data);
+    } catch (error) {
+      console.error('Failed to load data:', error);
+      message.error('Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSearch = (value: string) => {
     setSearchQuery(value);
-    setCurrentPage(1);
+    setPagination(prev => ({...prev, current: 1}));
   };
 
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value);
-    setCurrentPage(1);
+    setPagination(prev => ({...prev, current: 1}));
   };
 
   const handleAuthorChange = (value: string) => {
     setSelectedAuthor(value);
-    setCurrentPage(1);
+    setPagination(prev => ({...prev, current: 1}));
   };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    setPagination(prev => ({...prev, current: page}));
   };
 
   const handleImageError = (bookId: string) => {
     setImageErrors(prev => ({ ...prev, [bookId]: true }));
   };
-
-  const filteredBooks = books.filter(book =>
-    book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      book.subtitle.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   if (loading) {
     return (
@@ -114,67 +103,86 @@ const Home: React.FC = () => {
   }
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%', marginBottom: '24px' }}>
-      <Title level={2}>Library Catalog</Title>
-
-        <Row gutter={[16, 16]}>
-          <Col xs={24} sm={12} md={8}>
-            <Search
-              placeholder="Search by title or subtitle..."
-              allowClear
-              enterButton={<SearchOutlined />}
-              size="large"
-              onSearch={handleSearch}
+    <Space direction="vertical" size="large" style={{ width: '100%', minHeight: 'calc(100vh - 150px)', position: 'relative' }}>
+      <Row gutter={[16, 16]} align="middle">
+        <Col xs={24} md={8}>
+          <Space>
+            <img
+              src="/pscit-icon-large.png"
+              alt="PSciT Library"
+              style={{ width: '50px', height: '50px' }}
             />
-          </Col>
-          <Col xs={24} sm={12} md={8}>
-            <Select
-              placeholder="Select Category"
-              allowClear
-              style={{ width: '100%' }}
-              size="large"
-              onChange={handleCategoryChange}
-              value={selectedCategory || undefined}
-              showSearch
-              filterOption={(input, option) =>
-                String(option?.children).toLowerCase().includes(input.toLowerCase())
-              }
-            >
-              {categories.map(category => (
-                <Option key={category.id} value={category.name}>
-                  {category.name}
-                </Option>
-              ))}
-            </Select>
-          </Col>
-          <Col xs={24} sm={12} md={8}>
-            <Select
-              placeholder="Select Author"
-              allowClear
-              style={{ width: '100%' }}
-              size="large"
-              onChange={handleAuthorChange}
-              value={selectedAuthor || undefined}
-              showSearch
-              filterOption={(input, option) =>
-                String(option?.children).toLowerCase().includes(input.toLowerCase())
-              }
-            >
-              {authors.map(author => (
-                <Option key={author.id} value={author.name}>
-                  {author.name}
-                </Option>
-              ))}
-            </Select>
-          </Col>
-        </Row>
+            <div>
+              <Title level={3} style={{ margin: 0 }}>PSciT Library</Title>
+              <Text type="secondary">A curated physical library in Hanoi</Text>
+            </div>
+          </Space>
+        </Col>
+        <Col xs={24} md={16}>
+          <Row gutter={[8, 8]}>
+            <Col xs={24} sm={12} md={8}>
+              <Input.Search
+                placeholder="Search by title or subtitle..."
+                size="large"
+                allowClear
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onSearch={(value) => {
+                  setSearchQuery(value);
+                  setPagination(prev => ({ ...prev, current: 1 }));
+                }}
+              />
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <Select
+                placeholder="Select Category"
+                allowClear
+                style={{ width: '100%' }}
+                size="large"
+                onChange={handleCategoryChange}
+                value={selectedCategory || undefined}
+                showSearch
+                filterOption={(input, option) =>
+                  String(option?.children).toLowerCase().includes(input.toLowerCase())
+                }
+              >
+                {categories.map(category => (
+                  <Option key={category.id} value={category.name}>
+                    {category.name}
+                  </Option>
+                ))}
+              </Select>
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <Select
+                placeholder="Select Author"
+                allowClear
+                style={{ width: '100%' }}
+                size="large"
+                onChange={handleAuthorChange}
+                value={selectedAuthor || undefined}
+                showSearch
+                filterOption={(input, option) =>
+                  String(option?.children).toLowerCase().includes(input.toLowerCase())
+                }
+              >
+                {authors.map(author => (
+                  <Option key={author.id} value={author.name}>
+                    {author.name}
+                  </Option>
+                ))}
+              </Select>
+            </Col>
+          </Row>
+        </Col>
+      </Row>
 
-      {filteredBooks.length === 0 ? (
+      {books.length === 0 ? (
         <Empty description="No books found" />
       ) : (
         <>
           <Row gutter={[24, 24]}>
-            {filteredBooks.map((book) => (
+            {books.map((book) => (
               <Col xs={12} sm={8} md={6} lg={4} key={book.id}>
                 <Card
                   hoverable
@@ -183,7 +191,7 @@ const Home: React.FC = () => {
                       alt={book.title}
                       src={imageErrors[book.id] ? book.main_image : getBookImageUrl(book.id)}
                       onError={() => handleImageError(book.id)}
-                      style={{ height: '300px', objectFit: 'contain' }}
+                      style={{ height: '220px', objectFit: 'contain' }}
                     />
                   }
                   onClick={() => navigate(`/books/${book.id}`)}
@@ -191,10 +199,9 @@ const Home: React.FC = () => {
                   <Meta
                     title={book.title}
                     description={
-                      <Space direction="vertical">
-                        <Text>By {book.authors.map(a => a.name).join(', ')}</Text>
-                        <Text type="secondary">{book.published_year}</Text>
-                      </Space>
+                      <Text ellipsis style={{ width: '100%' }}>
+                        By {book.authors.map(a => a.name).join(', ')}
+                      </Text>
                     }
                   />
                 </Card>
@@ -202,14 +209,22 @@ const Home: React.FC = () => {
             ))}
           </Row>
 
-          <div style={{ textAlign: 'center', marginTop: '24px' }}>
-            <Pagination
-              current={currentPage}
-              total={total}
-              pageSize={12}
-              onChange={handlePageChange}
-              showSizeChanger={false}
-            />
+          <div style={{ 
+            position: 'absolute', 
+            bottom: 0, 
+            left: 0, 
+            right: 0,
+            background: 'inherit'
+          }}>
+            <Row justify="center">
+              <Pagination
+                current={pagination.current}
+                total={pagination.total}
+                pageSize={pagination.pageSize}
+                onChange={handlePageChange}
+                showSizeChanger={false}
+              />
+            </Row>
           </div>
         </>
       )}

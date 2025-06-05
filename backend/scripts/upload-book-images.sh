@@ -12,8 +12,8 @@ S3_BUCKET="pscit"
 TEMP_DIR="$WD/temp"
 mkdir -p "$TEMP_DIR"
 
-# Function to download and upload a single image
-process_image() {
+# Function to download a single image
+download_image() {
     local book_id=$1
     local image_url=$2
     
@@ -28,7 +28,7 @@ process_image() {
     
     # Download with basic user agent
     curl -s -L -A "Mozilla/5.0" -o "$temp_file" "$image_url"
-    
+
     # Check if download was successful and file is not empty
     if [ ! -s "$temp_file" ]; then
         echo "Failed to download image for book $book_id - file is empty"
@@ -41,22 +41,7 @@ process_image() {
         rm "$temp_file"
         return
     fi
-
-    # Upload to S3
-    echo "Uploading image for book $book_id to S3"
-    aws s3 cp "$temp_file" "s3://$S3_BUCKET/book-images/$book_id" \
-        --region "$AWS_REGION" \
-        --cache-control "max-age=31536000,public"
-
-    # Clean up
-    rm "$temp_file"
 }
-
-# Clean up existing book images in S3
-echo "Cleaning up existing book images in S3..."
-aws s3 rm "s3://$S3_BUCKET/book-images/" \
-    --region "$AWS_REGION" \
-    --recursive
 
 # Query books from database
 echo "Fetching books from database..."
@@ -69,15 +54,26 @@ books=$(PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_
     WHERE main_image IS NOT NULL AND main_image != '';
 ")
 
-# Process each book
+# Download all images first
+echo "Downloading all images..."
 echo "$books" | while read -r book; do
     if [ -n "$book" ]; then
         book_id=$(echo "$book" | jq -r '.id')
         image_url=$(echo "$book" | jq -r '.main_image')
-        process_image "$book_id" "$image_url"
+        download_image "$book_id" "$image_url"
     fi
 done
 
-# Clean up
-rm -rf "$TEMP_DIR"
-echo "Done!" 
+# Clean up existing book images in S3
+echo "Cleaning up existing book images in S3..."
+aws s3 rm "s3://$S3_BUCKET/book-images/" \
+    --region "$AWS_REGION" \
+    --recursive
+
+# Sync all images to S3
+echo "Syncing images to S3..."
+aws s3 sync "$TEMP_DIR" "s3://$S3_BUCKET/book-images/" \
+    --region "$AWS_REGION" \
+    --cache-control "max-age=31536000,public"
+
+echo "Done! Images are stored in $TEMP_DIR" 

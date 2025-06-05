@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hungcq/pscit/backend/models"
@@ -63,7 +64,7 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 	book := &models.Book{
 		Title:          req.Title,
 		Subtitle:       req.Subtitle,
-		Description:    req.Description,
+		Description:    strings.ReplaceAll(req.Description, "\r\n", "\n"),
 		ISBN10:         req.ISBN10,
 		ISBN13:         req.ISBN13,
 		PublishedYear:  req.PublishedYear,
@@ -121,7 +122,7 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 	// Update book fields
 	existingBook.Title = req.Title
 	existingBook.Subtitle = req.Subtitle
-	existingBook.Description = req.Description
+	existingBook.Description = strings.ReplaceAll(req.Description, "\r\n", "\n")
 	existingBook.ISBN10 = req.ISBN10
 	existingBook.ISBN13 = req.ISBN13
 	existingBook.PublishedYear = req.PublishedYear

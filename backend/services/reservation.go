@@ -10,15 +10,21 @@ import (
 )
 
 type ReservationService struct {
-	db *gorm.DB
+	db           *gorm.DB
+	emailService *EmailService
 }
 
-func NewReservationService(db *gorm.DB) *ReservationService {
-	return &ReservationService{db: db}
+func NewReservationService(db *gorm.DB, emailService *EmailService) *ReservationService {
+	return &ReservationService{
+		db:           db,
+		emailService: emailService,
+	}
 }
 
 // CreateReservation creates a new reservation
-func (s *ReservationService) CreateReservation(userID string, bookCopyID string, startDate time.Time, endDate time.Time, suggestedTimeslots []string) (*models.Reservation, error) {
+func (s *ReservationService) CreateReservation(
+	userID string, bookCopyID string, startDate time.Time, endDate time.Time, suggestedPickTimes []string, suggestedReturnTimes []string,
+) (*models.Reservation, error) {
 	var reservation models.Reservation
 
 	err := s.db.Transaction(func(tx *gorm.DB) error {
@@ -38,23 +44,11 @@ func (s *ReservationService) CreateReservation(userID string, bookCopyID string,
 			return errors.New("user already has a pending reservation for this book")
 		}
 
-		// Validate that suggested timeslots don't overlap
-		for i := 0; i < len(suggestedTimeslots); i++ {
-			slot1, err := time.Parse(time.RFC3339, suggestedTimeslots[i])
-			if err != nil {
-				return errors.New("invalid timeslot format")
-			}
-			// Check against all other slots
-			for j := i + 1; j < len(suggestedTimeslots); j++ {
-				slot2, err := time.Parse(time.RFC3339, suggestedTimeslots[j])
-				if err != nil {
-					return errors.New("invalid timeslot format")
-				}
-				// If slots are within 30 minutes of each other, they overlap
-				if slot1.Sub(slot2).Abs() < 30*time.Minute {
-					return errors.New("suggested timeslots cannot overlap")
-				}
-			}
+		if err := checkTimeOverlap(suggestedPickTimes); err != nil {
+			return err
+		}
+		if err := checkTimeOverlap(suggestedReturnTimes); err != nil {
+			return err
 		}
 
 		// Parse UUIDs
@@ -70,13 +64,15 @@ func (s *ReservationService) CreateReservation(userID string, bookCopyID string,
 
 		// Create reservation
 		reservation = models.Reservation{
-			UserID:             userUUID,
-			BookCopyID:         bookCopyUUID,
-			StartDate:          startDate,
-			EndDate:            endDate,
-			PickupSlot:         nil, // Will be set when approved
-			SuggestedTimeslots: suggestedTimeslots,
-			Status:             models.ReservationStatusPending,
+			UserID:                   userUUID,
+			BookCopyID:               bookCopyUUID,
+			StartDate:                startDate,
+			EndDate:                  endDate,
+			PickupTime:               nil, // Will be set when approved
+			ReturnTime:               nil, // Will be set when approved
+			SuggestedPickupTimeslots: suggestedPickTimes,
+			SuggestedReturnTimeslots: suggestedReturnTimes,
+			Status:                   models.ReservationStatusPending,
 		}
 
 		if err := tx.Create(&reservation).Error; err != nil {
@@ -95,28 +91,67 @@ func (s *ReservationService) CreateReservation(userID string, bookCopyID string,
 		return nil, err
 	}
 
-	// Load related data
-	if err := s.db.Preload("User").Preload("BookCopy.Book").First(&reservation, reservation.ID).Error; err != nil {
+	// Load related data with preloaded book and authors
+	if err := s.db.Preload("User").Preload("BookCopy.Book.Authors").First(&reservation, reservation.ID).Error; err != nil {
 		return nil, err
 	}
 
 	return &reservation, nil
 }
 
-// GetReservations gets all reservations with pagination
-func (s *ReservationService) GetReservations(page, limit int) ([]models.Reservation, int64, error) {
+func checkTimeOverlap(times []string) error {
+	// Validate that suggested timeslots don't overlap
+	for i := 0; i < len(times); i++ {
+		slot1, err := time.Parse(time.RFC3339, times[i])
+		if err != nil {
+			return errors.New("invalid timeslot format")
+		}
+		// Check against all other slots
+		for j := i + 1; j < len(times); j++ {
+			slot2, err := time.Parse(time.RFC3339, times[j])
+			if err != nil {
+				return errors.New("invalid timeslot format")
+			}
+			// If slots are within 30 minutes of each other, they overlap
+			if slot1.Sub(slot2).Abs() < 30*time.Minute {
+				return errors.New("suggested timeslots cannot overlap")
+			}
+		}
+	}
+	return nil
+}
+
+// GetReservations gets all reservations with pagination and filters
+func (s *ReservationService) GetReservations(page, limit int, filters map[string]string) ([]models.Reservation, int64, error) {
 	var reservations []models.Reservation
 	var total int64
 
 	offset := (page - 1) * limit
+	query := s.db.Model(&models.Reservation{})
 
-	// Get total count
-	if err := s.db.Model(&models.Reservation{}).Count(&total).Error; err != nil {
+	// Apply filters
+	if email := filters["email"]; email != "" {
+		query = query.Joins("JOIN users ON users.id = reservations.user_id").
+			Where("users.email ILIKE ?", "%"+email+"%")
+	}
+
+	if status := filters["status"]; status != "" {
+		query = query.Where("reservations.status = ?", status)
+	}
+
+	if bookTitle := filters["book_title"]; bookTitle != "" {
+		query = query.Joins("JOIN book_copies ON book_copies.id = reservations.book_copy_id").
+			Joins("JOIN books ON books.id = book_copies.book_id").
+			Where("books.title ILIKE ?", "%"+bookTitle+"%")
+	}
+
+	// Get total count with filters
+	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	// Get paginated reservations with preloaded relations
-	if err := s.db.Preload("BookCopy.Book").Preload("User").
+	if err := query.Preload("BookCopy.Book").Preload("User").
 		Offset(offset).Limit(limit).
 		Order("created_at DESC").
 		Find(&reservations).Error; err != nil {
@@ -157,7 +192,9 @@ func (s *ReservationService) GetUserReservations(userID string, page, limit int)
 }
 
 // UpdateReservationStatus updates a reservation's status
-func (s *ReservationService) UpdateReservationStatus(id string, status models.ReservationStatus, pickupSlot time.Time) (*models.Reservation, error) {
+func (s *ReservationService) UpdateReservationStatus(
+	id string, status models.ReservationStatus, pickupTime time.Time, returnTime time.Time,
+) (*models.Reservation, error) {
 	var reservation models.Reservation
 
 	err := s.db.Transaction(func(tx *gorm.DB) error {
@@ -166,7 +203,7 @@ func (s *ReservationService) UpdateReservationStatus(id string, status models.Re
 		}
 
 		// If status is approved, require a pickup slot
-		if status == models.ReservationStatusApproved && pickupSlot.IsZero() {
+		if status == models.ReservationStatusApproved && (pickupTime.IsZero() || returnTime.IsZero()) {
 			return errors.New("pickup slot is required when approving a reservation")
 		}
 
@@ -176,7 +213,8 @@ func (s *ReservationService) UpdateReservationStatus(id string, status models.Re
 		}
 
 		if status == models.ReservationStatusApproved {
-			updates["pickup_slot"] = pickupSlot
+			updates["pickup_time"] = pickupTime
+			updates["return_time"] = returnTime
 		}
 
 		if err := tx.Model(&reservation).Updates(updates).Error; err != nil {
@@ -211,8 +249,17 @@ func (s *ReservationService) UpdateReservationStatus(id string, status models.Re
 	}
 
 	// Load related data
-	if err := s.db.Preload("User").Preload("BookCopy.Book").First(&reservation, reservation.ID).Error; err != nil {
+	if err := s.db.Preload("User").Preload("BookCopy.Book.Authors").First(&reservation, reservation.ID).Error; err != nil {
 		return nil, err
+	}
+
+	// Send email notification for status updates
+	if status == models.ReservationStatusApproved || status == models.ReservationStatusRejected || status == models.ReservationStatusReturned {
+		if err := s.emailService.SendReservationStatusUpdate(&reservation); err != nil {
+			// Log error but don't fail the request
+			// TODO: Add proper logging
+			println("Failed to send status update email:", err.Error())
+		}
 	}
 
 	return &reservation, nil

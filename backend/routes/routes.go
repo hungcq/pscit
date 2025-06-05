@@ -13,7 +13,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	authService := services.NewAuthService(db)
 	bookService := services.NewBookService(db)
 	bookCopyService := services.NewBookCopyService(db)
-	reservationService := services.NewReservationService(db)
+	reservationService := services.NewReservationService(db, services.NewEmailService())
 	emailService := services.NewEmailService()
 	authorService := services.NewAuthorService(db)
 	categoryService := services.NewCategoryService(db)

@@ -30,7 +30,7 @@ const {Title, Text, Paragraph} = Typography;
 const MAX_SUGGESTED_TIMESLOTS = 5;
 
 const BookDetails: React.FC = () => {
-    const {id} = useParams<{id: string}>();
+    const {id} = useParams<{ id: string }>();
     const navigate = useNavigate();
     const {isAuthenticated, user} = useAuth();
     const [book, setBook] = useState<Book | null>(null);
@@ -39,7 +39,8 @@ const BookDetails: React.FC = () => {
     const [reservationModalVisible, setReservationModalVisible] = useState(false);
     const [selectedDates, setSelectedDates] = useState<[Dayjs, Dayjs] | null>(null);
     const [selectedCopy, setSelectedCopy] = useState<BookCopy | null>(null);
-    const [selectedTimeslots, setSelectedTimeslots] = useState<Dayjs[]>([]);
+    const [selectedPickupTimeslots, setSelectedPickupTimeslots] = useState<Dayjs[]>([]);
+    const [selectedReturnTimeslots, setSelectedReturnTimeslots] = useState<Dayjs[]>([]);
     const [imageUrl, setImageUrl] = useState<string>('');
     const [imageError, setImageError] = useState(false);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
@@ -92,38 +93,58 @@ const BookDetails: React.FC = () => {
 
     const handleAddTimeslot = () => {
         if (!selectedDates) return;
-        if (selectedTimeslots.length >= MAX_SUGGESTED_TIMESLOTS) {
+        if (selectedPickupTimeslots.length >= MAX_SUGGESTED_TIMESLOTS) {
             message.warning(`You can only suggest up to ${MAX_SUGGESTED_TIMESLOTS} pickup times`);
             return;
         }
         const newTimeslot = selectedDates[0].hour(9).minute(0).second(0);
-        setSelectedTimeslots([...selectedTimeslots, newTimeslot]);
+        setSelectedPickupTimeslots([...selectedPickupTimeslots, newTimeslot]);
     };
 
-    const handleRemoveTimeslot = (index: number) => {
-        setSelectedTimeslots(selectedTimeslots.filter((_, i) => i !== index));
+    const handleAddReturnTimeslot = () => {
+        if (!selectedDates) return;
+        if (selectedReturnTimeslots.length >= MAX_SUGGESTED_TIMESLOTS) {
+            message.warning(`You can only suggest up to ${MAX_SUGGESTED_TIMESLOTS} return times`);
+            return;
+        }
+        const newTimeslot = selectedDates[1].hour(17).minute(0).second(0);
+        setSelectedReturnTimeslots([...selectedReturnTimeslots, newTimeslot]);
+    };
+
+    const handleRemovePickupTimeslot = (index: number) => {
+        setSelectedPickupTimeslots(selectedPickupTimeslots.filter((_, i) => i !== index));
+    };
+
+    const handleRemoveReturnTimeslot = (index: number) => {
+        setSelectedReturnTimeslots(selectedReturnTimeslots.filter((_, i) => i !== index));
     };
 
     const handleReserve = async () => {
-        if (!selectedDates || selectedTimeslots.length === 0 || !selectedCopy) {
-            message.error('Please select a date, at least one pickup time, and a book copy');
+        if (!selectedDates || selectedPickupTimeslots.length === 0 || selectedReturnTimeslots.length === 0 || !selectedCopy) {
+            message.error('Please select a date, at least one pickup time, one return time, and a book copy');
             return;
         }
 
         try {
+            setSubmitting(true);
             await reservationsAPI.createReservation({
                 bookCopyId: selectedCopy.id,
                 startDate: selectedDates[0].toISOString(),
                 endDate: selectedDates[1].toISOString(),
-                suggestedTimeslots: selectedTimeslots.map(slot => slot.toISOString()),
+                suggestedPickupTimeslots: selectedPickupTimeslots.map(slot => slot.toISOString()),
+                suggestedReturnTimeslots: selectedReturnTimeslots.map(slot => slot.toISOString()),
             });
 
             message.success('Reservation request submitted successfully');
             setReservationModalVisible(false);
             setSelectedDates(null);
-            setSelectedTimeslots([]);
-        } catch (error) {
-            message.error('Failed to submit reservation request');
+            setSelectedPickupTimeslots([]);
+            setSelectedReturnTimeslots([]);
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.error || 'Failed to submit reservation request';
+            message.error(errorMessage);
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -146,13 +167,13 @@ const BookDetails: React.FC = () => {
 
     const handleEditSubmit = async (values: BookFormData) => {
         if (!book) return;
-        
+
         try {
             setSubmitting(true);
             await booksAPI.updateBook(book.id, values);
             message.success('Book updated successfully');
             setIsEditModalVisible(false);
-            
+
             // Reload book data
             const response = await booksAPI.getBook(book.id);
             setBook(response.data);
@@ -206,12 +227,12 @@ const BookDetails: React.FC = () => {
                                 }}
                             />
                             <Space direction="vertical" style={{width: '100%'}}>
-                                <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+                                <Space style={{width: '100%', justifyContent: 'space-between'}}>
                                     <Title level={2}>{book.title}</Title>
                                     {user?.role === 'admin' && (
-                                        <Button 
-                                            type="primary" 
-                                            icon={<EditOutlined />}
+                                        <Button
+                                            type="primary"
+                                            icon={<EditOutlined/>}
                                             onClick={handleEdit}
                                         >
                                             Edit Book
@@ -234,10 +255,10 @@ const BookDetails: React.FC = () => {
                     {/* Right Column - Book Details and Description */}
                     <Col xs={24} md={16}>
                         <Space direction="vertical" size="large" style={{width: '100%'}}>
-                            <Descriptions 
-                                title="Book Details" 
-                                bordered 
-                                column={{ xs: 1, sm: 2 }}
+                            <Descriptions
+                                title="Book Details"
+                                bordered
+                                column={{xs: 1, sm: 2}}
                                 size="small"
                             >
                                 <Descriptions.Item label="ISBN-10">{book.isbn10}</Descriptions.Item>
@@ -254,7 +275,7 @@ const BookDetails: React.FC = () => {
 
                             <div>
                                 <Title level={3}>Description</Title>
-                                <Paragraph>{book.description}</Paragraph>
+                                <Paragraph style={{ whiteSpace: 'pre-wrap' }}>{book.description}</Paragraph>
                             </div>
 
                             <div>
@@ -272,10 +293,10 @@ const BookDetails: React.FC = () => {
                                                 render: (condition: BookCopy['condition']) => (
                                                     <Tag color={
                                                         condition === 'new' ? 'green' :
-                                                        condition === 'like_new' ? 'lime' :
-                                                        condition === 'good' ? 'blue' :
-                                                        condition === 'fair' ? 'orange' :
-                                                        'red'
+                                                            condition === 'like_new' ? 'lime' :
+                                                                condition === 'good' ? 'blue' :
+                                                                    condition === 'fair' ? 'orange' :
+                                                                        'red'
                                                     }>
                                                         {condition.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                                                     </Tag>
@@ -316,10 +337,12 @@ const BookDetails: React.FC = () => {
                 onCancel={() => {
                     setReservationModalVisible(false);
                     setSelectedDates(null);
-                    setSelectedTimeslots([]);
+                    setSelectedPickupTimeslots([]);
+                    setSelectedReturnTimeslots([]);
                 }}
                 okText="Submit Request"
                 cancelText="Cancel"
+                confirmLoading={submitting}
             >
                 <Form layout="vertical">
                     <Text>From - To:</Text>
@@ -331,49 +354,112 @@ const BookDetails: React.FC = () => {
                         format="DD-MM-YYYY"
                     />
 
-                    <Form.Item
-                        label={`Suggested Pickup Times (on ${selectedDates?.[0]?.format('DD-MM-YYYY')})`}
-                        required
-                        validateStatus={selectedTimeslots.length > 0 ? '' : 'error'}
-                        help={
-                            selectedTimeslots.length > 0 
-                                ? `You can suggest up to ${MAX_SUGGESTED_TIMESLOTS} times (${selectedTimeslots.length}/${MAX_SUGGESTED_TIMESLOTS})`
-                                : 'Please add at least one pickup time'
-                        }
-                    >
-                        <Space direction="vertical" style={{ width: '100%' }}>
-                            {selectedTimeslots.map((slot, index) => (
-                                <Space key={index}>
-                                    <TimePicker
-                                        value={slot}
-                                        onChange={(time) => {
-                                            const newTimeslots = [...selectedTimeslots];
-                                            newTimeslots[index] = time || slot;
-                                            setSelectedTimeslots(newTimeslots);
-                                        }}
-                                        format="HH:mm"
-                                        minuteStep={30}
-                                        needConfirm={false}
-                                        showNow={false}
-                                    />
-                                    <Button
-                                        type="text"
-                                        danger
-                                        icon={<DeleteOutlined />}
-                                        onClick={() => handleRemoveTimeslot(index)}
-                                    />
-                                </Space>
-                            ))}
-                            <Button
-                                type="dashed"
-                                onClick={handleAddTimeslot}
-                                icon={<PlusOutlined />}
-                                disabled={!selectedDates || selectedTimeslots.length >= MAX_SUGGESTED_TIMESLOTS}
-                            >
-                                Add Pickup Time
-                            </Button>
-                        </Space>
-                    </Form.Item>
+                    {selectedDates &&
+                        <Form.Item
+                            style={{marginTop: '10px'}}
+                            label={`Suggested Pickup Times (on ${selectedDates?.[0]?.format('DD-MM-YYYY')})`}
+                            required
+                            validateStatus={selectedPickupTimeslots.length > 0 ? '' : 'error'}
+                            help={
+                                selectedPickupTimeslots.length > 0
+                                    ? `You can suggest up to ${MAX_SUGGESTED_TIMESLOTS} times (${selectedPickupTimeslots.length}/${MAX_SUGGESTED_TIMESLOTS})`
+                                    : 'Please add at least one pickup time'
+                            }
+                        >
+                            <Space direction="vertical" style={{width: '100%'}}>
+                                {selectedPickupTimeslots.map((slot, index) => (
+                                    <Space key={index}>
+                                        <TimePicker
+                                            value={slot}
+                                            onChange={(time) => {
+                                                const newTimeslots = [...selectedPickupTimeslots];
+                                                newTimeslots[index] = time || slot;
+                                                setSelectedPickupTimeslots(newTimeslots);
+                                            }}
+                                            format="HH:mm"
+                                            minuteStep={30}
+                                            needConfirm={false}
+                                            showNow={false}
+                                        />
+                                         - <TimePicker
+                                            value={slot.add(30, 'minute')}
+                                            disabled
+                                            format="HH:mm"
+                                            needConfirm={false}
+                                            showNow={false}
+                                        />
+                                        <Button
+                                            type="text"
+                                            danger
+                                            icon={<DeleteOutlined/>}
+                                            onClick={() => handleRemovePickupTimeslot(index)}
+                                        />
+                                    </Space>
+                                ))}
+                                <Button
+                                    type="dashed"
+                                    onClick={handleAddTimeslot}
+                                    icon={<PlusOutlined/>}
+                                    disabled={!selectedDates || selectedPickupTimeslots.length >= MAX_SUGGESTED_TIMESLOTS}
+                                >
+                                    Add Pickup Time
+                                </Button>
+                            </Space>
+                        </Form.Item>
+                    }
+
+                    {selectedDates &&
+                        <Form.Item
+                            label={`Suggested Return Times (on ${selectedDates?.[1]?.format('DD-MM-YYYY')})`}
+                            required
+                            validateStatus={selectedReturnTimeslots.length > 0 ? '' : 'error'}
+                            help={
+                                selectedReturnTimeslots.length > 0
+                                    ? `You can suggest up to ${MAX_SUGGESTED_TIMESLOTS} times (${selectedReturnTimeslots.length}/${MAX_SUGGESTED_TIMESLOTS})`
+                                    : 'Please add at least one return time'
+                            }
+                        >
+                            <Space direction="vertical" style={{width: '100%'}}>
+                                {selectedReturnTimeslots.map((slot, index) => (
+                                    <Space key={index}>
+                                        <TimePicker
+                                            value={slot}
+                                            onChange={(time) => {
+                                                const newTimeslots = [...selectedReturnTimeslots];
+                                                newTimeslots[index] = time || slot;
+                                                setSelectedReturnTimeslots(newTimeslots);
+                                            }}
+                                            format="HH:mm"
+                                            minuteStep={30}
+                                            needConfirm={false}
+                                            showNow={false}
+                                        />
+                                         - <TimePicker
+                                            value={slot.add(30, 'minute')}
+                                            disabled
+                                            format="HH:mm"
+                                            needConfirm={false}
+                                            showNow={false}
+                                        />
+                                        <Button
+                                            type="text"
+                                            danger
+                                            icon={<DeleteOutlined/>}
+                                            onClick={() => handleRemoveReturnTimeslot(index)}
+                                        />
+                                    </Space>
+                                ))}
+                                <Button
+                                    type="dashed"
+                                    onClick={handleAddReturnTimeslot}
+                                    icon={<PlusOutlined/>}
+                                    disabled={!selectedDates || selectedReturnTimeslots.length >= MAX_SUGGESTED_TIMESLOTS}
+                                >
+                                    Add Return Time
+                                </Button>
+                            </Space>
+                        </Form.Item>
+                    }
                 </Form>
             </Modal>
 
