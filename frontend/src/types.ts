@@ -38,7 +38,7 @@ export interface Category {
 
 export interface BookCopy {
   id: string;
-  bookId: string;
+  book_id: string;
   condition: 'new' | 'like_new' | 'good' | 'fair' | 'poor';
   status: 'available' | 'borrowed' | 'reserved';
   notes?: string;
@@ -59,11 +59,4 @@ export interface Reservation {
   book_copy?: BookCopy;
   suggested_pickup_timeslots?: string[];
   suggested_return_timeslots?: string[];
-}
-
-export interface CreateReservationRequest {
-  bookCopyId: string;
-  startDate: string;
-  endDate: string;
-  suggestedTimeslots: string;
 }

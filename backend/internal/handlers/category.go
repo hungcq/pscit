@@ -1,11 +1,11 @@
 package handlers
 
 import (
+	"github.com/hungcq/pscit/backend/internal/models"
+	"github.com/hungcq/pscit/backend/internal/services"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/hungcq/pscit/backend/models"
-	"github.com/hungcq/pscit/backend/services"
 )
 
 type CategoryHandler struct {

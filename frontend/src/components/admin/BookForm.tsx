@@ -92,7 +92,6 @@ const BookForm: React.FC<BookFormProps> = ({
                 <Form.Item
                     name="description"
                     label="Description"
-                    rules={[{required: true, message: 'Please enter the book description'}]}
                 >
                     <TextArea 
                         rows={4} 
@@ -104,7 +103,6 @@ const BookForm: React.FC<BookFormProps> = ({
                 <Form.Item
                     name="isbn10"
                     label="ISBN-10"
-                    rules={[{required: true, message: 'Please enter the ISBN-10'}]}
                 >
                     <Input/>
                 </Form.Item>
@@ -112,7 +110,6 @@ const BookForm: React.FC<BookFormProps> = ({
                 <Form.Item
                     name="isbn13"
                     label="ISBN-13"
-                    rules={[{required: true, message: 'Please enter the ISBN-13'}]}
                 >
                     <Input/>
                 </Form.Item>
@@ -164,7 +161,6 @@ const BookForm: React.FC<BookFormProps> = ({
                 <Form.Item
                     name="category_ids"
                     label="Categories"
-                    rules={[{required: true, message: 'Please select at least one category'}]}
                 >
                     <Select
                         mode="multiple"

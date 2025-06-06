@@ -2,9 +2,8 @@ const fs = require('fs');
 const axios = require('axios');
 
 const API_BASE = 'https://www.googleapis.com/books/v1/volumes';
-const BACKEND_BASE = 'http://localhost:8080/api';
-const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMWQzMGI0NDktNGIxYy00M2RiLTg2MDMtNjNmYWQyNTUwYjU0IiwiZW1haWwiOiJodW5nY3FydEBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE3NDg2ODk3ODIsImlhdCI6MTc0ODYwMzM4Mn0.4D168PfOFDtni-_0OdsWhFMFnvcI6-9_d3YpyjFJWjs'; // Replace with your actual JWT token
-
+const BACKEND_BASE = 'http://localhost:8000/api';
+const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMGJmN2NmMzQtYTUwMC00MmM5LWE4YmMtYmI1MmE3YjgwMDY1IiwiZW1haWwiOiJodW5nY3FydEBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE3NDkyMjUxODUsImlhdCI6MTc0OTEzODc4NX0.QOtWPcSs_bRk_3oiZ-yjj7zSbUP09Vqh2xNVTUgWi0g'
 function stripHtmlTags(input) {
     return input.replace(/<[^>]*>/g, '');
 }
@@ -98,13 +97,6 @@ async function processBooks(filePath) {
             const industryIdentifiers = volumeInfo.industryIdentifiers || [];
             let isbn10 = industryIdentifiers.find(id => id.type === 'ISBN_10')?.identifier || '';
             let isbn13 = industryIdentifiers.find(id => id.type === 'ISBN_13')?.identifier || '';
-            console.log(industryIdentifiers)
-            if (isbn10 === '') {
-                isbn10 = industryIdentifiers[0].identifier
-            }
-            if (isbn13 === '') {
-                isbn13 = industryIdentifiers[0].identifier
-            }
 
             const bookPayload = {
                 title: volumeInfo.title || book.title,
@@ -133,4 +125,4 @@ async function processBooks(filePath) {
     }
 }
 
-processBooks('/Users/hungcq/projects/pscit/backend/data-test.json');
+processBooks('/Users/hungcq/projects/pscit/backend/scripts/data.json');

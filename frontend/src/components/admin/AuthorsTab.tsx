@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {Button, Card, Form, Input, Modal, Space, Table} from 'antd';
 import {DeleteOutlined, EditOutlined, PlusOutlined} from '@ant-design/icons';
-import {authorsAPI} from '../../services/api';
+import {authorsAPI} from '../../api';
 import {Author} from '../../types';
 
 const { TextArea } = Input;

@@ -2,7 +2,7 @@ import React from 'react';
 import {useNavigate} from 'react-router-dom';
 import {GoogleLogin, GoogleOAuthProvider} from '@react-oauth/google';
 import {useAuth} from '../contexts/AuthContext';
-import api from '../services/api';
+import api from '../api';
 import {Card, message, Space, Typography} from 'antd';
 
 const { Title } = Typography;

@@ -1,11 +1,11 @@
 package middleware
 
 import (
+	"github.com/hungcq/pscit/backend/internal/services"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/hungcq/pscit/backend/services"
 )
 
 var authService = services.NewAuthService(nil) // We'll initialize this properly in main.go

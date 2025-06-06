@@ -2,10 +2,10 @@ package services
 
 import (
 	"errors"
+	"github.com/hungcq/pscit/backend/internal/models"
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/hungcq/pscit/backend/models"
 	"gorm.io/gorm"
 )
 
@@ -139,7 +139,7 @@ func (s *BookService) DeleteBook(id string) error {
 		}
 
 		// Delete the book
-		result := tx.Delete(&models.Book{}, "id = ?", id)
+		result := tx.Unscoped().Delete(&models.Book{}, "id = ?", id)
 		if result.Error != nil {
 			return result.Error
 		}

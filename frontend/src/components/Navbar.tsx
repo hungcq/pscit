@@ -17,7 +17,7 @@ const {Header} = Layout;
 
 const Navbar: React.FC = () => {
     const navigate = useNavigate();
-    const {logout, isAuthenticated, isAdmin} = useAuth();
+    const {logout, user} = useAuth();
 
     const handleLogout = () => {
         logout();
@@ -31,7 +31,7 @@ const Navbar: React.FC = () => {
             label: 'Home',
             onClick: () => navigate('/')
         },
-        ...(isAuthenticated ? [
+        ...(user ? [
             {
                 key: '/reservations',
                 icon: <BookOutlined/>,
@@ -39,7 +39,7 @@ const Navbar: React.FC = () => {
                 onClick: () => navigate('/reservations')
             }
         ] : []),
-        ...(isAdmin ? [
+        ...(user && user.role === 'admin' ? [
             {
                 key: '/admin',
                 icon: <DashboardOutlined/>,
@@ -56,7 +56,7 @@ const Navbar: React.FC = () => {
     ];
 
     const rightMenuItems: MenuProps['items'] = [
-        ...(isAuthenticated ? [
+        ...(user ? [
             {
                 key: '/profile',
                 icon: <UserOutlined/>,

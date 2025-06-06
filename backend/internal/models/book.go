@@ -34,8 +34,8 @@ type Book struct {
 	Title          string         `gorm:"index:idx_books_title;type:gin" json:"title"`
 	Subtitle       string         `json:"subtitle"`
 	Description    string         `json:"description"`
-	ISBN10         string         `gorm:"uniqueIndex:idx_books_isbn10" json:"isbn10"`
-	ISBN13         string         `gorm:"uniqueIndex:idx_books_isbn13" json:"isbn13"`
+	ISBN10         *string        `gorm:"uniqueIndex:idx_books_isbn10" json:"isbn10"`
+	ISBN13         *string        `gorm:"uniqueIndex:idx_books_isbn13" json:"isbn13"`
 	PublishedYear  int            `gorm:"index:idx_books_published_year" json:"published_year"`
 	PageCount      int            `json:"page_count"`
 	Publisher      string         `gorm:"index:idx_books_publisher" json:"publisher"`
@@ -51,16 +51,16 @@ type Book struct {
 type CreateBookRequest struct {
 	Title          string   `json:"title" binding:"required"`
 	Subtitle       string   `json:"subtitle"`
-	Description    string   `json:"description" binding:"required"`
-	ISBN10         string   `json:"isbn10" binding:"required"`
-	ISBN13         string   `json:"isbn13" binding:"required"`
+	Description    string   `json:"description"`
+	ISBN10         *string  `json:"isbn10"`
+	ISBN13         *string  `json:"isbn13"`
 	PublishedYear  int      `json:"published_year"`
 	PageCount      int      `json:"page_count"`
 	Publisher      string   `json:"publisher"`
 	GoogleVolumeID string   `json:"google_volume_id"`
 	MainImage      string   `json:"main_image"`
 	AuthorIDs      []string `json:"author_ids" binding:"required"`
-	CategoryIDs    []string `json:"category_ids" binding:"required"`
+	CategoryIDs    []string `json:"category_ids"`
 }
 
 func (b *Book) BeforeCreate(tx *gorm.DB) error {

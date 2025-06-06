@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Button, Card, Form, Input, message, Modal, Select, Space, Table, Tag} from 'antd';
-import {reservationsAPI} from '../../services/api';
+import {reservationsAPI} from '../../api';
 import {BookCopy, Reservation} from '../../types';
 import dayjs from 'dayjs';
 import {ColumnsType} from 'antd/es/table';

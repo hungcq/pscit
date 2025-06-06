@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {App, Space, Spin, Table, Tag, Typography} from 'antd';
-import {reservationsAPI} from '../services/api';
+import {reservationsAPI} from '../api';
 import {BookCopy, Reservation} from '../types';
 import dayjs from 'dayjs';
 

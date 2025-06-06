@@ -2,11 +2,11 @@ package services
 
 import (
 	"fmt"
+	"github.com/hungcq/pscit/backend/internal/config"
+	models2 "github.com/hungcq/pscit/backend/internal/models"
 	"strings"
 	"time"
 
-	"github.com/hungcq/pscit/backend/config"
-	"github.com/hungcq/pscit/backend/models"
 	"gopkg.in/gomail.v2"
 )
 
@@ -27,7 +27,7 @@ func NewEmailService() *EmailService {
 	}
 }
 
-func (s *EmailService) SendReservationNotification(reservation *models.Reservation) error {
+func (s *EmailService) SendReservationNotification(reservation *models2.Reservation) error {
 	// Send to user
 	userMsg := gomail.NewMessage()
 	userMsg.SetHeader("From", config.AppConfig.SMTPUsername)
@@ -224,7 +224,7 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 	return nil
 }
 
-func formatAuthors(authors []models.Author) string {
+func formatAuthors(authors []models2.Author) string {
 	names := make([]string, len(authors))
 	for i, author := range authors {
 		names[i] = author.Name
@@ -244,7 +244,7 @@ func formatTimeslots(timeslots []string) string {
 	return strings.Join(slots, "")
 }
 
-func (s *EmailService) SendNewBookNotification(book *models.Book, subscribers []models.User) error {
+func (s *EmailService) SendNewBookNotification(book *models2.Book, subscribers []models2.User) error {
 	for _, user := range subscribers {
 		msg := gomail.NewMessage()
 		msg.SetHeader("From", config.AppConfig.SMTPUsername)
@@ -276,7 +276,7 @@ func (s *EmailService) SendNewBookNotification(book *models.Book, subscribers []
 	return nil
 }
 
-func (s *EmailService) SendReservationStatusUpdate(reservation *models.Reservation) error {
+func (s *EmailService) SendReservationStatusUpdate(reservation *models2.Reservation) error {
 	userMsg := gomail.NewMessage()
 	userMsg.SetHeader("From", config.AppConfig.SMTPUsername)
 	userMsg.SetHeader("To", reservation.User.Email)
@@ -327,17 +327,17 @@ func (s *EmailService) SendReservationStatusUpdate(reservation *models.Reservati
 	// Get status-specific message
 	var statusMessage string
 	switch reservation.Status {
-	case models.ReservationStatusApproved:
+	case models2.ReservationStatusApproved:
 		statusMessage = `
 			<p>Your book reservation request has been approved!</p>
 			<p>Please make sure to pick up and return the book at the specified times.</p>
 		`
-	case models.ReservationStatusRejected:
+	case models2.ReservationStatusRejected:
 		statusMessage = `
 			<p>We regret to inform you that your book reservation request has been rejected.</p>
 			<p>Please feel free to make another reservation request with different times.</p>
 		`
-	case models.ReservationStatusReturned:
+	case models2.ReservationStatusReturned:
 		statusMessage = `
 			<p>Thank you for returning the book!</p>
 			<p>We hope you enjoyed reading it.</p>
@@ -403,21 +403,21 @@ func (s *EmailService) SendReservationStatusUpdate(reservation *models.Reservati
 	return s.dialer.DialAndSend(userMsg)
 }
 
-func getStatusColor(status models.ReservationStatus) string {
+func getStatusColor(status models2.ReservationStatus) string {
 	switch status {
-	case models.ReservationStatusApproved:
+	case models2.ReservationStatusApproved:
 		return "#4CAF50" // Green
-	case models.ReservationStatusRejected:
+	case models2.ReservationStatusRejected:
 		return "#F44336" // Red
-	case models.ReservationStatusReturned:
+	case models2.ReservationStatusReturned:
 		return "#2196F3" // Blue
 	default:
 		return "#FFC107" // Yellow
 	}
 }
 
-func getTimeDetails(status models.ReservationStatus, pickupTime, returnTime string) string {
-	if status != models.ReservationStatusApproved {
+func getTimeDetails(status models2.ReservationStatus, pickupTime, returnTime string) string {
+	if status != models2.ReservationStatusApproved {
 		return ""
 	}
 

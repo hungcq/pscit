@@ -2,9 +2,9 @@ package services
 
 import (
 	"errors"
+	"github.com/hungcq/pscit/backend/internal/models"
 
 	"github.com/google/uuid"
-	"github.com/hungcq/pscit/backend/models"
 	"gorm.io/gorm"
 )
 
@@ -54,7 +54,7 @@ func (s *BookCopyService) UpdateBookCopy(id string, copy *models.BookCopy) error
 
 // DeleteBookCopy deletes a book copy
 func (s *BookCopyService) DeleteBookCopy(id string) error {
-	result := s.db.Delete(&models.BookCopy{}, "id = ?", id)
+	result := s.db.Unscoped().Delete(&models.BookCopy{}, "id = ?", id)
 	if result.Error != nil {
 		return result.Error
 	}

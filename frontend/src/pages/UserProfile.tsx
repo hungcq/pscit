@@ -1,14 +1,17 @@
 import React from 'react';
 import {Card, Descriptions, Space, Tag, Typography} from 'antd';
 import {useAuth} from '../contexts/AuthContext';
+import {Navigate, useLocation} from 'react-router-dom';
+
 
 const {Title} = Typography;
 
 const UserProfile: React.FC = () => {
     const {user} = useAuth();
+    const location = useLocation();
 
     if (!user) {
-        return null;
+        return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
     return (

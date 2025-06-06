@@ -2,8 +2,8 @@ package services
 
 import (
 	"errors"
+	"github.com/hungcq/pscit/backend/internal/models"
 
-	"github.com/hungcq/pscit/backend/models"
 	"gorm.io/gorm"
 )
 
@@ -51,7 +51,7 @@ func (s *CategoryService) UpdateCategory(id string, category *models.Category) e
 }
 
 func (s *CategoryService) DeleteCategory(id string) error {
-	result := s.db.Delete(&models.Category{}, "id = ?", id)
+	result := s.db.Unscoped().Delete(&models.Category{}, "id = ?", id)
 	if result.Error != nil {
 		return result.Error
 	}

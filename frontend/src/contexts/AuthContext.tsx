@@ -1,14 +1,11 @@
 import React, {createContext, useContext, useEffect, useState} from 'react';
 import type {User} from '../types';
-import {GoogleOAuthProvider} from "@react-oauth/google";
 
 interface AuthContextType {
     user: User | null;
     token: string | null;
     login: (token: string, user: User) => void;
     logout: () => void;
-    isAuthenticated: boolean;
-    isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,8 +44,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 token,
                 login,
                 logout,
-                isAuthenticated: !!token,
-                isAdmin: user?.role === 'admin',
             }}
         >
             {children}

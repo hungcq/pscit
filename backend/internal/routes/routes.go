@@ -2,29 +2,29 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/hungcq/pscit/backend/handlers"
-	"github.com/hungcq/pscit/backend/middleware"
-	"github.com/hungcq/pscit/backend/services"
+	handlers2 "github.com/hungcq/pscit/backend/internal/handlers"
+	"github.com/hungcq/pscit/backend/internal/middleware"
+	services2 "github.com/hungcq/pscit/backend/internal/services"
 	"gorm.io/gorm"
 )
 
 func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	// Initialize services
-	authService := services.NewAuthService(db)
-	bookService := services.NewBookService(db)
-	bookCopyService := services.NewBookCopyService(db)
-	reservationService := services.NewReservationService(db, services.NewEmailService())
-	emailService := services.NewEmailService()
-	authorService := services.NewAuthorService(db)
-	categoryService := services.NewCategoryService(db)
+	authService := services2.NewAuthService(db)
+	bookService := services2.NewBookService(db)
+	bookCopyService := services2.NewBookCopyService(db)
+	reservationService := services2.NewReservationService(db, services2.NewEmailService())
+	emailService := services2.NewEmailService()
+	authorService := services2.NewAuthorService(db)
+	categoryService := services2.NewCategoryService(db)
 
 	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(authService)
-	bookHandler := handlers.NewBookHandler(bookService)
-	bookCopyHandler := handlers.NewBookCopyHandler(bookCopyService)
-	reservationHandler := handlers.NewReservationHandler(reservationService, emailService)
-	authorHandler := handlers.NewAuthorHandler(authorService)
-	categoryHandler := handlers.NewCategoryHandler(categoryService)
+	authHandler := handlers2.NewAuthHandler(authService)
+	bookHandler := handlers2.NewBookHandler(bookService)
+	bookCopyHandler := handlers2.NewBookCopyHandler(bookCopyService)
+	reservationHandler := handlers2.NewReservationHandler(reservationService, emailService)
+	authorHandler := handlers2.NewAuthorHandler(authorService)
+	categoryHandler := handlers2.NewCategoryHandler(categoryService)
 
 	// Custom 404 handler
 	r.NoRoute(func(c *gin.Context) {

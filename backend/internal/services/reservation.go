@@ -2,10 +2,10 @@ package services
 
 import (
 	"errors"
+	models2 "github.com/hungcq/pscit/backend/internal/models"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/hungcq/pscit/backend/models"
 	"gorm.io/gorm"
 )
 
@@ -24,23 +24,23 @@ func NewReservationService(db *gorm.DB, emailService *EmailService) *Reservation
 // CreateReservation creates a new reservation
 func (s *ReservationService) CreateReservation(
 	userID string, bookCopyID string, startDate time.Time, endDate time.Time, suggestedPickTimes []string, suggestedReturnTimes []string,
-) (*models.Reservation, error) {
-	var reservation models.Reservation
+) (*models2.Reservation, error) {
+	var reservation models2.Reservation
 
 	err := s.db.Transaction(func(tx *gorm.DB) error {
 		// Check if book copy exists and is available
-		var bookCopy models.BookCopy
+		var bookCopy models2.BookCopy
 		if err := tx.First(&bookCopy, "id = ?", bookCopyID).Error; err != nil {
 			return err
 		}
 
-		if bookCopy.Status != models.BookCopyStatusAvailable {
+		if bookCopy.Status != models2.BookCopyStatusAvailable {
 			return errors.New("book copy is not available")
 		}
 
 		// Check if user has any active reservations for this book copy
-		var existingReservation models.Reservation
-		if err := tx.Where("book_copy_id = ? AND user_id = ? AND status = ?", bookCopyID, userID, models.ReservationStatusPending).First(&existingReservation).Error; err == nil {
+		var existingReservation models2.Reservation
+		if err := tx.Where("book_copy_id = ? AND user_id = ? AND status = ?", bookCopyID, userID, models2.ReservationStatusPending).First(&existingReservation).Error; err == nil {
 			return errors.New("user already has a pending reservation for this book")
 		}
 
@@ -63,7 +63,7 @@ func (s *ReservationService) CreateReservation(
 		}
 
 		// Create reservation
-		reservation = models.Reservation{
+		reservation = models2.Reservation{
 			UserID:                   userUUID,
 			BookCopyID:               bookCopyUUID,
 			StartDate:                startDate,
@@ -72,7 +72,7 @@ func (s *ReservationService) CreateReservation(
 			ReturnTime:               nil, // Will be set when approved
 			SuggestedPickupTimeslots: suggestedPickTimes,
 			SuggestedReturnTimeslots: suggestedReturnTimes,
-			Status:                   models.ReservationStatusPending,
+			Status:                   models2.ReservationStatusPending,
 		}
 
 		if err := tx.Create(&reservation).Error; err != nil {
@@ -80,7 +80,7 @@ func (s *ReservationService) CreateReservation(
 		}
 
 		// Update book copy status
-		if err := tx.Model(&bookCopy).Update("status", models.BookCopyStatusReserved).Error; err != nil {
+		if err := tx.Model(&bookCopy).Update("status", models2.BookCopyStatusReserved).Error; err != nil {
 			return err
 		}
 
@@ -122,12 +122,12 @@ func checkTimeOverlap(times []string) error {
 }
 
 // GetReservations gets all reservations with pagination and filters
-func (s *ReservationService) GetReservations(page, limit int, filters map[string]string) ([]models.Reservation, int64, error) {
-	var reservations []models.Reservation
+func (s *ReservationService) GetReservations(page, limit int, filters map[string]string) ([]models2.Reservation, int64, error) {
+	var reservations []models2.Reservation
 	var total int64
 
 	offset := (page - 1) * limit
-	query := s.db.Model(&models.Reservation{})
+	query := s.db.Model(&models2.Reservation{})
 
 	// Apply filters
 	if email := filters["email"]; email != "" {
@@ -162,20 +162,20 @@ func (s *ReservationService) GetReservations(page, limit int, filters map[string
 }
 
 // GetUserReservations gets reservations for a specific user with pagination
-func (s *ReservationService) GetUserReservations(userID string, page, limit int) ([]models.Reservation, int64, error) {
+func (s *ReservationService) GetUserReservations(userID string, page, limit int) ([]models2.Reservation, int64, error) {
 	// Parse user ID
 	userUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, 0, errors.New("invalid user ID")
 	}
 
-	var reservations []models.Reservation
+	var reservations []models2.Reservation
 	var total int64
 
 	offset := (page - 1) * limit
 
 	// Get total count
-	if err := s.db.Model(&models.Reservation{}).Where("user_id = ?", userUUID).Count(&total).Error; err != nil {
+	if err := s.db.Model(&models2.Reservation{}).Where("user_id = ?", userUUID).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -193,9 +193,9 @@ func (s *ReservationService) GetUserReservations(userID string, page, limit int)
 
 // UpdateReservationStatus updates a reservation's status
 func (s *ReservationService) UpdateReservationStatus(
-	id string, status models.ReservationStatus, pickupTime time.Time, returnTime time.Time,
-) (*models.Reservation, error) {
-	var reservation models.Reservation
+	id string, status models2.ReservationStatus, pickupTime time.Time, returnTime time.Time,
+) (*models2.Reservation, error) {
+	var reservation models2.Reservation
 
 	err := s.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.First(&reservation, "id = ?", id).Error; err != nil {
@@ -203,7 +203,7 @@ func (s *ReservationService) UpdateReservationStatus(
 		}
 
 		// If status is approved, require a pickup slot
-		if status == models.ReservationStatusApproved && (pickupTime.IsZero() || returnTime.IsZero()) {
+		if status == models2.ReservationStatusApproved && (pickupTime.IsZero() || returnTime.IsZero()) {
 			return errors.New("pickup slot is required when approving a reservation")
 		}
 
@@ -212,7 +212,7 @@ func (s *ReservationService) UpdateReservationStatus(
 			"status": status,
 		}
 
-		if status == models.ReservationStatusApproved {
+		if status == models2.ReservationStatusApproved {
 			updates["pickup_time"] = pickupTime
 			updates["return_time"] = returnTime
 		}
@@ -222,19 +222,19 @@ func (s *ReservationService) UpdateReservationStatus(
 		}
 
 		// Update book copy status
-		var bookCopy models.BookCopy
+		var bookCopy models2.BookCopy
 		if err := tx.First(&bookCopy, "id = ?", reservation.BookCopyID).Error; err != nil {
 			return err
 		}
 
-		bookCopyStatus := models.BookCopyStatusAvailable
+		bookCopyStatus := models2.BookCopyStatusAvailable
 		switch status {
-		case models.ReservationStatusApproved:
-			bookCopyStatus = models.BookCopyStatusBorrowed
-		case models.ReservationStatusPending:
-			bookCopyStatus = models.BookCopyStatusReserved
-		case models.ReservationStatusRejected, models.ReservationStatusReturned:
-			bookCopyStatus = models.BookCopyStatusAvailable
+		case models2.ReservationStatusApproved:
+			bookCopyStatus = models2.BookCopyStatusBorrowed
+		case models2.ReservationStatusPending:
+			bookCopyStatus = models2.BookCopyStatusReserved
+		case models2.ReservationStatusRejected, models2.ReservationStatusReturned:
+			bookCopyStatus = models2.BookCopyStatusAvailable
 		}
 
 		if err := tx.Model(&bookCopy).Update("status", bookCopyStatus).Error; err != nil {
@@ -254,7 +254,7 @@ func (s *ReservationService) UpdateReservationStatus(
 	}
 
 	// Send email notification for status updates
-	if status == models.ReservationStatusApproved || status == models.ReservationStatusRejected || status == models.ReservationStatusReturned {
+	if status == models2.ReservationStatusApproved || status == models2.ReservationStatusRejected || status == models2.ReservationStatusReturned {
 		if err := s.emailService.SendReservationStatusUpdate(&reservation); err != nil {
 			// Log error but don't fail the request
 			// TODO: Add proper logging
@@ -266,14 +266,14 @@ func (s *ReservationService) UpdateReservationStatus(
 }
 
 // GetReservation gets a single reservation
-func (s *ReservationService) GetReservation(id string) (*models.Reservation, error) {
+func (s *ReservationService) GetReservation(id string) (*models2.Reservation, error) {
 	// Parse reservation ID
 	reservationUUID, err := uuid.Parse(id)
 	if err != nil {
 		return nil, errors.New("invalid reservation ID")
 	}
 
-	var reservation models.Reservation
+	var reservation models2.Reservation
 	if err := s.db.Preload("BookCopy.Book").Preload("User").First(&reservation, "id = ?", reservationUUID).Error; err != nil {
 		return nil, err
 	}
@@ -282,7 +282,7 @@ func (s *ReservationService) GetReservation(id string) (*models.Reservation, err
 
 func (s *ReservationService) CheckExpiredReservations() error {
 	now := time.Now()
-	var reservations []models.Reservation
+	var reservations []models2.Reservation
 
 	// Find expired reservations
 	if err := s.db.Where("status = ? AND expires_at < ?", "pending", now).Find(&reservations).Error; err != nil {
@@ -297,11 +297,11 @@ func (s *ReservationService) CheckExpiredReservations() error {
 		}
 
 		// Make book available again
-		var bookCopy models.BookCopy
+		var bookCopy models2.BookCopy
 		if err := s.db.First(&bookCopy, "id = ?", reservation.BookCopyID).Error; err != nil {
 			return err
 		}
-		bookCopy.Status = models.BookCopyStatusAvailable
+		bookCopy.Status = models2.BookCopyStatusAvailable
 		if err := s.db.Save(&bookCopy).Error; err != nil {
 			return err
 		}

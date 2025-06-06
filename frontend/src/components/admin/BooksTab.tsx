@@ -1,19 +1,13 @@
 import React, {useEffect, useState} from 'react';
-import {Button, Card, Form, Input, InputNumber, message, Modal, Select, Space, Table, Tag} from 'antd';
+import {Button, Card, Form, Input, message, Modal, Select, Space, Table, Tag} from 'antd';
 import {DeleteOutlined, EditOutlined, PlusOutlined} from '@ant-design/icons';
-import {authorsAPI, bookCopiesAPI, booksAPI, categoriesAPI} from '../../services/api';
+import {authorsAPI, bookCopiesAPI, booksAPI, categoriesAPI} from '../../api';
 import {Author, Book, BookCopy, Category} from '../../types';
-import {getBookImageUrl} from '../../utils/imageUtils';
+import {getBookImageUrl} from '../../utils';
 import {useLocation, useNavigate} from 'react-router-dom';
 import BookForm, {BookFormData} from './BookForm';
 
-interface BooksTabProps {
-    onDataReload?: () => void;
-}
-
-const BooksTab: React.FC<BooksTabProps> = ({
-    onDataReload,
-}) => {
+const BooksTab: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const searchParams = new URLSearchParams(location.search);
@@ -40,6 +34,8 @@ const BooksTab: React.FC<BooksTabProps> = ({
     const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
     const [imageUrls, setImageUrls] = useState<{ [key: string]: string }>({});
     const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
+    const [editingCopy, setEditingCopy] = useState<BookCopy | null>(null);
+    const [isEditCopyModalVisible, setIsEditCopyModalVisible] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -125,7 +121,7 @@ const BooksTab: React.FC<BooksTabProps> = ({
     const handleDeleteBook = async (id: string) => {
         try {
             await booksAPI.deleteBook(id);
-            onDataReload?.();
+            loadData();
         } catch (error) {
             console.error('Failed to delete book:', error);
         }
@@ -162,7 +158,6 @@ const BooksTab: React.FC<BooksTabProps> = ({
             }
             handleBookCancel();
             loadData();
-            onDataReload?.();
         } catch (error) {
             console.error('Failed to save book:', error);
             message.error('Failed to save book');
@@ -205,15 +200,46 @@ const BooksTab: React.FC<BooksTabProps> = ({
         copyForm.resetFields();
     };
 
-    const handleCopySubmit = async (values: { count: number; condition: BookCopy['condition'] }) => {
+    const showEditCopyModal = (copy: BookCopy) => {
+        setEditingCopy(copy);
+        copyForm.setFieldsValue({
+            condition: copy.condition,
+            notes: copy.notes
+        });
+        setIsEditCopyModalVisible(true);
+    };
+
+    const handleEditCopyCancel = () => {
+        setIsEditCopyModalVisible(false);
+        setEditingCopy(null);
+        copyForm.resetFields();
+    };
+
+    const handleEditCopySubmit = async (values: { condition: BookCopy['condition'], notes?: string }) => {
+        if (!editingCopy) return;
+
+        try {
+            await bookCopiesAPI.updateBookCopy(editingCopy.id, values);
+            message.success('Book copy updated successfully');
+            handleEditCopyCancel();
+            loadBookCopies(editingCopy.book_id);
+        } catch (error) {
+            console.error('Failed to update book copy:', error);
+            message.error('Failed to update book copy');
+        }
+    };
+
+    const handleCopySubmit = async (values: { condition: BookCopy['condition'], notes?: string }) => {
         if (!selectedBookForCopy) return;
 
         try {
-            await bookCopiesAPI.bulkCreateBookCopies(selectedBookForCopy.id, values.count, values.condition);
+            await bookCopiesAPI.createBookCopy(selectedBookForCopy.id, values);
+            message.success('Book copy created successfully');
             handleCopyCancel();
             loadBookCopies(selectedBookForCopy.id);
         } catch (error) {
-            console.error('Failed to create book copies:', error);
+            console.error('Failed to create book copy:', error);
+            message.error('Failed to create book copy');
         }
     };
 
@@ -280,6 +306,12 @@ const BooksTab: React.FC<BooksTabProps> = ({
                 key: 'actions',
                 render: (_: any, record: BookCopy) => (
                     <Space direction="vertical" size="small">
+                        <Button
+                            icon={<EditOutlined/>}
+                            onClick={() => showEditCopyModal(record)}
+                        >
+                            Edit
+                        </Button>
                         <Button
                             danger
                             icon={<DeleteOutlined/>}
@@ -392,11 +424,6 @@ const BooksTab: React.FC<BooksTabProps> = ({
                         Edit
                     </Button>
                     <Button
-                        onClick={() => handleShowCopies(record.id)}
-                    >
-                        {expandedRowKeys.includes(record.id) ? 'Hide Copies' : 'Show Copies'}
-                    </Button>
-                    <Button
                         icon={<DeleteOutlined/>}
                         danger
                         onClick={() => handleDeleteBook(record.id)}
@@ -459,10 +486,13 @@ const BooksTab: React.FC<BooksTabProps> = ({
                 loading={loading}
                 pagination={pagination}
                 onChange={handleTableChange}
+                onRow={(row) => ({
+                    style: { cursor: 'pointer' },
+                    onClick: () =>  handleShowCopies(row.id),
+                })}
                 expandable={{
                     expandedRowRender,
                     expandedRowKeys,
-                    expandIcon: () => null,
                 }}
             />
 
@@ -478,7 +508,7 @@ const BooksTab: React.FC<BooksTabProps> = ({
 
             {/* Copy Modal */}
             <Modal
-                title={`Add Copies - ${selectedBookForCopy?.title}`}
+                title={`Add Copy - ${selectedBookForCopy?.title}`}
                 open={isCopyModalVisible}
                 onCancel={handleCopyCancel}
                 footer={null}
@@ -488,17 +518,6 @@ const BooksTab: React.FC<BooksTabProps> = ({
                     layout="vertical"
                     onFinish={handleCopySubmit}
                 >
-                    <Form.Item
-                        name="count"
-                        label="Number of Copies"
-                        rules={[
-                            {required: true, message: 'Please enter the number of copies'},
-                            {type: 'number', min: 1, message: 'Must be at least 1'}
-                        ]}
-                    >
-                        <InputNumber min={1}  style={{ width: '100%' }}/>
-                    </Form.Item>
-
                     <Form.Item
                         name="condition"
                         label="Condition"
@@ -513,12 +532,63 @@ const BooksTab: React.FC<BooksTabProps> = ({
                         </Select>
                     </Form.Item>
 
+                    <Form.Item
+                        name="notes"
+                        label="Notes"
+                    >
+                        <Input.TextArea rows={4} />
+                    </Form.Item>
+
                     <Form.Item>
                         <Space>
                             <Button type="primary" htmlType="submit">
-                                Create Copies
+                                Create Copy
                             </Button>
                             <Button onClick={handleCopyCancel}>Cancel</Button>
+                        </Space>
+                    </Form.Item>
+                </Form>
+            </Modal>
+
+            {/* Edit Copy Modal */}
+            <Modal
+                title={`Edit Copy - ${editingCopy?.book?.title}`}
+                open={isEditCopyModalVisible}
+                onCancel={handleEditCopyCancel}
+                footer={null}
+            >
+                <Form
+                    form={copyForm}
+                    layout="vertical"
+                    onFinish={handleEditCopySubmit}
+                >
+                    <Form.Item
+                        name="condition"
+                        label="Condition"
+                        rules={[{required: true, message: 'Please select the condition'}]}
+                    >
+                        <Select>
+                            <Select.Option value="new">New</Select.Option>
+                            <Select.Option value="like_new">Like New</Select.Option>
+                            <Select.Option value="good">Good</Select.Option>
+                            <Select.Option value="fair">Fair</Select.Option>
+                            <Select.Option value="poor">Poor</Select.Option>
+                        </Select>
+                    </Form.Item>
+
+                    <Form.Item
+                        name="notes"
+                        label="Notes"
+                    >
+                        <Input.TextArea rows={4} />
+                    </Form.Item>
+
+                    <Form.Item>
+                        <Space>
+                            <Button type="primary" htmlType="submit">
+                                Update Copy
+                            </Button>
+                            <Button onClick={handleEditCopyCancel}>Cancel</Button>
                         </Space>
                     </Form.Item>
                 </Form>

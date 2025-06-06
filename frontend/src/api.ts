@@ -1,5 +1,5 @@
 import axios from 'axios';
-import {Author, Book, BookCopy, Category, Reservation, User} from '../types';
+import {Author, Book, BookCopy, Category, Reservation, User} from './types';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -61,12 +61,12 @@ export const booksAPI = {
 // Book Copies API
 export const bookCopiesAPI = {
     getBookCopies: (bookId: string) => api.get<BookCopy[]>(`/books/${bookId}/copies`),
-    getBookCopy: (id: string) => api.get<BookCopy>(`/book-copies/${id}`),
+    getBookCopy: (id: string) => api.get<BookCopy>(`/books/copies/${id}`),
     createBookCopy: (bookId: string, copy: Partial<BookCopy>) =>
         api.post<BookCopy>(`/books/${bookId}/copies`, copy),
     updateBookCopy: (id: string, copy: Partial<BookCopy>) =>
-        api.put<BookCopy>(`/book-copies/${id}`, copy),
-    deleteBookCopy: (id: string) => api.delete(`/book-copies/${id}`),
+        api.put<BookCopy>(`/books/copies/${id}`, copy),
+    deleteBookCopy: (id: string) => api.delete(`/books/copies/${id}`),
     bulkCreateBookCopies: (bookId: string, count: number, condition: BookCopy['condition']) =>
         api.post<BookCopy[]>(`/books/${bookId}/copies/bulk`, { count, condition }),
 };

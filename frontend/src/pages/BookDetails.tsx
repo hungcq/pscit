@@ -19,10 +19,10 @@ import {
 } from 'antd';
 import {BookOutlined, DeleteOutlined, EditOutlined, PlusOutlined, UserOutlined} from '@ant-design/icons';
 import type {Author, Book, BookCopy, Category} from '../types';
-import {authorsAPI, bookCopiesAPI, booksAPI, categoriesAPI, reservationsAPI} from '../services/api';
+import {authorsAPI, bookCopiesAPI, booksAPI, categoriesAPI, reservationsAPI} from '../api';
 import {useAuth} from '../contexts/AuthContext';
 import dayjs, {Dayjs} from 'dayjs';
-import {getBookImageUrl} from '../utils/imageUtils';
+import {getBookImageUrl} from '../utils';
 import BookForm, {BookFormData} from '../components/admin/BookForm';
 
 const {Title, Text, Paragraph} = Typography;
@@ -32,7 +32,7 @@ const MAX_SUGGESTED_TIMESLOTS = 5;
 const BookDetails: React.FC = () => {
     const {id} = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const {isAuthenticated, user} = useAuth();
+    const {user} = useAuth();
     const [book, setBook] = useState<Book | null>(null);
     const [copies, setCopies] = useState<BookCopy[]>([]);
     const [loading, setLoading] = useState(true);
@@ -149,6 +149,11 @@ const BookDetails: React.FC = () => {
     };
 
     const showReservationModal = (copy: BookCopy) => {
+        if (!user) {
+            navigate("/login")
+            return
+        }
+
         setSelectedCopy(copy);
         setReservationModalVisible(true);
     };

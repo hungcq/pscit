@@ -2,12 +2,12 @@ package services
 
 import (
 	"errors"
+	"github.com/hungcq/pscit/backend/internal/config"
+	"github.com/hungcq/pscit/backend/internal/models"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
-	"github.com/hungcq/pscit/backend/config"
-	"github.com/hungcq/pscit/backend/models"
 	"gorm.io/gorm"
 )
 

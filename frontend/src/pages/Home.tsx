@@ -1,9 +1,9 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {Card, Col, Empty, Input, message, Pagination, Row, Select, Space, Spin, Typography} from 'antd';
-import {authorsAPI, booksAPI, categoriesAPI} from '../services/api';
+import {authorsAPI, booksAPI, categoriesAPI} from '../api';
 import {Author, Book, Category} from '../types';
-import {getBookImageUrl} from '../utils/imageUtils';
+import {getBookImageUrl} from '../utils';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -103,7 +103,7 @@ const Home: React.FC = () => {
   }
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%', minHeight: 'calc(100vh - 150px)', position: 'relative' }}>
+    <Space direction="vertical" size="large" style={{ width: '100%', minHeight: 'calc(100vh - 140px)', position: 'relative' }}>
       <Row gutter={[16, 16]} align="middle">
         <Col xs={24} md={8}>
           <Space>

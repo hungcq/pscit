@@ -1,12 +1,13 @@
 package handlers
 
 import (
+	"github.com/google/uuid"
+	"github.com/hungcq/pscit/backend/internal/models"
+	"github.com/hungcq/pscit/backend/internal/services"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/hungcq/pscit/backend/models"
-	"github.com/hungcq/pscit/backend/services"
 )
 
 type BookCopyHandler struct {
@@ -50,6 +51,8 @@ func (h *BookCopyHandler) CreateBookCopy(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	bookId := c.Param("bookId")
+	copy.BookID = uuid.MustParse(bookId)
 
 	if err := h.bookCopyService.CreateBookCopy(&copy); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

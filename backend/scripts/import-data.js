@@ -2,17 +2,20 @@ const fs = require('fs');
 const axios = require('axios');
 
 const API_BASE = 'https://www.googleapis.com/books/v1/volumes';
-const BACKEND_BASE = 'http://localhost:8080/api';
-const AUTH_TOKEN = 'your-jwt-token-here'; // Replace with your actual JWT token
+const BACKEND_BASE = 'http://localhost:8000/api';
+const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMGJmN2NmMzQtYTUwMC00MmM5LWE4YmMtYmI1MmE3YjgwMDY1IiwiZW1haWwiOiJodW5nY3FydEBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE3NDkyMjUxODUsImlhdCI6MTc0OTEzODc4NX0.QOtWPcSs_bRk_3oiZ-yjj7zSbUP09Vqh2xNVTUgWi0g';
 
 function stripHtmlTags(text) {
     return text?.replace(/<[^>]*>/g, '') || '';
 }
 
-async function getBookDetails(volumeId) {
-    const url = `${API_BASE}/${volumeId}`;
+async function getBookDetails(isbn13) {
+    const url = `${API_BASE}?q=isbn:${isbn13}`;
     const response = await axios.get(url);
-    return response.data;
+    const items = response.data.items || [];
+    const link = items[0].selfLink
+    const details = await axios.get(link);
+    return details.data
 }
 
 async function createAuthor(name) {
@@ -42,12 +45,12 @@ async function createBook(bookData) {
     return response.data;
 }
 
-async function processBooksByVolumeIds(filePath) {
-    const volumeIds = fs.readFileSync(filePath, 'utf8').split('\n').map(id => id.trim()).filter(Boolean);
+async function processBooksByIsbn13s(filePath) {
+    const isbn13s = fs.readFileSync(filePath, 'utf8').split('\n').map(id => id.trim()).filter(Boolean);
 
-    for (const volumeId of volumeIds) {
+    for (const isbn of isbn13s) {
         try {
-            const bookDetails = await getBookDetails(volumeId);
+            const bookDetails = await getBookDetails(isbn);
             const volumeInfo = bookDetails.volumeInfo;
 
             // Create author(s)
@@ -88,20 +91,19 @@ async function processBooksByVolumeIds(filePath) {
             };
 
             const createdBook = await createBook(bookPayload);
-            console.log(`Successfully created book: ${createdBook.title}`);
+            console.log(`Successfully created book: ${createdBook.title}, isbn13: ${isbn13}`);
         } catch (error) {
             if (error.response) {
-                console.error(`Error processing volume ID "${volumeId}":`, {
+                console.error(`Error processing volume ID "${isbn}":`, {
                     status: error.response.status,
                     data: error.response.data,
                     headers: error.response.headers
                 });
             } else {
-                console.error(`Error processing volume ID "${volumeId}":`, error.message);
+                console.error(`Error processing ISBN13 "${isbn}":`, error.message);
             }
         }
     }
 }
 
-// Run with path to txt file containing volume IDs
-processBooksByVolumeIds('/path/to/volume_ids.txt');
+processBooksByIsbn13s('/Users/hungcq/Desktop/isbns.txt');

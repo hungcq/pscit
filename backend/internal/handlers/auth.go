@@ -1,13 +1,12 @@
 package handlers
 
 import (
+	"github.com/hungcq/pscit/backend/internal/config"
+	"github.com/hungcq/pscit/backend/internal/services"
 	"log"
 	"net/http"
 
-	"github.com/hungcq/pscit/backend/config"
-
 	"github.com/gin-gonic/gin"
-	"github.com/hungcq/pscit/backend/services"
 	"google.golang.org/api/idtoken"
 )
 

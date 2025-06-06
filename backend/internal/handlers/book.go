@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/hungcq/pscit/backend/internal/models"
+	"github.com/hungcq/pscit/backend/internal/services"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/hungcq/pscit/backend/models"
-	"github.com/hungcq/pscit/backend/services"
 )
 
 type BookHandler struct {

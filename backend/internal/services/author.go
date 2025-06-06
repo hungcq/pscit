@@ -2,8 +2,8 @@ package services
 
 import (
 	"errors"
+	"github.com/hungcq/pscit/backend/internal/models"
 
-	"github.com/hungcq/pscit/backend/models"
 	"gorm.io/gorm"
 )
 
@@ -51,7 +51,7 @@ func (s *AuthorService) UpdateAuthor(id string, author *models.Author) error {
 }
 
 func (s *AuthorService) DeleteAuthor(id string) error {
-	result := s.db.Delete(&models.Author{}, "id = ?", id)
+	result := s.db.Unscoped().Delete(&models.Author{}, "id = ?", id)
 	if result.Error != nil {
 		return result.Error
 	}

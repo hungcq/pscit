@@ -1,21 +1,21 @@
 package handlers
 
 import (
+	"github.com/hungcq/pscit/backend/internal/models"
+	services2 "github.com/hungcq/pscit/backend/internal/services"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/hungcq/pscit/backend/models"
-	"github.com/hungcq/pscit/backend/services"
 )
 
 type ReservationHandler struct {
-	reservationService *services.ReservationService
-	emailService       *services.EmailService
+	reservationService *services2.ReservationService
+	emailService       *services2.EmailService
 }
 
-func NewReservationHandler(reservationService *services.ReservationService, emailService *services.EmailService) *ReservationHandler {
+func NewReservationHandler(reservationService *services2.ReservationService, emailService *services2.EmailService) *ReservationHandler {
 	return &ReservationHandler{
 		reservationService: reservationService,
 		emailService:       emailService,
