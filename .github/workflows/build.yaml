@@ -5,6 +5,7 @@ on:
     branches: [ master ]
     paths:
       - 'backend/**'
+      - 'k8s/**'
       - '.github/workflows/build.yaml'
       - '.github/workflows/deploy.yaml'
 
