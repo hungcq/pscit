@@ -7,6 +7,7 @@ source $WD/.env
 # Configuration
 AWS_REGION="ap-southeast-1"
 S3_BUCKET="pscit"
+CLOUDFRONT_DISTRIBUTION_ID="E1YQD9PMKB2G7W"
 
 # Create temporary directory for images
 TEMP_DIR="$WD/temp"
@@ -75,5 +76,10 @@ echo "Syncing images to S3..."
 aws s3 sync "$TEMP_DIR" "s3://$S3_BUCKET/book-images/" \
     --region "$AWS_REGION" \
     --cache-control "max-age=31536000,public"
+
+echo "Invalidate cloudfront distribution"
+aws cloudfront create-invalidation \
+  --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
+  --paths "/*"
 
 echo "Done! Images are stored in $TEMP_DIR" 

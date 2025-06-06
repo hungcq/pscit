@@ -3,7 +3,8 @@ const axios = require('axios');
 
 const API_BASE = 'https://www.googleapis.com/books/v1/volumes';
 const BACKEND_BASE = 'http://localhost:8000/api';
-const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMGJmN2NmMzQtYTUwMC00MmM5LWE4YmMtYmI1MmE3YjgwMDY1IiwiZW1haWwiOiJodW5nY3FydEBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE3NDkyMjUxODUsImlhdCI6MTc0OTEzODc4NX0.QOtWPcSs_bRk_3oiZ-yjj7zSbUP09Vqh2xNVTUgWi0g'
+const AUTH_TOKEN = ''
+
 function stripHtmlTags(input) {
     return input.replace(/<[^>]*>/g, '');
 }
