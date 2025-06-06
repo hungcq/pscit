@@ -75,7 +75,7 @@ aws s3 rm "s3://$S3_BUCKET/book-images/" \
 echo "Syncing images to S3..."
 aws s3 sync "$TEMP_DIR" "s3://$S3_BUCKET/book-images/" \
     --region "$AWS_REGION" \
-    --cache-control "max-age=31536000,public"
+    --cache-control "max-age=1800,public"
 
 echo "Invalidate cloudfront distribution"
 aws cloudfront create-invalidation \
