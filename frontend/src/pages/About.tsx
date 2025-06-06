@@ -61,7 +61,7 @@ const Introduction: React.FC = () => {
                             </Paragraph>
                             <Paragraph style={{ fontSize: '13pt' }}>
                                 Feel free to browse the library, reserve a book, or just reach out for a chat over coffee.
-                                <b>Reserved books can be picked up at my place in <a href='https://maps.app.goo.gl/yEbHKpyqVknWia6L8'>
+                                <b>Reserved books can be picked up at my place at <a href='https://maps.app.goo.gl/yEbHKpyqVknWia6L8'>
                                     No 57, 38 alley, 189 lane, Hoi Phu hamlet, Dong Hoi commune,
                                     Dong Anh district, Hanoi, Vietnam.</a></b>
                             </Paragraph>

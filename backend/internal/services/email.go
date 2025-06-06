@@ -2,10 +2,11 @@ package services
 
 import (
 	"fmt"
-	"github.com/hungcq/pscit/backend/internal/config"
-	models2 "github.com/hungcq/pscit/backend/internal/models"
 	"strings"
 	"time"
+
+	"github.com/hungcq/pscit/backend/internal/config"
+	"github.com/hungcq/pscit/backend/internal/models"
 
 	"gopkg.in/gomail.v2"
 )
@@ -27,7 +28,7 @@ func NewEmailService() *EmailService {
 	}
 }
 
-func (s *EmailService) SendReservationNotification(reservation *models2.Reservation) error {
+func (s *EmailService) SendReservationNotification(reservation *models.Reservation) error {
 	// Send to user
 	userMsg := gomail.NewMessage()
 	userMsg.SetHeader("From", config.AppConfig.SMTPUsername)
@@ -224,7 +225,7 @@ func (s *EmailService) SendReservationNotification(reservation *models2.Reservat
 	return nil
 }
 
-func formatAuthors(authors []models2.Author) string {
+func formatAuthors(authors []models.Author) string {
 	names := make([]string, len(authors))
 	for i, author := range authors {
 		names[i] = author.Name
@@ -244,7 +245,7 @@ func formatTimeslots(timeslots []string) string {
 	return strings.Join(slots, "")
 }
 
-func (s *EmailService) SendNewBookNotification(book *models2.Book, subscribers []models2.User) error {
+func (s *EmailService) SendNewBookNotification(book *models.Book, subscribers []models.User) error {
 	for _, user := range subscribers {
 		msg := gomail.NewMessage()
 		msg.SetHeader("From", config.AppConfig.SMTPUsername)
@@ -276,7 +277,7 @@ func (s *EmailService) SendNewBookNotification(book *models2.Book, subscribers [
 	return nil
 }
 
-func (s *EmailService) SendReservationStatusUpdate(reservation *models2.Reservation) error {
+func (s *EmailService) SendReservationStatusUpdate(reservation *models.Reservation) error {
 	userMsg := gomail.NewMessage()
 	userMsg.SetHeader("From", config.AppConfig.SMTPUsername)
 	userMsg.SetHeader("To", reservation.User.Email)
@@ -327,21 +328,34 @@ func (s *EmailService) SendReservationStatusUpdate(reservation *models2.Reservat
 	// Get status-specific message
 	var statusMessage string
 	switch reservation.Status {
-	case models2.ReservationStatusApproved:
+	case models.ReservationStatusApproved:
 		statusMessage = `
 			<p>Your book reservation request has been approved!</p>
 			<p>Please make sure to pick up and return the book at the specified times.</p>
 		`
-	case models2.ReservationStatusRejected:
+	case models.ReservationStatusRejected:
 		statusMessage = `
 			<p>We regret to inform you that your book reservation request has been rejected.</p>
 			<p>Please feel free to make another reservation request with different times.</p>
 		`
-	case models2.ReservationStatusReturned:
+	case models.ReservationStatusReturned:
 		statusMessage = `
 			<p>Thank you for returning the book!</p>
 			<p>We hope you enjoyed reading it.</p>
 		`
+	}
+
+	// Get status-specific title
+	var statusTitle string
+	switch reservation.Status {
+	case models.ReservationStatusApproved:
+		statusTitle = "Book Reservation Approved"
+	case models.ReservationStatusRejected:
+		statusTitle = "Book Reservation Rejected"
+	case models.ReservationStatusReturned:
+		statusTitle = "Book Returned"
+	default:
+		statusTitle = "Book Reservation Update"
 	}
 
 	userMsg.SetBody("text/html", fmt.Sprintf(`
@@ -358,12 +372,15 @@ func (s *EmailService) SendReservationStatusUpdate(reservation *models2.Reservat
 				.timeslot { background-color: #e8f4fd; padding: 10px; margin: 5px 0; border-radius: 3px; }
 				.status { display: inline-block; padding: 5px 10px; background-color: %s; color: white; border-radius: 3px; }
 				.timezone { color: #666; font-size: 0.9em; }
+				.location { background-color: #e8f4fd; padding: 15px; margin: 15px 0; border-radius: 5px; }
+				.location a { color: #4a90e2; text-decoration: none; }
+				.location a:hover { text-decoration: underline; }
 			</style>
 		</head>
 		<body>
 			<div class="container">
 				<div class="header">
-					<h1>Book Reservation Update</h1>
+					<h1>%s</h1>
 				</div>
 				<div class="content">
 					<p>Dear %s,</p>
@@ -379,6 +396,8 @@ func (s *EmailService) SendReservationStatusUpdate(reservation *models2.Reservat
 
 					%s
 
+					%s
+
 					<p>If you have any questions, please don't hesitate to contact us.</p>
 				</div>
 				<div class="footer">
@@ -390,6 +409,7 @@ func (s *EmailService) SendReservationStatusUpdate(reservation *models2.Reservat
 		</html>
 	`,
 		getStatusColor(reservation.Status),
+		statusTitle,
 		reservation.User.Name,
 		statusMessage,
 		reservation.BookCopy.Book.Title,
@@ -398,26 +418,27 @@ func (s *EmailService) SendReservationStatusUpdate(reservation *models2.Reservat
 		reservation.EndDate.Format("January 2, 2006"),
 		strings.Title(string(reservation.Status)),
 		getTimeDetails(reservation.Status, pickupTimeStr, returnTimeStr),
+		getLocationDetails(reservation.Status),
 	))
 
 	return s.dialer.DialAndSend(userMsg)
 }
 
-func getStatusColor(status models2.ReservationStatus) string {
+func getStatusColor(status models.ReservationStatus) string {
 	switch status {
-	case models2.ReservationStatusApproved:
+	case models.ReservationStatusApproved:
 		return "#4CAF50" // Green
-	case models2.ReservationStatusRejected:
+	case models.ReservationStatusRejected:
 		return "#F44336" // Red
-	case models2.ReservationStatusReturned:
+	case models.ReservationStatusReturned:
 		return "#2196F3" // Blue
 	default:
 		return "#FFC107" // Yellow
 	}
 }
 
-func getTimeDetails(status models2.ReservationStatus, pickupTime, returnTime string) string {
-	if status != models2.ReservationStatusApproved {
+func getTimeDetails(status models.ReservationStatus, pickupTime, returnTime string) string {
+	if status != models.ReservationStatusApproved {
 		return ""
 	}
 
@@ -432,4 +453,20 @@ func getTimeDetails(status models2.ReservationStatus, pickupTime, returnTime str
 			</div>
 		</div>
 	`, pickupTime, returnTime)
+}
+
+func getLocationDetails(status models.ReservationStatus) string {
+	if status != models.ReservationStatusApproved {
+		return ""
+	}
+
+	return `
+		<div class="location">
+			<h3>Pickup Location</h3>
+			<p>Reserved books can be picked up at my place at <a href='https://maps.app.goo.gl/yEbHKpyqVknWia6L8'>
+				No 57, 38 alley, 189 lane, Hoi Phu hamlet, Dong Hoi commune,
+				Dong Anh district, Hanoi, Vietnam.
+			</a></p>
+		</div>
+	`
 }
