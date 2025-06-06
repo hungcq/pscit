@@ -15,6 +15,7 @@ export interface BookFormData {
     publisher: string;
     google_volume_id: string;
     main_image: string;
+    format: 'paperback' | 'hardcover';
     author_ids: string[];
     category_ids: string[];
 }
@@ -133,6 +134,17 @@ const BookForm: React.FC<BookFormProps> = ({
                     label="Publisher"
                 >
                     <Input/>
+                </Form.Item>
+
+                <Form.Item
+                    name="format"
+                    label="Format"
+                    rules={[{required: true, message: 'Please select a format'}]}
+                >
+                    <Select>
+                        <Select.Option value="paperback">Paperback</Select.Option>
+                        <Select.Option value="hardcover">Hardcover</Select.Option>
+                    </Select>
                 </Form.Item>
 
                 <Form.Item

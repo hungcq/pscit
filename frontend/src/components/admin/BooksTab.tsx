@@ -36,10 +36,11 @@ const BooksTab: React.FC = () => {
     const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
     const [editingCopy, setEditingCopy] = useState<BookCopy | null>(null);
     const [isEditCopyModalVisible, setIsEditCopyModalVisible] = useState(false);
+    const [isbn13, setIsbn13] = useState<string>('');
 
     useEffect(() => {
         loadData();
-    }, [pagination.current, pagination.pageSize, searchQuery, selectedAuthor, selectedCategory]);
+    }, [pagination.current, pagination.pageSize, searchQuery, selectedAuthor, selectedCategory, isbn13]);
 
     useEffect(() => {
         if (editBookId) {
@@ -70,6 +71,7 @@ const BooksTab: React.FC = () => {
                     searchQuery,
                     selectedCategory,
                     selectedAuthor,
+                    isbn13,
                     pagination.current,
                     pagination.pageSize
                 ),
@@ -115,6 +117,7 @@ const BooksTab: React.FC = () => {
         setSearchQuery('');
         setSelectedAuthor('');
         setSelectedCategory('');
+        setIsbn13('');
         setPagination(prev => ({...prev, current: 1}));
     };
 
@@ -398,9 +401,9 @@ const BooksTab: React.FC = () => {
             },
         },
         {
-            title: 'ISBN-10',
-            dataIndex: 'isbn10',
-            key: 'isbn10',
+            title: 'ISBN-13',
+            dataIndex: 'isbn13',
+            key: 'isbn13',
         },
         {
             title: 'Published Year',
@@ -411,6 +414,16 @@ const BooksTab: React.FC = () => {
             title: 'Publisher',
             dataIndex: 'publisher',
             key: 'publisher',
+        },
+        {
+            title: 'Format',
+            dataIndex: 'format',
+            key: 'format',
+            render: (format: string) => (
+                <Tag color={format === 'hardcover' ? 'blue' : 'green'}>
+                    {format.charAt(0).toUpperCase() + format.slice(1)}
+                </Tag>
+            ),
         },
         {
             title: 'Actions',
@@ -475,6 +488,15 @@ const BooksTab: React.FC = () => {
                             (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                         }
                         options={categories.map(c => ({label: c.name, value: c.id}))}
+                    />
+                    <Input.Search
+                        placeholder="Search by ISBN-13..."
+                        allowClear
+                        onSearch={(value) => {
+                            setIsbn13(value);
+                            setPagination(prev => ({...prev, current: 1}));
+                        }}
+                        style={{width: 300}}
                     />
                     <Button onClick={handleResetFilters}>Reset Filters</Button>
                 </Space>

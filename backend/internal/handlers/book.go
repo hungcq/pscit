@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/hungcq/pscit/backend/internal/models"
-	"github.com/hungcq/pscit/backend/internal/services"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/hungcq/pscit/backend/internal/models"
+	"github.com/hungcq/pscit/backend/internal/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,10 +26,12 @@ func (h *BookHandler) GetBooks(c *gin.Context) {
 	query := c.Query("query")
 	category := c.Query("category")
 	author := c.Query("author")
+	isbn10 := c.Query("isbn10")
+	isbn13 := c.Query("isbn13")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	books, total, err := h.bookService.GetBooks(query, category, author, page, limit)
+	books, total, err := h.bookService.GetBooks(query, category, author, isbn10, isbn13, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -72,6 +75,7 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 		Publisher:      req.Publisher,
 		GoogleVolumeID: req.GoogleVolumeID,
 		MainImage:      req.MainImage,
+		Format:         req.Format,
 	}
 
 	// Load authors
@@ -130,6 +134,7 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 	existingBook.Publisher = req.Publisher
 	existingBook.GoogleVolumeID = req.GoogleVolumeID
 	existingBook.MainImage = req.MainImage
+	existingBook.Format = req.Format
 
 	// Load authors
 	existingBook.Authors = make([]models.Author, len(req.AuthorIDs))

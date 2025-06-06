@@ -21,15 +21,17 @@ const Home: React.FC = () => {
     total: 0,
   });
   const [searchInput, setSearchInput] = useState('');
+  const [isbn13SearchInput, setIsbn13SearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedAuthor, setSelectedAuthor] = useState<string>('');
   const [imageUrls, setImageUrls] = useState<{ [key: string]: string }>({});
   const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
+  const [isbn13, setIsbn13] = useState<string>('');
 
   useEffect(() => {
     loadData();
-  }, [pagination.current, pagination.pageSize, searchQuery, selectedCategory, selectedAuthor]);
+  }, [pagination.current, pagination.pageSize, searchQuery, selectedCategory, selectedAuthor, isbn13]);
 
   useEffect(() => {
     const loadImageUrls = async () => {
@@ -50,6 +52,7 @@ const Home: React.FC = () => {
           searchQuery,
           selectedCategory,
           selectedAuthor,
+          isbn13,
           pagination.current,
           pagination.pageSize
         ),
@@ -69,11 +72,6 @@ const Home: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSearch = (value: string) => {
-    setSearchQuery(value);
-    setPagination(prev => ({...prev, current: 1}));
   };
 
   const handleCategoryChange = (value: string) => {
@@ -120,7 +118,7 @@ const Home: React.FC = () => {
         </Col>
         <Col xs={24} md={16}>
           <Row gutter={[8, 8]}>
-            <Col xs={24} sm={12} md={8}>
+            <Col xs={24} sm={12} md={6}>
               <Input.Search
                 placeholder="Search by title or subtitle..."
                 size="large"
@@ -133,7 +131,7 @@ const Home: React.FC = () => {
                 }}
               />
             </Col>
-            <Col xs={24} sm={12} md={8}>
+            <Col xs={24} sm={12} md={6}>
               <Select
                 placeholder="Select Category"
                 allowClear
@@ -153,7 +151,7 @@ const Home: React.FC = () => {
                 ))}
               </Select>
             </Col>
-            <Col xs={24} sm={12} md={8}>
+            <Col xs={24} sm={12} md={6}>
               <Select
                 placeholder="Select Author"
                 allowClear
@@ -172,6 +170,19 @@ const Home: React.FC = () => {
                   </Option>
                 ))}
               </Select>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Input.Search
+                  placeholder="Search by ISBN-13..."
+                  size="large"
+                  allowClear
+                  value={isbn13SearchInput}
+                  onChange={(e) => setIsbn13SearchInput(e.target.value)}
+                  onSearch={(value) => {
+                    setIsbn13(value);
+                    setPagination(prev => ({ ...prev, current: 1 }));
+                  }}
+              />
             </Col>
           </Row>
         </Col>

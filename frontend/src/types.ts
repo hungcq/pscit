@@ -22,6 +22,8 @@ export interface Book {
   published_year: number;
   publisher: string;
   page_count: number;
+  format: 'paperback' | 'hardcover';
+  google_volume_id: string;
 }
 
 export interface Author {

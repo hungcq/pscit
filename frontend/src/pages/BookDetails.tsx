@@ -271,6 +271,11 @@ const BookDetails: React.FC = () => {
                                 <Descriptions.Item label="Publisher">{book.publisher}</Descriptions.Item>
                                 <Descriptions.Item label="Published Year">{book.published_year}</Descriptions.Item>
                                 <Descriptions.Item label="Page Count">{book.page_count}</Descriptions.Item>
+                                <Descriptions.Item label="Format">
+                                    <Tag color={book.format === 'hardcover' ? 'blue' : 'green'}>
+                                        {book.format.charAt(0).toUpperCase() + book.format.slice(1)}
+                                    </Tag>
+                                </Descriptions.Item>
                                 <Descriptions.Item label="Status">
                                     <Tag color={isBookAvailable ? 'green' : 'red'}>
                                         {isBookAvailable ? 'Available' : 'Not Available'}

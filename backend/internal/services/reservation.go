@@ -2,8 +2,10 @@ package services
 
 import (
 	"errors"
-	models2 "github.com/hungcq/pscit/backend/internal/models"
+	"strings"
 	"time"
+
+	models2 "github.com/hungcq/pscit/backend/internal/models"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -121,40 +123,39 @@ func checkTimeOverlap(times []string) error {
 	return nil
 }
 
-// GetReservations gets all reservations with pagination and filters
-func (s *ReservationService) GetReservations(page, limit int, filters map[string]string) ([]models2.Reservation, int64, error) {
+// GetReservations retrieves all reservations with pagination and filtering
+func (s *ReservationService) GetReservations(page, limit int, filters models2.ReservationFilters) ([]models2.Reservation, int64, error) {
 	var reservations []models2.Reservation
 	var total int64
 
-	offset := (page - 1) * limit
-	query := s.db.Model(&models2.Reservation{})
+	query := s.db.Model(&models2.Reservation{}).
+		Preload("User").
+		Preload("BookCopy").
+		Preload("BookCopy.Book")
 
-	// Apply filters
-	if email := filters["email"]; email != "" {
+	if filters.Email != "" {
 		query = query.Joins("JOIN users ON users.id = reservations.user_id").
-			Where("users.email ILIKE ?", "%"+email+"%")
+			Where("LOWER(users.email) LIKE ?", "%"+strings.ToLower(filters.Email)+"%")
 	}
 
-	if status := filters["status"]; status != "" {
-		query = query.Where("reservations.status = ?", status)
+	if filters.Status != "" {
+		query = query.Where("reservations.status = ?", filters.Status)
 	}
 
-	if bookTitle := filters["book_title"]; bookTitle != "" {
+	if filters.BookTitle != "" {
 		query = query.Joins("JOIN book_copies ON book_copies.id = reservations.book_copy_id").
 			Joins("JOIN books ON books.id = book_copies.book_id").
-			Where("books.title ILIKE ?", "%"+bookTitle+"%")
+			Where("LOWER(books.title) LIKE ?", "%"+strings.ToLower(filters.BookTitle)+"%")
 	}
 
-	// Get total count with filters
+	// Get total count
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Get paginated reservations with preloaded relations
-	if err := query.Preload("BookCopy.Book").Preload("User").
-		Offset(offset).Limit(limit).
-		Order("created_at DESC").
-		Find(&reservations).Error; err != nil {
+	// Get paginated results
+	offset := (page - 1) * limit
+	if err := query.Offset(offset).Limit(limit).Order("created_at DESC").Find(&reservations).Error; err != nil {
 		return nil, 0, err
 	}
 

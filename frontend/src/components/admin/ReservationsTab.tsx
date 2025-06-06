@@ -153,6 +153,16 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
             ),
         },
         {
+            title: 'Format',
+            dataIndex: ['book_copy', 'book', 'format'],
+            key: 'format',
+            render: (format: string) => (
+                <Tag color={format === 'hardcover' ? 'blue' : 'green'}>
+                    {format.charAt(0).toUpperCase() + format.slice(1)}
+                </Tag>
+            ),
+        },
+        {
             title: 'User Name',
             dataIndex: ['user', 'name'],
             key: 'userName',

@@ -36,17 +36,23 @@ type Reservation struct {
 }
 
 type CreateReservationRequest struct {
-	BookCopyID               string   `json:"bookCopyId" binding:"required"`
-	StartDate                string   `json:"startDate" binding:"required"`
-	EndDate                  string   `json:"endDate" binding:"required"`
-	SuggestedPickupTimeslots []string `json:"suggestedPickupTimeslots" binding:"required,min=1"`
-	SuggestedReturnTimeslots []string `json:"suggestedReturnTimeslots" binding:"required,min=1"`
+	BookCopyID               string   `json:"book_copy_id" binding:"required"`
+	StartDate                string   `json:"start_date" binding:"required"`
+	EndDate                  string   `json:"end_date" binding:"required"`
+	SuggestedPickupTimeslots []string `json:"suggested_pickup_timeslots" binding:"required,min=1"`
+	SuggestedReturnTimeslots []string `json:"suggested_return_timeslots" binding:"required,min=1"`
 }
 
 type UpdateReservationStatusRequest struct {
-	Status     ReservationStatus `json:"status" binding:"required"`
-	PickupTime string            `json:"pickupTime,omitempty"`
-	ReturnTime string            `json:"returnTime,omitempty"`
+	Status     ReservationStatus `json:"status" binding:"required,oneof=pending approved rejected returned"`
+	PickupTime string            `json:"pickup_time,omitempty"`
+	ReturnTime string            `json:"return_time,omitempty"`
+}
+
+type ReservationFilters struct {
+	Email     string `form:"email"`
+	Status    string `form:"status"`
+	BookTitle string `form:"book_title"`
 }
 
 func (r *Reservation) BeforeCreate(tx *gorm.DB) error {

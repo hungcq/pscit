@@ -47,9 +47,9 @@ export const authAPI = {
 
 // Books API
 export const booksAPI = {
-    getBooks: (query?: string, category?: string, author?: string, page = 1, limit = 12) =>
+    getBooks: (query?: string, category?: string, author?: string, isbn13?: string, page = 1, limit = 12) =>
         api.get<{ books: Book[]; total: number }>('/books', {
-            params: { query, category, author, page, limit },
+            params: { query, category, author, isbn13, page, limit },
         }),
     getBook: (id: string) => api.get<Book>(`/books/${id}`),
     getBookCopies: (bookId: string) => api.get<BookCopy[]>(`/books/${bookId}/copies`),

@@ -24,7 +24,7 @@ func InitDB() *gorm.DB {
 	}
 
 	// Auto-migrate the schema
-	db.AutoMigrate(
+	err = db.AutoMigrate(
 		&models2.User{},
 		&models2.Author{},
 		&models2.Category{},
@@ -33,6 +33,9 @@ func InitDB() *gorm.DB {
 		&models2.Reservation{},
 		&models2.FAQ{},
 	)
+	if err != nil {
+		panic(err)
+	}
 
 	return db
 }

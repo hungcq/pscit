@@ -2,8 +2,9 @@ package services
 
 import (
 	"errors"
-	"github.com/hungcq/pscit/backend/internal/models"
 	"strings"
+
+	"github.com/hungcq/pscit/backend/internal/models"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -18,7 +19,7 @@ func NewBookService(db *gorm.DB) *BookService {
 }
 
 // GetBooks retrieves books with pagination and filtering
-func (s *BookService) GetBooks(query, category, author string, page, limit int) ([]models.Book, int64, error) {
+func (s *BookService) GetBooks(query, category, author, isbn10, isbn13 string, page, limit int) ([]models.Book, int64, error) {
 	var books []models.Book
 	var total int64
 
@@ -49,6 +50,16 @@ func (s *BookService) GetBooks(query, category, author string, page, limit int) 
 			Joins("JOIN book_authors ON books.id = book_authors.book_id").
 			Joins("JOIN authors ON book_authors.author_id = authors.id").
 			Where("LOWER(authors.name) LIKE ?", "%"+strings.ToLower(author)+"%")
+	}
+
+	if isbn10 != "" {
+		subQuery = subQuery.Distinct("books.id").
+			Where("isbn10 = ?", isbn10)
+	}
+
+	if isbn13 != "" {
+		subQuery = subQuery.Distinct("books.id").
+			Where("isbn13 = ?", isbn13)
 	}
 
 	// Build final query with preloading
@@ -119,6 +130,7 @@ func (s *BookService) UpdateBook(id string, book *models.Book) error {
 			"publisher":        book.Publisher,
 			"google_volume_id": book.GoogleVolumeID,
 			"main_image":       book.MainImage,
+			"format":           book.Format,
 		}).Error; err != nil {
 			return err
 		}

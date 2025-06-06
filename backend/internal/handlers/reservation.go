@@ -1,11 +1,12 @@
 package handlers
 
 import (
-	"github.com/hungcq/pscit/backend/internal/models"
-	services2 "github.com/hungcq/pscit/backend/internal/services"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/hungcq/pscit/backend/internal/models"
+	services2 "github.com/hungcq/pscit/backend/internal/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,14 +32,7 @@ func (h *ReservationHandler) CreateReservation(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		BookCopyID               string   `json:"book_copy_id" binding:"required"`
-		StartDate                string   `json:"start_date" binding:"required"`
-		EndDate                  string   `json:"end_date" binding:"required"`
-		SuggestedPickupTimeslots []string `json:"suggested_pickup_timeslots" binding:"required,min=1"`
-		SuggestedReturnTimeslots []string `json:"suggested_return_timeslots" binding:"required,min=1"`
-	}
-
+	var req models.CreateReservationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -111,11 +105,10 @@ func (h *ReservationHandler) GetReservations(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	// Get filter parameters
-	filters := map[string]string{
-		"email":      c.Query("email"),
-		"status":     c.Query("status"),
-		"book_title": c.Query("book_title"),
+	var filters models.ReservationFilters
+	if err := c.ShouldBindQuery(&filters); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	reservations, total, err := h.reservationService.GetReservations(page, limit, filters)
@@ -165,12 +158,7 @@ func (h *ReservationHandler) UpdateReservationStatus(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		Status     models.ReservationStatus `json:"status" binding:"required,oneof=pending approved rejected returned"`
-		PickupTime string                   `json:"pickup_time,omitempty"`
-		ReturnTime string                   `json:"return_time,omitempty"`
-	}
-
+	var req models.UpdateReservationStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
