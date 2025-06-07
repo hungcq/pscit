@@ -101,7 +101,7 @@ const Home: React.FC = () => {
   }
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%', minHeight: 'calc(100vh - 140px)', position: 'relative' }}>
+    <Space direction="vertical" size="large" style={{ width: '100%', minHeight: 'calc(100vh - 120px)', position: 'relative' }}>
       <Row gutter={[16, 16]} align="middle">
         <Col xs={24} md={8}>
           <Space>
@@ -202,7 +202,7 @@ const Home: React.FC = () => {
                       alt={book.title}
                       src={imageErrors[book.id] ? book.main_image : getBookImageUrl(book.id)}
                       onError={() => handleImageError(book.id)}
-                      style={{ height: '220px', objectFit: 'contain' }}
+                      style={{ height: '230px', objectFit: 'contain' }}
                     />
                   }
                   onClick={() => navigate(`/books/${book.id}`)}

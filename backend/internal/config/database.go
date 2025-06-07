@@ -2,11 +2,12 @@ package config
 
 import (
 	"fmt"
-	models2 "github.com/hungcq/pscit/backend/internal/models"
 	"log"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"github.com/hungcq/pscit/backend/internal/models"
 )
 
 func InitDB() *gorm.DB {
@@ -25,13 +26,12 @@ func InitDB() *gorm.DB {
 
 	// Auto-migrate the schema
 	err = db.AutoMigrate(
-		&models2.User{},
-		&models2.Author{},
-		&models2.Category{},
-		&models2.Book{},
-		&models2.BookCopy{},
-		&models2.Reservation{},
-		&models2.FAQ{},
+		&models.User{},
+		&models.Author{},
+		&models.Category{},
+		&models.Book{},
+		&models.BookCopy{},
+		&models.Reservation{},
 	)
 	if err != nil {
 		panic(err)

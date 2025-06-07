@@ -1,5 +1,9 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import {Author, Book, BookCopy, Category, Reservation, User} from './types';
+
+interface ErrorResponse {
+    error: string;
+}
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -19,16 +23,18 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// Handle token expiration
+// Handle token expiration and error messages
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
+    (error: AxiosError<ErrorResponse>) => {
         if (error.response?.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             window.location.href = '/login';
         }
-        return Promise.reject(error);
+        // Extract error message from backend response
+        const errorMessage = error.response?.data?.error || 'An error occurred';
+        return Promise.reject(new Error(errorMessage));
     }
 );
 
@@ -47,9 +53,9 @@ export const authAPI = {
 
 // Books API
 export const booksAPI = {
-    getBooks: (query?: string, category?: string, author?: string, isbn13?: string, page = 1, limit = 12) =>
+    getBooks: (query?: string, category?: string, author?: string, isbn13?: string, page = 1, limit = 12, sortField?: string, sortOrder?: string) =>
         api.get<{ books: Book[]; total: number }>('/books', {
-            params: { query, category, author, isbn13, page, limit },
+            params: { query, category, author, isbn13, page, limit, sortField, sortOrder },
         }),
     getBook: (id: string) => api.get<Book>(`/books/${id}`),
     getBookCopies: (bookId: string) => api.get<BookCopy[]>(`/books/${bookId}/copies`),

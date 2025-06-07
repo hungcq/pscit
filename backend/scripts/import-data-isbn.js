@@ -108,7 +108,7 @@ async function processBooks(filePath) {
             // Check if book already exists
             const existingBook = await checkBookExists(isbn);
             if (existingBook) {
-                console.log(`Book already exists: ${existingBook.title} (ISBN: ${isbn})`);
+                // console.log(`Book already exists: ${existingBook.title} (ISBN: ${isbn})`);
                 continue;
             }
 
@@ -126,6 +126,8 @@ async function processBooks(filePath) {
             const industryIdentifiers = volumeInfo.industryIdentifiers || [];
             let isbn10 = industryIdentifiers.find(id => id.type === 'ISBN_10')?.identifier || '';
             let isbn13 = industryIdentifiers.find(id => id.type === 'ISBN_13')?.identifier || '';
+
+            console.log('isbn10', isbn10)
 
             const authorIds = [];
             if (volumeInfo.authors) {
@@ -175,4 +177,4 @@ async function processBooks(filePath) {
 }
 
 // Example usage:
-processBooks('/Users/hungcq/Desktop/retry.txt');
+processBooks('/Users/hungcq/drive/isbns.txt');

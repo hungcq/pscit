@@ -141,8 +141,7 @@ const BookDetails: React.FC = () => {
             setSelectedPickupTimeslots([]);
             setSelectedReturnTimeslots([]);
         } catch (error: any) {
-            const errorMessage = error.response?.data?.error || 'Failed to submit reservation request';
-            message.error(errorMessage);
+            message.error(error.message || 'Failed to submit reservation request');
         } finally {
             setSubmitting(false);
         }
@@ -182,9 +181,8 @@ const BookDetails: React.FC = () => {
             // Reload book data
             const response = await booksAPI.getBook(book.id);
             setBook(response.data);
-        } catch (error) {
-            console.error('Failed to update book:', error);
-            message.error('Failed to update book');
+        } catch (error: any) {
+            message.error(error.message || 'Failed to update book');
         } finally {
             setSubmitting(false);
         }

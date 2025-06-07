@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Button, Card, Form, Input, Modal, Space, Table} from 'antd';
+import {Button, Card, Form, Input, Modal, Space, Table, message} from 'antd';
 import {DeleteOutlined, EditOutlined, PlusOutlined} from '@ant-design/icons';
 import {categoriesAPI} from '../../api';
 import {Category} from '../../types';
@@ -39,10 +39,11 @@ const CategoriesTab: React.FC<CategoriesTabProps> = ({
     const handleDeleteCategory = async (id: string) => {
         try {
             await categoriesAPI.deleteCategory(id);
+            message.success('Category deleted successfully');
             onDataReload?.();
             loadData();
-        } catch (error) {
-            console.error('Failed to delete category:', error);
+        } catch (error: any) {
+            message.error(error.message || 'Failed to delete category');
         }
     };
 
@@ -66,14 +67,16 @@ const CategoriesTab: React.FC<CategoriesTabProps> = ({
         try {
             if (editingCategory) {
                 await categoriesAPI.updateCategory(editingCategory.id, values);
+                message.success('Category updated successfully');
             } else {
                 await categoriesAPI.createCategory(values);
+                message.success('Category created successfully');
             }
             handleCategoryCancel();
             onDataReload?.();
             loadData();
-        } catch (error) {
-            console.error('Failed to save category:', error);
+        } catch (error: any) {
+            message.error(error.message || 'Failed to save category');
         }
     };
 

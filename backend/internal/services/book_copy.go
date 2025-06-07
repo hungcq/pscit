@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+
 	"github.com/hungcq/pscit/backend/internal/models"
 
 	"github.com/google/uuid"
@@ -54,14 +55,23 @@ func (s *BookCopyService) UpdateBookCopy(id string, copy *models.BookCopy) error
 
 // DeleteBookCopy deletes a book copy
 func (s *BookCopyService) DeleteBookCopy(id string) error {
-	result := s.db.Unscoped().Delete(&models.BookCopy{}, "id = ?", id)
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return errors.New("book copy not found")
-	}
-	return nil
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// First, delete any returned reservations for this book copy
+		if err := tx.Unscoped().Where("book_copy_id = ? AND status = ?", id, models.ReservationStatusReturned).
+			Delete(&models.Reservation{}).Error; err != nil {
+			return err
+		}
+
+		// Then delete the book copy
+		result := tx.Unscoped().Delete(&models.BookCopy{}, "id = ?", id)
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return errors.New("book copy not found")
+		}
+		return nil
+	})
 }
 
 // BulkCreateBookCopies creates multiple copies of a book

@@ -27,39 +27,47 @@ const App: React.FC = () => {
                     <Router>
                         <Layout style={{minHeight: '100vh'}}>
                             <Navbar/>
-                            <Content style={{padding: '24px'}}>
-                                <Routes>
-                                    <Route path="/login" element={<Login/>}/>
-                                    <Route path="/about" element={<About/>}/>
-                                    <Route path="/" element={<Home/>}/>
-                                    <Route path="/books/:id" element={<BookDetails/>}/>
-                                    <Route
-                                        path="/reservations"
-                                        element={
-                                            <PrivateRoute>
-                                                <UserReservations/>
-                                            </PrivateRoute>
-                                        }
-                                    />
-                                    <Route
-                                        path="/profile"
-                                        element={
-                                            <PrivateRoute>
-                                                <UserProfile />
-                                            </PrivateRoute>
-                                        }
-                                    />
-                                    <Route
-                                        path="/admin"
-                                        element={
-                                            <AdminRoute>
-                                                <AdminDashboard />
-                                            </AdminRoute>
-                                        }
-                                    />
-                                </Routes>
-                            </Content>
-                            <Footer />
+                            <Layout style={{marginLeft: 200}}>
+                                <Content style={{
+                                    margin: '24px 16px',
+                                    padding: 24,
+                                    minHeight: 280,
+                                    background: '#141414',
+                                    borderRadius: '8px'
+                                }}>
+                                    <Routes>
+                                        <Route path="/login" element={<Login/>}/>
+                                        <Route path="/about" element={<About/>}/>
+                                        <Route path="/" element={<Home/>}/>
+                                        <Route path="/books/:id" element={<BookDetails/>}/>
+                                        <Route
+                                            path="/reservations"
+                                            element={
+                                                <PrivateRoute>
+                                                    <UserReservations/>
+                                                </PrivateRoute>
+                                            }
+                                        />
+                                        <Route
+                                            path="/profile"
+                                            element={
+                                                <PrivateRoute>
+                                                    <UserProfile/>
+                                                </PrivateRoute>
+                                            }
+                                        />
+                                        <Route
+                                            path="/admin"
+                                            element={
+                                                <AdminRoute>
+                                                    <AdminDashboard/>
+                                                </AdminRoute>
+                                            }
+                                        />
+                                    </Routes>
+                                </Content>
+                                <Footer/>
+                            </Layout>
                         </Layout>
                     </Router>
                 </AuthProvider>

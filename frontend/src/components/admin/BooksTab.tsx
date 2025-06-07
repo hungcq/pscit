@@ -6,6 +6,7 @@ import {Author, Book, BookCopy, Category} from '../../types';
 import {getBookImageUrl} from '../../utils';
 import {useLocation, useNavigate} from 'react-router-dom';
 import BookForm, {BookFormData} from './BookForm';
+import dayjs from 'dayjs';
 
 const BooksTab: React.FC = () => {
     const location = useLocation();
@@ -37,10 +38,12 @@ const BooksTab: React.FC = () => {
     const [editingCopy, setEditingCopy] = useState<BookCopy | null>(null);
     const [isEditCopyModalVisible, setIsEditCopyModalVisible] = useState(false);
     const [isbn13, setIsbn13] = useState<string>('');
+    const [sortField, setSortField] = useState<string>('');
+    const [sortOrder, setSortOrder] = useState<string>('');
 
     useEffect(() => {
         loadData();
-    }, [pagination.current, pagination.pageSize, searchQuery, selectedAuthor, selectedCategory, isbn13]);
+    }, [pagination.current, pagination.pageSize, searchQuery, selectedAuthor, selectedCategory, isbn13, sortField, sortOrder]);
 
     useEffect(() => {
         if (editBookId) {
@@ -73,7 +76,9 @@ const BooksTab: React.FC = () => {
                     selectedAuthor,
                     isbn13,
                     pagination.current,
-                    pagination.pageSize
+                    pagination.pageSize,
+                    sortField,
+                    sortOrder
                 ),
                 authorsAPI.getAuthors(),
                 categoriesAPI.getCategories(),
@@ -92,8 +97,15 @@ const BooksTab: React.FC = () => {
         }
     };
 
-    const handleTableChange = (newPagination: any) => {
+    const handleTableChange = (newPagination: any, filters: any, sorter: any) => {
         setPagination(newPagination);
+        if (sorter.field) {
+            setSortField(sorter.field);
+            setSortOrder(sorter.order);
+        } else {
+            setSortField('');
+            setSortOrder('');
+        }
     };
 
     const handleSearch = (value: string) => {
@@ -124,9 +136,10 @@ const BooksTab: React.FC = () => {
     const handleDeleteBook = async (id: string) => {
         try {
             await booksAPI.deleteBook(id);
+            message.success('Book deleted successfully');
             loadData();
-        } catch (error) {
-            console.error('Failed to delete book:', error);
+        } catch (error: any) {
+            message.error(error.message || 'Failed to delete book');
         }
     };
 
@@ -161,9 +174,8 @@ const BooksTab: React.FC = () => {
             }
             handleBookCancel();
             loadData();
-        } catch (error) {
-            console.error('Failed to save book:', error);
-            message.error('Failed to save book');
+        } catch (error: any) {
+            message.error(error.message || 'Failed to save book');
         }
     };
 
@@ -226,9 +238,8 @@ const BooksTab: React.FC = () => {
             message.success('Book copy updated successfully');
             handleEditCopyCancel();
             loadBookCopies(editingCopy.book_id);
-        } catch (error) {
-            console.error('Failed to update book copy:', error);
-            message.error('Failed to update book copy');
+        } catch (error: any) {
+            message.error(error.message || 'Failed to update book copy');
         }
     };
 
@@ -240,18 +251,18 @@ const BooksTab: React.FC = () => {
             message.success('Book copy created successfully');
             handleCopyCancel();
             loadBookCopies(selectedBookForCopy.id);
-        } catch (error) {
-            console.error('Failed to create book copy:', error);
-            message.error('Failed to create book copy');
+        } catch (error: any) {
+            message.error(error.message || 'Failed to create book copy');
         }
     };
 
     const handleDeleteCopy = async (bookId: string, copyId: string) => {
         try {
             await bookCopiesAPI.deleteBookCopy(copyId);
+            message.success('Book copy deleted successfully');
             loadBookCopies(bookId);
-        } catch (error) {
-            console.error('Failed to delete book copy:', error);
+        } catch (error: any) {
+            message.error(error.message || 'Failed to delete book copy');
         }
     };
 
@@ -353,23 +364,32 @@ const BooksTab: React.FC = () => {
             title: '',
             key: 'image',
             render: (record: Book) => (
-                <img 
-                    src={imageErrors[record.id] ? record.main_image : getBookImageUrl(record.id)}
-                    alt={record.title}
-                    onError={() => handleImageError(record.id)}
-                    style={{ 
-                        width: '100px',
-                        objectFit: 'contain',
-                    }}
-                />
+                <div 
+                    onClick={() => handleShowCopies(record.id)}
+                    style={{ cursor: 'pointer' }}
+                >
+                    <img 
+                        src={imageErrors[record.id] ? record.main_image : getBookImageUrl(record.id)}
+                        alt={record.title}
+                        onError={() => handleImageError(record.id)}
+                        style={{ 
+                            width: '100px',
+                            objectFit: 'contain',
+                        }}
+                    />
+                </div>
             ),
         },
         {
             title: 'Title',
             dataIndex: 'title',
             key: 'title',
-            render: (text: string) => (
-                <span style={{ fontWeight: 'bold' }}>
+            sorter: true,
+            render: (text: string, record: Book) => (
+                <span 
+                    style={{ fontWeight: 'bold', cursor: 'pointer' }}
+                    onClick={() => handleShowCopies(record.id)}
+                >
                     {text || 'N/A'}
                 </span>
             ),
@@ -384,6 +404,7 @@ const BooksTab: React.FC = () => {
             title: 'Authors',
             dataIndex: 'authors',
             key: 'authors',
+            sorter: true,
             render: (authors: Author[]) => authors.map(a => a.name).join(', '),
         },
         {
@@ -426,10 +447,22 @@ const BooksTab: React.FC = () => {
             ),
         },
         {
+            title: 'Created At',
+            dataIndex: 'created_at',
+            key: 'created_at',
+            sorter: true,
+            render: (date: string) => dayjs(date).format('DD/MM/YYYY hh:mm A'),
+        },
+        {
             title: 'Actions',
             key: 'actions',
             render: (_: any, record: Book) => (
                 <Space direction="vertical" size="small">
+                    <Button
+                        onClick={() => handleShowCopies(record.id)}
+                    >
+                        {expandedRowKeys.includes(record.id) ? 'Hide Copies' : 'Show Copies'}
+                    </Button>
                     <Button
                         icon={<EditOutlined/>}
                         onClick={() => showBookModal(record)}
@@ -508,10 +541,6 @@ const BooksTab: React.FC = () => {
                 loading={loading}
                 pagination={pagination}
                 onChange={handleTableChange}
-                onRow={(row) => ({
-                    style: { cursor: 'pointer' },
-                    onClick: () =>  handleShowCopies(row.id),
-                })}
                 expandable={{
                     expandedRowRender,
                     expandedRowKeys,

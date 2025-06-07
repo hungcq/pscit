@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Button, Card, Form, Input, Modal, Space, Table} from 'antd';
+import {Button, Card, Form, Input, Modal, Space, Table, message} from 'antd';
 import {DeleteOutlined, EditOutlined, PlusOutlined} from '@ant-design/icons';
 import {authorsAPI} from '../../api';
 import {Author} from '../../types';
@@ -39,10 +39,11 @@ const AuthorsTab: React.FC<AuthorsTabProps> = ({
     const handleDeleteAuthor = async (id: string) => {
         try {
             await authorsAPI.deleteAuthor(id);
+            message.success('Author deleted successfully');
             onDataReload?.();
             loadData();
-        } catch (error) {
-            console.error('Failed to delete author:', error);
+        } catch (error: any) {
+            message.error(error.message || 'Failed to delete author');
         }
     };
 
@@ -66,14 +67,16 @@ const AuthorsTab: React.FC<AuthorsTabProps> = ({
         try {
             if (editingAuthor) {
                 await authorsAPI.updateAuthor(editingAuthor.id, values);
+                message.success('Author updated successfully');
             } else {
                 await authorsAPI.createAuthor(values);
+                message.success('Author created successfully');
             }
             handleAuthorCancel();
             onDataReload?.();
             loadData();
-        } catch (error) {
-            console.error('Failed to save author:', error);
+        } catch (error: any) {
+            message.error(error.message || 'Failed to save author');
         }
     };
 

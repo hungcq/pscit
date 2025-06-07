@@ -91,8 +91,8 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
             await reservationsAPI.updateReservation(id, status);
             message.success(`Reservation ${status} successfully`);
             loadData();
-        } catch (error) {
-            message.error('Failed to update reservation status');
+        } catch (error: any) {
+            message.error(error.message || 'Failed to update reservation status');
         }
     };
 
@@ -110,8 +110,8 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
             setSelectedPickupTimeslot('');
             setSelectedReturnTimeslot('');
             loadData();
-        } catch (error) {
-            message.error('Failed to approve reservation');
+        } catch (error: any) {
+            message.error(error.message || 'Failed to approve reservation');
         }
     };
 
@@ -120,8 +120,8 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
             await reservationsAPI.updateReservation(id, 'returned');
             message.success('Book returned successfully');
             loadData();
-        } catch (error) {
-            message.error('Failed to mark book as returned');
+        } catch (error: any) {
+            message.error(error.message || 'Failed to mark book as returned');
         }
     };
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import type {MenuProps} from 'antd';
-import {Layout, Menu} from 'antd';
+import {Layout, Menu, Typography} from 'antd';
 import {useNavigate} from 'react-router-dom';
 import {useAuth} from '../contexts/AuthContext';
 import {
@@ -13,7 +13,8 @@ import {
     UserOutlined
 } from '@ant-design/icons';
 
-const {Header} = Layout;
+const {Sider} = Layout;
+const {Title, Text} = Typography;
 
 const Navbar: React.FC = () => {
     const navigate = useNavigate();
@@ -24,7 +25,7 @@ const Navbar: React.FC = () => {
         navigate('/login');
     };
 
-    const leftMenuItems: MenuProps['items'] = [
+    const menuItems: MenuProps['items'] = [
         {
             key: '/',
             icon: <HomeOutlined/>,
@@ -53,9 +54,9 @@ const Navbar: React.FC = () => {
             label: 'About',
             onClick: () => navigate('/about')
         },
-    ];
-
-    const rightMenuItems: MenuProps['items'] = [
+        {
+            type: 'divider'
+        },
         ...(user ? [
             {
                 key: '/profile',
@@ -80,23 +81,27 @@ const Navbar: React.FC = () => {
     ];
 
     return (
-        <Header style={{ display: 'flex', alignItems: 'center', padding: '0 24px' }}>
+        <Sider
+            theme="dark"
+            width={200}
+            style={{
+                overflow: 'auto',
+                height: '100vh',
+                position: 'fixed',
+                left: 0,
+                top: 0,
+                bottom: 0,
+            }}
+        >
+            <Title level={3} style={{ margin: '20px' }}>PSciT Library</Title>
             <Menu
                 theme="dark"
-                mode="horizontal"
+                mode="inline"
                 selectedKeys={[window.location.pathname]}
-                items={leftMenuItems}
-                style={{ flex: 1 }}
+                items={menuItems}
+                style={{ borderRight: 0 }}
             />
-            <Menu
-                theme="dark"
-                mode="horizontal"
-                selectedKeys={[window.location.pathname]}
-                items={rightMenuItems}
-                style={{ minWidth: 'auto' }}
-                overflowedIndicator={<UserOutlined />}
-            />
-        </Header>
+        </Sider>
     );
 };
 
