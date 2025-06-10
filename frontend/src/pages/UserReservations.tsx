@@ -3,6 +3,7 @@ import {App, Card, Grid, Space, Spin, Table, Tag, Typography} from 'antd';
 import {reservationsAPI} from '../api';
 import {BookCopy, Reservation} from '../types';
 import dayjs from 'dayjs';
+import {ColumnsType} from "antd/es/table";
 
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
@@ -72,7 +73,7 @@ const UserReservations: React.FC = () => {
     return `${time.toLocaleDateString('en-GB')} ${time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`
   };
 
-  const columns = [
+  const columns: ColumnsType<Reservation> = [
     {
       title: 'Book',
       dataIndex: ['book_copy', 'book', 'title'],

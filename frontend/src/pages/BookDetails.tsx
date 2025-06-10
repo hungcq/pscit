@@ -291,7 +291,7 @@ const BookDetails: React.FC = () => {
                                 {availableCopies.length === 0 ? (
                                     <Text type="secondary">No copies available for reservation</Text>
                                 ) : (
-                                    <Table
+                                    <Table<BookCopy>
                                         dataSource={availableCopies}
                                         columns={[
                                             {
@@ -386,8 +386,15 @@ const BookDetails: React.FC = () => {
                             value={selectedDates?.[1]}
                             style={{ width: '100%' }}
                             disabledDate={(current) => {
-                                return current && (current < dayjs().startOf('day') || 
-                                    (selectedDates?.[0] && current < selectedDates[0]));
+                                if (!current) return false;
+
+                                const today = dayjs().startOf('day');
+                                const isBeforeToday = current.isBefore(today);
+
+                                const hasStartDate = !!selectedDates?.[0];
+                                const isBeforeStartDate = hasStartDate && current.isBefore(selectedDates[0]);
+
+                                return isBeforeToday || isBeforeStartDate;
                             }}
                             format="DD-MM-YYYY"
                         />

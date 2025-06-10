@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: npm-build-frontend
+        name: Run npm build if /frontend changed
+        entry: .githooks/build-check.sh
+        language: script
+        always_run: true  # Ensures it runs even if no files match `types`
+        pass_filenames: false  # Prevents pre-commit from passing file list
