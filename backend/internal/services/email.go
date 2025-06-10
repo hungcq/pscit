@@ -39,8 +39,10 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 	pickupTimeslots := make([]string, len(reservation.SuggestedPickupTimeslots))
 	loc, _ := time.LoadLocation("Asia/Bangkok")
 	for i, slot := range reservation.SuggestedPickupTimeslots {
-		t, _ := time.Parse(time.RFC3339, slot)
-		t = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.UTC)
+		t, err := time.ParseInLocation(time.RFC3339, slot, time.UTC)
+		if err != nil {
+			return err
+		}
 		t = t.In(loc)
 		endTime := t.Add(30 * time.Minute)
 		_, offset := t.Zone()
@@ -60,8 +62,10 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 
 	returnTimeslots := make([]string, len(reservation.SuggestedReturnTimeslots))
 	for i, slot := range reservation.SuggestedReturnTimeslots {
-		t, _ := time.Parse(time.RFC3339, slot)
-		t = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.UTC)
+		t, err := time.ParseInLocation(time.RFC3339, slot, time.UTC)
+		if err != nil {
+			return err
+		}
 		t = t.In(loc)
 		endTime := t.Add(30 * time.Minute)
 		_, offset := t.Zone()
