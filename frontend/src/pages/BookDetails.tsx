@@ -314,6 +314,7 @@ const BookDetails: React.FC = () => {
                                                 title: 'Notes',
                                                 dataIndex: 'notes',
                                                 key: 'notes',
+                                                responsive: ['md'],
                                             },
                                             {
                                                 title: 'Action',
@@ -351,16 +352,46 @@ const BookDetails: React.FC = () => {
                 okText="Submit Request"
                 cancelText="Cancel"
                 confirmLoading={submitting}
+                width="95%"
+                style={{ maxWidth: '500px' }}
             >
                 <Form layout="vertical">
                     <Text>From - To:</Text>
-                    <DatePicker.RangePicker
-                        onChange={(dates) => setSelectedDates(dates as [Dayjs, Dayjs])}
-                        value={selectedDates}
-                        style={{width: '100%'}}
-                        disabledDate={(current) => current && current < dayjs().startOf('day')}
-                        format="DD-MM-YYYY"
-                    />
+                    <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        gap: '8px'
+                    }}>
+                        <DatePicker
+                            placeholder="Start Date"
+                            onChange={(date) => {
+                                if (date && selectedDates?.[1]) {
+                                    setSelectedDates([date, selectedDates[1]]);
+                                } else if (date) {
+                                    setSelectedDates([date, date]);
+                                }
+                            }}
+                            value={selectedDates?.[0]}
+                            style={{ width: '100%' }}
+                            disabledDate={(current) => current && current < dayjs().startOf('day')}
+                            format="DD-MM-YYYY"
+                        />
+                        <DatePicker
+                            placeholder="End Date"
+                            onChange={(date) => {
+                                if (date && selectedDates?.[0]) {
+                                    setSelectedDates([selectedDates[0], date]);
+                                }
+                            }}
+                            value={selectedDates?.[1]}
+                            style={{ width: '100%' }}
+                            disabledDate={(current) => {
+                                return current && (current < dayjs().startOf('day') || 
+                                    (selectedDates?.[0] && current < selectedDates[0]));
+                            }}
+                            format="DD-MM-YYYY"
+                        />
+                    </div>
 
                     {selectedDates &&
                         <Form.Item
@@ -376,26 +407,28 @@ const BookDetails: React.FC = () => {
                         >
                             <Space direction="vertical" style={{width: '100%'}}>
                                 {selectedPickupTimeslots.map((slot, index) => (
-                                    <Space key={index}>
-                                        <TimePicker
-                                            value={slot}
-                                            onChange={(time) => {
-                                                const newTimeslots = [...selectedPickupTimeslots];
-                                                newTimeslots[index] = time || slot;
-                                                setSelectedPickupTimeslots(newTimeslots);
-                                            }}
-                                            format="HH:mm"
-                                            minuteStep={30}
-                                            needConfirm={false}
-                                            showNow={false}
-                                        />
-                                         - <TimePicker
-                                            value={slot.add(30, 'minute')}
-                                            disabled
-                                            format="HH:mm"
-                                            needConfirm={false}
-                                            showNow={false}
-                                        />
+                                    <Space key={index} style={{ width: '100%', justifyContent: 'space-between' }}>
+                                        <Space>
+                                            <TimePicker
+                                                value={slot}
+                                                onChange={(time) => {
+                                                    const newTimeslots = [...selectedPickupTimeslots];
+                                                    newTimeslots[index] = time || slot;
+                                                    setSelectedPickupTimeslots(newTimeslots);
+                                                }}
+                                                format="HH:mm"
+                                                minuteStep={30}
+                                                needConfirm={false}
+                                                showNow={false}
+                                            />
+                                             - <TimePicker
+                                                value={slot.add(30, 'minute')}
+                                                disabled
+                                                format="HH:mm"
+                                                needConfirm={false}
+                                                showNow={false}
+                                            />
+                                        </Space>
                                         <Button
                                             type="text"
                                             danger
@@ -409,6 +442,7 @@ const BookDetails: React.FC = () => {
                                     onClick={handleAddTimeslot}
                                     icon={<PlusOutlined/>}
                                     disabled={!selectedDates || selectedPickupTimeslots.length >= MAX_SUGGESTED_TIMESLOTS}
+                                    style={{ width: '100%' }}
                                 >
                                     Add Pickup Time
                                 </Button>
@@ -429,26 +463,28 @@ const BookDetails: React.FC = () => {
                         >
                             <Space direction="vertical" style={{width: '100%'}}>
                                 {selectedReturnTimeslots.map((slot, index) => (
-                                    <Space key={index}>
-                                        <TimePicker
-                                            value={slot}
-                                            onChange={(time) => {
-                                                const newTimeslots = [...selectedReturnTimeslots];
-                                                newTimeslots[index] = time || slot;
-                                                setSelectedReturnTimeslots(newTimeslots);
-                                            }}
-                                            format="HH:mm"
-                                            minuteStep={30}
-                                            needConfirm={false}
-                                            showNow={false}
-                                        />
-                                         - <TimePicker
-                                            value={slot.add(30, 'minute')}
-                                            disabled
-                                            format="HH:mm"
-                                            needConfirm={false}
-                                            showNow={false}
-                                        />
+                                    <Space key={index} style={{ width: '100%', justifyContent: 'space-between' }}>
+                                        <Space>
+                                            <TimePicker
+                                                value={slot}
+                                                onChange={(time) => {
+                                                    const newTimeslots = [...selectedReturnTimeslots];
+                                                    newTimeslots[index] = time || slot;
+                                                    setSelectedReturnTimeslots(newTimeslots);
+                                                }}
+                                                format="HH:mm"
+                                                minuteStep={30}
+                                                needConfirm={false}
+                                                showNow={false}
+                                            />
+                                             - <TimePicker
+                                                value={slot.add(30, 'minute')}
+                                                disabled
+                                                format="HH:mm"
+                                                needConfirm={false}
+                                                showNow={false}
+                                            />
+                                        </Space>
                                         <Button
                                             type="text"
                                             danger
@@ -462,6 +498,7 @@ const BookDetails: React.FC = () => {
                                     onClick={handleAddReturnTimeslot}
                                     icon={<PlusOutlined/>}
                                     disabled={!selectedDates || selectedReturnTimeslots.length >= MAX_SUGGESTED_TIMESLOTS}
+                                    style={{ width: '100%' }}
                                 >
                                     Add Return Time
                                 </Button>

@@ -44,7 +44,7 @@ export interface BookCopy {
   condition: 'new' | 'like_new' | 'good' | 'fair' | 'poor';
   status: 'available' | 'borrowed' | 'reserved';
   notes?: string;
-  book?: Book;
+  book: Book;
 }
 
 export interface Reservation {
@@ -53,12 +53,13 @@ export interface Reservation {
   book_copy_id: string;
   start_date: string;
   end_date: string;
-  pickup_slot: string;
+  pickup_time: string;
+  return_time: string;
   status: 'pending' | 'approved' | 'rejected' | 'returned';
   created_at: string;
   updated_at: string;
   user?: User;
-  book_copy?: BookCopy;
+  book_copy: BookCopy;
   suggested_pickup_timeslots?: string[];
   suggested_return_timeslots?: string[];
 }
