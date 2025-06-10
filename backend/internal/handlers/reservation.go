@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -88,14 +89,11 @@ func (h *ReservationHandler) CreateReservation(c *gin.Context) {
 	}
 
 	// Send email notifications
-	if err := h.emailService.SendReservationNotification(reservation); err != nil {
-		// Log error but don't fail the request
-		c.JSON(http.StatusOK, gin.H{
-			"message":     "Reservation created but email notification failed",
-			"reservation": reservation,
-		})
-		return
-	}
+	go func() {
+		if err = h.emailService.SendReservationNotification(reservation); err != nil {
+			log.Printf("Send email notification error: %v", err)
+		}
+	}()
 
 	c.JSON(http.StatusCreated, reservation)
 }
