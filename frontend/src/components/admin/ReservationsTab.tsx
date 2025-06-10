@@ -193,19 +193,14 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
                 if (record.status === 'approved' && date) {
                     const pickupTime = new Date(date);
                     const endTime = new Date(pickupTime.getTime() + 30 * 60000);
-                    return (
-                        <Tag color="green">
-                            {`${pickupTime.toLocaleDateString('en-GB')} ${pickupTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`}
-                        </Tag>
+                    return (`${pickupTime.toLocaleDateString('en-GB')} ${pickupTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`
                     );
                 }
                 return (
                     <Space direction="vertical">
-                        {record.suggested_pickup_timeslots?.map((slot, index) => (
-                            <Tag key={index} color="blue">
-                                {`${dayjs(slot).format('DD/MM/YYYY hh:mm A')} - ${dayjs(new Date(slot).getTime() + 30 * 60000).format('hh:mm A')}`}
-                            </Tag>
-                        ))}
+                        {record.suggested_pickup_timeslots?.map((slot, index) =>
+                            `${dayjs(slot).format('DD/MM/YYYY hh:mm A')} - ${dayjs(new Date(slot).getTime() + 30 * 60000).format('hh:mm A')}`
+                        )}
                     </Space>
                 );
             },
@@ -219,18 +214,13 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
                 if (record.status === 'approved' && date) {
                     const returnTime = new Date(date);
                     const endTime = new Date(returnTime.getTime() + 30 * 60000);
-                    return (
-                        <Tag color="green">
-                            {`${returnTime.toLocaleDateString('en-GB')} ${returnTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`}
-                        </Tag>
+                    return (`${returnTime.toLocaleDateString('en-GB')} ${returnTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`
                     );
                 }
                 return (
                     <Space direction="vertical">
                         {record.suggested_return_timeslots?.map((slot, index) => (
-                            <Tag key={index} color="blue">
-                                {`${dayjs(slot).format('DD/MM/YYYY hh:mm A')} - ${dayjs(new Date(slot).getTime() + 30 * 60000).format('hh:mm A')}`}
-                            </Tag>
+                                `${dayjs(slot).format('DD/MM/YYYY hh:mm A')} - ${dayjs(new Date(slot).getTime() + 30 * 60000).format('hh:mm A')}`
                         ))}
                     </Space>
                 );
