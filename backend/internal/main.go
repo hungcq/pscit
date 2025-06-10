@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	_ "time/tzdata"
 
 	"github.com/hungcq/pscit/backend/internal/config"
 	"github.com/hungcq/pscit/backend/internal/routes"
