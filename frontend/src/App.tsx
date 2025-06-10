@@ -27,7 +27,7 @@ const App: React.FC = () => {
                     <Router>
                         <Layout style={{minHeight: '100vh'}}>
                             <Navbar/>
-                            <Layout style={{marginLeft: 200}}>
+                            <Layout className="main-content">
                                 <Content style={{
                                     margin: '24px 16px',
                                     padding: 24,
@@ -72,6 +72,19 @@ const App: React.FC = () => {
                     </Router>
                 </AuthProvider>
             </AntApp>
+            <style>
+                {`
+                    .main-content {
+                        margin-left: 200px;
+                    }
+                    @media (max-width: 768px) {
+                        .main-content {
+                            margin-left: 0 !important;
+                            padding-top: 50px !important;
+                        }
+                    }
+                `}
+            </style>
         </ConfigProvider>
     );
 };

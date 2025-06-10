@@ -101,7 +101,7 @@ const Home: React.FC = () => {
   }
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%', minHeight: 'calc(100vh - 120px)', position: 'relative' }}>
+    <Space direction="vertical" size="large" style={{ width: '100%', minHeight: '85vh', position: 'relative' }}>
       <Row gutter={[16, 16]} align="middle">
         <Col xs={24} md={8}>
           <Space>
@@ -220,14 +220,7 @@ const Home: React.FC = () => {
             ))}
           </Row>
 
-          <div style={{ 
-            position: 'absolute', 
-            bottom: 0, 
-            left: 0, 
-            right: 0,
-            background: 'inherit'
-          }}>
-            <Row justify="center">
+          <Row justify="center">
               <Pagination
                 current={pagination.current}
                 total={pagination.total}
@@ -236,7 +229,6 @@ const Home: React.FC = () => {
                 showSizeChanger={false}
               />
             </Row>
-          </div>
         </>
       )}
     </Space>
