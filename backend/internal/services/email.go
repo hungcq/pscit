@@ -37,9 +37,10 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 
 	// Format suggested timeslots with timezone
 	pickupTimeslots := make([]string, len(reservation.SuggestedPickupTimeslots))
+	loc, _ := time.LoadLocation("Asia/Bangkok")
 	for i, slot := range reservation.SuggestedPickupTimeslots {
 		t, _ := time.Parse(time.RFC3339, slot)
-		loc, _ := time.LoadLocation("Asia/Bangkok") // GMT+7
+		t = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.UTC)
 		t = t.In(loc)
 		endTime := t.Add(30 * time.Minute)
 		_, offset := t.Zone()
@@ -60,7 +61,7 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 	returnTimeslots := make([]string, len(reservation.SuggestedReturnTimeslots))
 	for i, slot := range reservation.SuggestedReturnTimeslots {
 		t, _ := time.Parse(time.RFC3339, slot)
-		loc, _ := time.LoadLocation("Asia/Bangkok") // GMT+7
+		t = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.UTC)
 		t = t.In(loc)
 		endTime := t.Add(30 * time.Minute)
 		_, offset := t.Zone()
@@ -285,9 +286,9 @@ func (s *EmailService) SendReservationStatusUpdate(reservation *models.Reservati
 
 	// Format pickup and return times with timezone
 	var pickupTimeStr, returnTimeStr string
+	loc, _ := time.LoadLocation("Asia/Bangkok") // GMT+7
 	if reservation.PickupTime != nil {
 		t := *reservation.PickupTime
-		loc, _ := time.LoadLocation("Asia/Bangkok") // GMT+7
 		t = t.In(loc)
 		endTime := t.Add(30 * time.Minute)
 		_, offset := t.Zone()
@@ -307,7 +308,6 @@ func (s *EmailService) SendReservationStatusUpdate(reservation *models.Reservati
 
 	if reservation.ReturnTime != nil {
 		t := *reservation.ReturnTime
-		loc, _ := time.LoadLocation("Asia/Bangkok") // GMT+7
 		t = t.In(loc)
 		endTime := t.Add(30 * time.Minute)
 		_, offset := t.Zone()
