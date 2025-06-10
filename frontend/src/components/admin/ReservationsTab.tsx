@@ -188,7 +188,6 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
             title: 'Pickup Time',
             dataIndex: 'pickup_time',
             key: 'pickup_time',
-            width: 50,
             render: (date: string, record: Reservation) => {
                 if (record.status === 'approved' && date) {
                     const pickupTime = new Date(date);
@@ -209,7 +208,6 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
             title: 'Return Time',
             dataIndex: 'return_time',
             key: 'return_time',
-            width: 50,
             render: (date: string, record: Reservation) => {
                 if (record.status === 'approved' && date) {
                     const returnTime = new Date(date);
@@ -245,7 +243,6 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
             title: 'Created At',
             dataIndex: 'created_at',
             key: 'created_at',
-            width: 100,
             render: (date: string) => date ? new Date(date).toLocaleString('en-GB') : 'N/A',
         },
         {
