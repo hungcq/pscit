@@ -467,6 +467,10 @@ func getLocationDetails(status models.ReservationStatus) string {
 				No 57, 38 alley, 189 lane, Hoi Phu hamlet, Dong Hoi commune,
 				Dong Anh district, Hanoi, Vietnam.
 			</a></p>
+			<p>When you arrive, you can contact me via:</p>
+			<ul>
+				<li>WhatsApp/Mobile: <a href="tel:+84987134200">+84 987 134 200</a></li>
+			</ul>
 		</div>
 	`
 }
