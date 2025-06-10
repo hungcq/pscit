@@ -140,6 +140,7 @@ const BookDetails: React.FC = () => {
             setSelectedDates(null);
             setSelectedPickupTimeslots([]);
             setSelectedReturnTimeslots([]);
+            await loadCopies();
         } catch (error: any) {
             message.error(error.message || 'Failed to submit reservation request');
         } finally {
