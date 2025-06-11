@@ -6,7 +6,6 @@ import {Author, Book, BookCopy, Category} from '../../types';
 import {getBookImageUrl} from '../../utils';
 import {useLocation, useNavigate} from 'react-router-dom';
 import BookForm, {BookFormData} from './BookForm';
-import dayjs from 'dayjs';
 
 const BooksTab: React.FC = () => {
     const location = useLocation();
@@ -413,12 +412,12 @@ const BooksTab: React.FC = () => {
             key: 'categories',
             width: 300,
             render: (categories: Category[]) => {
-                if (categories.length <= 3) {
+                if (categories.length <= 2) {
                     return categories.map(c => c.name).join(', ');
                 }
-                const firstThree = categories.slice(0, 3).map(c => c.name).join(', ');
-                const remaining = categories.length - 3;
-                return `${firstThree}...`;
+                const firstItems = categories.slice(0, 2).map(c => c.name).join(', ');
+                const remaining = categories.length - 2;
+                return `${firstItems}...`;
             },
         },
         {
@@ -426,16 +425,16 @@ const BooksTab: React.FC = () => {
             dataIndex: 'isbn13',
             key: 'isbn13',
         },
-        {
-            title: 'Published Year',
-            dataIndex: 'published_year',
-            key: 'published_year',
-        },
-        {
-            title: 'Publisher',
-            dataIndex: 'publisher',
-            key: 'publisher',
-        },
+        // {
+        //     title: 'Published Year',
+        //     dataIndex: 'published_year',
+        //     key: 'published_year',
+        // },
+        // {
+        //     title: 'Publisher',
+        //     dataIndex: 'publisher',
+        //     key: 'publisher',
+        // },
         {
             title: 'Format',
             dataIndex: 'format',
@@ -446,13 +445,13 @@ const BooksTab: React.FC = () => {
                 </Tag>
             ),
         },
-        {
-            title: 'Created At',
-            dataIndex: 'created_at',
-            key: 'created_at',
-            sorter: true,
-            render: (date: string) => dayjs(date).format('DD/MM/YYYY hh:mm A'),
-        },
+        // {
+        //     title: 'Created At',
+        //     dataIndex: 'created_at',
+        //     key: 'created_at',
+        //     sorter: true,
+        //     render: (date: string) => dayjs(date).format('DD/MM/YYYY hh:mm A'),
+        // },
         {
             title: 'Actions',
             key: 'actions',
@@ -544,6 +543,7 @@ const BooksTab: React.FC = () => {
                 expandable={{
                     expandedRowRender,
                     expandedRowKeys,
+                    expandIcon: () => null,
                 }}
             />
 

@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Button, Card, Form, Input, Modal, Space, Table, message} from 'antd';
+import {Button, Card, Form, Input, message, Modal, Space, Table} from 'antd';
 import {DeleteOutlined, EditOutlined, PlusOutlined} from '@ant-design/icons';
 import {categoriesAPI} from '../../api';
 import {Category} from '../../types';
@@ -86,12 +86,12 @@ const CategoriesTab: React.FC<CategoriesTabProps> = ({
             dataIndex: 'name',
             key: 'name',
         },
-        {
-            title: 'Description',
-            dataIndex: 'description',
-            key: 'description',
-            ellipsis: true,
-        },
+        // {
+        //     title: 'Description',
+        //     dataIndex: 'description',
+        //     key: 'description',
+        //     ellipsis: true,
+        // },
         {
             title: 'Actions',
             key: 'actions',

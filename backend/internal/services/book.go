@@ -69,23 +69,26 @@ func (s *BookService) GetBooks(query, category, author, isbn10, isbn13 string, p
 		Where("id IN (?)", subQuery)
 
 	// Apply sorting
-	if sortField != "" {
-		order := "ASC"
-		if sortOrder == "descend" {
-			order = "DESC"
-		}
+	if sortField == "" {
+		sortField = "title"
+		sortOrder = "ascend"
+	}
 
-		switch sortField {
-		case "title":
-			dbQuery = dbQuery.Order("title " + order)
-		case "authors":
-			dbQuery = dbQuery.Joins("LEFT JOIN book_authors ON books.id = book_authors.book_id").
-				Joins("LEFT JOIN authors ON book_authors.author_id = authors.id").
-				Group("books.id").
-				Order("MIN(authors.name) " + order)
-		case "created_at":
-			dbQuery = dbQuery.Order("created_at " + order)
-		}
+	order := "ASC"
+	if sortOrder == "descend" {
+		order = "DESC"
+	}
+
+	switch sortField {
+	case "title":
+		dbQuery = dbQuery.Order("title " + order)
+	case "authors":
+		dbQuery = dbQuery.Joins("LEFT JOIN book_authors ON books.id = book_authors.book_id").
+			Joins("LEFT JOIN authors ON book_authors.author_id = authors.id").
+			Group("books.id").
+			Order("MIN(authors.name) " + order)
+	case "created_at":
+		dbQuery = dbQuery.Order("created_at " + order)
 	}
 
 	// Get total count

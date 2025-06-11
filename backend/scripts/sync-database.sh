@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Source environment variables
-source ../.env
+source /Users/hungcq/projects/pscit/backend/.env
 
 # Local database connection string
 LOCAL_DB="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"

@@ -58,11 +58,13 @@ const UserReservations: React.FC = () => {
   const formatTimeSlots = (slots: string[] | undefined) => {
     if (!slots || slots.length === 0) return null;
     return (
-      <Space direction="vertical" style={{ width: '100%' }}>
-        {slots.map((slot, index) => 
-          `${dayjs(slot).format('DD/MM/YYYY hh:mm A')} - ${dayjs(new Date(slot).getTime() + 30 * 60000).format('hh:mm A')}`
-        )}
-      </Space>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          {slots.map((slot, index) => (
+              <span key={index}>
+                • {dayjs(slot).format('DD/MM/YYYY hh:mm A')} - {dayjs(new Date(slot).getTime() + 30 * 60000).format('hh:mm A')}
+              </span>
+          ))}
+        </Space>
     );
   };
 
@@ -101,16 +103,6 @@ const UserReservations: React.FC = () => {
       ),
     },
     {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => (
-        <Tag color={getStatusColor(status)}>
-          {status?.toUpperCase() || 'UNKNOWN'}
-        </Tag>
-      ),
-    },
-    {
       title: 'Start Date',
       dataIndex: 'start_date',
       key: 'start_date',
@@ -145,12 +137,22 @@ const UserReservations: React.FC = () => {
       },
     },
     {
-      title: 'Created At',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      responsive: ['lg'],
-      render: (date: string) => date ? new Date(date).toLocaleString('en-GB') : 'N/A',
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => (
+          <Tag color={getStatusColor(status)}>
+            {status?.toUpperCase() || 'UNKNOWN'}
+          </Tag>
+      ),
     },
+    // {
+    //   title: 'Created At',
+    //   dataIndex: 'created_at',
+    //   key: 'created_at',
+    //   responsive: ['lg'],
+    //   render: (date: string) => date ? new Date(date).toLocaleString('en-GB') : 'N/A',
+    // },
   ];
 
   if (loading) {

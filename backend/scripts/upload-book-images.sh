@@ -13,35 +13,55 @@ CLOUDFRONT_DISTRIBUTION_ID="E1YQD9PMKB2G7W"
 TEMP_DIR="$WD/temp"
 mkdir -p "$TEMP_DIR"
 
+# Function to determine file extension from MIME type
+get_extension_from_mime() {
+    local mime=$1
+    case "$mime" in
+        image/jpeg) echo ".jpg" ;;
+        image/png) echo ".png" ;;
+        image/gif) echo ".gif" ;;
+        image/webp) echo ".webp" ;;
+        image/bmp) echo ".bmp" ;;
+        image/tiff) echo ".tiff" ;;
+        *) echo "" ;;
+    esac
+}
+
 # Function to download a single image
 download_image() {
     local book_id=$1
     local image_url=$2
-    
+
     if [ -z "$image_url" ]; then
         echo "No image URL for book $book_id, skipping..."
         return
     fi
 
-    # Download image
     local temp_file="$TEMP_DIR/$book_id"
     echo "Downloading image for book $book_id"
-    
-    # Download with basic user agent
     curl -s -L -A "Mozilla/5.0" -o "$temp_file" "$image_url"
 
-    # Check if download was successful and file is not empty
     if [ ! -s "$temp_file" ]; then
         echo "Failed to download image for book $book_id - file is empty"
         return
     fi
 
-    # Check if file is a valid image
-    if ! file "$temp_file" | grep -q "image"; then
+    local mime_type=$(file -b --mime-type "$temp_file")
+    if [[ ! "$mime_type" =~ ^image/ ]]; then
         echo "Failed to download image for book $book_id - file is not a valid image"
         rm "$temp_file"
         return
     fi
+
+    local extension=$(get_extension_from_mime "$mime_type")
+    if [ -z "$extension" ]; then
+        echo "Unknown image type for book $book_id - MIME: $mime_type"
+        return
+    fi
+
+    # Rename the file with the correct extension
+    local final_file="$TEMP_DIR/${book_id}${extension}"
+    mv "$temp_file" "$final_file"
 }
 
 # Query books from database
@@ -71,11 +91,18 @@ aws s3 rm "s3://$S3_BUCKET/book-images/" \
     --region "$AWS_REGION" \
     --recursive
 
-# Sync all images to S3
-echo "Syncing images to S3..."
-aws s3 sync "$TEMP_DIR" "s3://$S3_BUCKET/book-images/" \
-    --region "$AWS_REGION" \
-    --cache-control "max-age=1800,public"
+# Upload each image individually without extension in S3 key
+echo "Uploading images to S3 without extension..."
+for file in "$TEMP_DIR"/*; do
+    filename=$(basename "$file")
+    book_id="${filename%%.*}"  # strip extension
+    mime_type=$(file -b --mime-type "$file")
+
+    aws s3 cp "$file" "s3://$S3_BUCKET/book-images/$book_id" \
+        --region "$AWS_REGION" \
+        --cache-control "max-age=1800,public" \
+        --content-type "$mime_type"
+done
 
 echo "Invalidate cloudfront distribution"
 aws cloudfront create-invalidation \

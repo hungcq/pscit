@@ -198,7 +198,9 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
                 return (
                     <Space direction="vertical">
                         {record.suggested_pickup_timeslots?.map((slot, index) =>
-                            `${dayjs(slot).format('DD/MM/YYYY hh:mm A')} - ${dayjs(new Date(slot).getTime() + 30 * 60000).format('hh:mm A')}`
+                                <span key={index}>
+                                    • {dayjs(slot).format('DD/MM/YYYY hh:mm A')} - {dayjs(new Date(slot).getTime() + 30 * 60000).format('hh:mm A')}
+                                </span>
                         )}
                     </Space>
                 );
@@ -218,7 +220,9 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
                 return (
                     <Space direction="vertical">
                         {record.suggested_return_timeslots?.map((slot, index) => (
-                                `${dayjs(slot).format('DD/MM/YYYY hh:mm A')} - ${dayjs(new Date(slot).getTime() + 30 * 60000).format('hh:mm A')}`
+                            <span key={index}>
+                                • {dayjs(slot).format('DD/MM/YYYY hh:mm A')} - {dayjs(new Date(slot).getTime() + 30 * 60000).format('hh:mm A')}
+                            </span>
                         ))}
                     </Space>
                 );
@@ -239,12 +243,12 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
                 </Tag>
             ),
         },
-        {
-            title: 'Created At',
-            dataIndex: 'created_at',
-            key: 'created_at',
-            render: (date: string) => date ? new Date(date).toLocaleString('en-GB') : 'N/A',
-        },
+        // {
+        //     title: 'Created At',
+        //     dataIndex: 'created_at',
+        //     key: 'created_at',
+        //     render: (date: string) => date ? new Date(date).toLocaleString('en-GB') : 'N/A',
+        // },
         {
             title: 'Actions',
             key: 'actions',
