@@ -1,9 +1,10 @@
 const fs = require('fs');
 const axios = require('axios');
+require('dotenv').config({ path: '/Users/hungcq/projects/pscit/backend/.env' });
 
 const API_BASE = 'https://www.googleapis.com/books/v1/volumes';
 const BACKEND_BASE = 'http://localhost:8000/api';
-const AUTH_TOKEN = ''
+const AUTH_TOKEN = process.env.AUTH_TOKEN;
 
 function stripHtmlTags(input) {
     return input.replace(/<[^>]*>/g, '');
@@ -127,8 +128,6 @@ async function processBooks(filePath) {
             let isbn10 = industryIdentifiers.find(id => id.type === 'ISBN_10')?.identifier || '';
             let isbn13 = industryIdentifiers.find(id => id.type === 'ISBN_13')?.identifier || '';
 
-            console.log('isbn10', isbn10)
-
             const authorIds = [];
             if (volumeInfo.authors) {
                 for (const authorName of volumeInfo.authors) {
@@ -177,4 +176,4 @@ async function processBooks(filePath) {
 }
 
 // Example usage:
-processBooks('/Users/hungcq/drive/isbns.txt');
+processBooks('/Users/hungcq/drive/isbns-vn.txt');

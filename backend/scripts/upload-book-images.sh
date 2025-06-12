@@ -62,7 +62,7 @@ download_image() {
         mv "$temp_file" "$final_file"
     else
         echo "Converting image to JPEG for book $book_id"
-        if convert "$temp_file" "$final_file"; then
+        if magick "$temp_file" "$final_file"; then
             rm "$temp_file"
         else
             echo "Failed to convert image for book $book_id"

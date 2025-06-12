@@ -69,6 +69,7 @@ const BookForm: React.FC<BookFormProps> = ({
             onCancel={onCancel}
             footer={null}
             width={800}
+            maskClosable={false}
         >
             <Form
                 form={form}

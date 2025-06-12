@@ -19,16 +19,29 @@ const CategoriesTab: React.FC<CategoriesTabProps> = ({
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
     const [categoryForm] = Form.useForm();
     const [categorySearchQuery, setCategorySearchQuery] = useState('');
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 5,
+        total: 0,
+    });
 
     useEffect(() => {
         loadData();
     }, []);
+
+    const handleTableChange = (newPagination: any, filters: any, sorter: any) => {
+        setPagination(newPagination);
+    };
 
     const loadData = async () => {
         try {
             setLoading(true);
             const response = await categoriesAPI.getCategories();
             setCategories(response.data);
+            setPagination(prev => ({
+                ...prev,
+                total: response.data.length
+            }));
         } catch (error) {
             console.error('Failed to load categories:', error);
         } finally {
@@ -142,9 +155,8 @@ const CategoriesTab: React.FC<CategoriesTabProps> = ({
                 dataSource={filteredCategories}
                 rowKey="id"
                 loading={loading}
-                pagination={{
-                    pageSize: 5,
-                }}
+                pagination={pagination}
+                onChange={handleTableChange}
             />
 
             {/* Category Modal */}

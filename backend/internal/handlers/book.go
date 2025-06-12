@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -25,15 +26,18 @@ func NewBookHandler(bookService *services.BookService) *BookHandler {
 func (h *BookHandler) GetBooks(c *gin.Context) {
 	query := c.Query("query")
 	category := c.Query("category")
-	author := c.Query("author")
-	isbn10 := c.Query("isbn10")
-	isbn13 := c.Query("isbn13")
+	author, err := url.QueryUnescape(c.Query("author"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid author parameter"})
+		return
+	}
+	language := c.Query("language")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	sortField := c.Query("sortField")
 	sortOrder := c.Query("sortOrder")
 
-	books, total, err := h.bookService.GetBooks(query, category, author, isbn10, isbn13, page, limit, sortField, sortOrder)
+	books, total, err := h.bookService.GetBooks(query, category, author, language, page, limit, sortField, sortOrder)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

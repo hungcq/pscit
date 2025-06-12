@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios';
+import axios, {AxiosError} from 'axios';
 import {Author, Book, BookCopy, Category, Reservation, User} from './types';
 
 interface ErrorResponse {
@@ -53,9 +53,9 @@ export const authAPI = {
 
 // Books API
 export const booksAPI = {
-    getBooks: (query?: string, category?: string, author?: string, isbn13?: string, page = 1, limit = 12, sortField?: string, sortOrder?: string) =>
+    getBooks: (query?: string, category?: string, author?: string, language?: string, page = 1, limit = 12, sortField?: string, sortOrder?: string) =>
         api.get<{ books: Book[]; total: number }>('/books', {
-            params: { query, category, author, isbn13, page, limit, sortField, sortOrder },
+            params: { query, category, author, language, page, limit, sortField, sortOrder },
         }),
     getBook: (id: string) => api.get<Book>(`/books/${id}`),
     getBookCopies: (bookId: string) => api.get<BookCopy[]>(`/books/${bookId}/copies`),

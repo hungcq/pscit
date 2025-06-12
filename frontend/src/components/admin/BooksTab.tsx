@@ -24,6 +24,7 @@ const BooksTab: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedAuthor, setSelectedAuthor] = useState<string>('');
     const [selectedCategory, setSelectedCategory] = useState<string>('');
+    const [selectedLanguage, setSelectedLanguage] = useState<string>('');
     const [isBookModalVisible, setIsBookModalVisible] = useState(false);
     const [isCopyModalVisible, setIsCopyModalVisible] = useState(false);
     const [editingBook, setEditingBook] = useState<Book | null>(null);
@@ -36,13 +37,12 @@ const BooksTab: React.FC = () => {
     const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
     const [editingCopy, setEditingCopy] = useState<BookCopy | null>(null);
     const [isEditCopyModalVisible, setIsEditCopyModalVisible] = useState(false);
-    const [isbn13, setIsbn13] = useState<string>('');
     const [sortField, setSortField] = useState<string>('');
     const [sortOrder, setSortOrder] = useState<string>('');
 
     useEffect(() => {
         loadData();
-    }, [pagination.current, pagination.pageSize, searchQuery, selectedAuthor, selectedCategory, isbn13, sortField, sortOrder]);
+    }, [pagination.current, pagination.pageSize, searchQuery, selectedAuthor, selectedCategory, selectedLanguage, sortField, sortOrder]);
 
     useEffect(() => {
         if (editBookId) {
@@ -73,7 +73,7 @@ const BooksTab: React.FC = () => {
                     searchQuery,
                     selectedCategory,
                     selectedAuthor,
-                    isbn13,
+                    selectedLanguage,
                     pagination.current,
                     pagination.pageSize,
                     sortField,
@@ -124,11 +124,16 @@ const BooksTab: React.FC = () => {
         setPagination(prev => ({...prev, current: 1}));
     };
 
+    const handleLanguageFilter = (value: string) => {
+        setSelectedLanguage(value);
+        setPagination(prev => ({...prev, current: 1}));
+    };
+
     const handleResetFilters = () => {
         setSearchQuery('');
         setSelectedAuthor('');
         setSelectedCategory('');
-        setIsbn13('');
+        setSelectedLanguage('');
         setPagination(prev => ({...prev, current: 1}));
     };
 
@@ -492,7 +497,7 @@ const BooksTab: React.FC = () => {
             <Space direction="vertical" style={{width: '100%', marginBottom: 16}}>
                 <Space wrap>
                     <Input.Search
-                        placeholder="Search by title or subtitle..."
+                        placeholder="Title or subtitle or ISBN..."
                         allowClear
                         onSearch={handleSearch}
                         style={{width: 300}}
@@ -521,15 +526,16 @@ const BooksTab: React.FC = () => {
                         }
                         options={categories.map(c => ({label: c.name, value: c.id}))}
                     />
-                    <Input.Search
-                        placeholder="Search by ISBN-13..."
+                    <Select
+                        placeholder="Filter by language"
                         allowClear
-                        onSearch={(value) => {
-                            setIsbn13(value);
-                            setPagination(prev => ({...prev, current: 1}));
-                        }}
-                        style={{width: 300}}
-                    />
+                        style={{width: 200}}
+                        onChange={handleLanguageFilter}
+                        value={selectedLanguage || undefined}
+                    >
+                        <Select.Option value="en">English</Select.Option>
+                        <Select.Option value="vi">Vietnamese</Select.Option>
+                    </Select>
                     <Button onClick={handleResetFilters}>Reset Filters</Button>
                 </Space>
             </Space>

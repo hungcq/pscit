@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Button, Card, Form, Input, Modal, Space, Table, message} from 'antd';
+import {Button, Card, Form, Input, message, Modal, Space, Table} from 'antd';
 import {DeleteOutlined, EditOutlined, PlusOutlined} from '@ant-design/icons';
 import {authorsAPI} from '../../api';
 import {Author} from '../../types';
@@ -19,6 +19,11 @@ const AuthorsTab: React.FC<AuthorsTabProps> = ({
     const [editingAuthor, setEditingAuthor] = useState<Author | null>(null);
     const [authorForm] = Form.useForm();
     const [authorSearchQuery, setAuthorSearchQuery] = useState('');
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 5,
+        total: 0,
+    });
 
     useEffect(() => {
         loadData();
@@ -29,11 +34,19 @@ const AuthorsTab: React.FC<AuthorsTabProps> = ({
             setLoading(true);
             const response = await authorsAPI.getAuthors();
             setAuthors(response.data);
+            setPagination(prev => ({
+                ...prev,
+                total: response.data.length
+            }));
         } catch (error) {
             console.error('Failed to load authors:', error);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleTableChange = (newPagination: any, filters: any, sorter: any) => {
+        setPagination(newPagination);
     };
 
     const handleDeleteAuthor = async (id: string) => {
@@ -142,9 +155,8 @@ const AuthorsTab: React.FC<AuthorsTabProps> = ({
                 dataSource={filteredAuthors}
                 rowKey="id"
                 loading={loading}
-                pagination={{
-                    pageSize: 5,
-                }}
+                pagination={pagination}
+                onChange={handleTableChange}
             />
 
             {/* Author Modal */}

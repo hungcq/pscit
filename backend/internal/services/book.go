@@ -19,7 +19,7 @@ func NewBookService(db *gorm.DB) *BookService {
 }
 
 // GetBooks retrieves books with pagination and filtering
-func (s *BookService) GetBooks(query, category, author, isbn10, isbn13 string, page, limit int, sortField, sortOrder string) ([]models.Book, int64, error) {
+func (s *BookService) GetBooks(query, category, author, language string, page, limit int, sortField, sortOrder string) ([]models.Book, int64, error) {
 	var books []models.Book
 	var total int64
 
@@ -28,10 +28,10 @@ func (s *BookService) GetBooks(query, category, author, isbn10, isbn13 string, p
 
 	// Apply filters
 	if query != "" {
-		query = "%" + strings.ToLower(query) + "%"
+		query = "%" + query + "%"
 		baseQuery = baseQuery.Where(
-			"LOWER(title) LIKE ? OR LOWER(subtitle) LIKE ?",
-			query, query,
+			"unaccent(title) ILIKE unaccent(?) OR unaccent(subtitle) ILIKE unaccent(?) OR unaccent(isbn10) ILIKE unaccent(?) OR unaccent(isbn13) ILIKE unaccent(?)",
+			query, query, query, query,
 		)
 	}
 
@@ -42,24 +42,18 @@ func (s *BookService) GetBooks(query, category, author, isbn10, isbn13 string, p
 		subQuery = subQuery.Distinct("books.id").
 			Joins("JOIN book_categories ON books.id = book_categories.book_id").
 			Joins("JOIN categories ON book_categories.category_id = categories.id").
-			Where("LOWER(categories.name) LIKE ?", "%"+strings.ToLower(category)+"%")
+			Where("unaccent(categories.name) ILIKE unaccent(?)", "%"+category+"%")
 	}
 
 	if author != "" {
 		subQuery = subQuery.Distinct("books.id").
 			Joins("JOIN book_authors ON books.id = book_authors.book_id").
 			Joins("JOIN authors ON book_authors.author_id = authors.id").
-			Where("LOWER(authors.name) LIKE ?", "%"+strings.ToLower(author)+"%")
+			Where("unaccent(authors.name) ILIKE unaccent(?)", "%"+author+"%")
 	}
 
-	if isbn10 != "" {
-		subQuery = subQuery.Distinct("books.id").
-			Where("isbn10 = ?", isbn10)
-	}
-
-	if isbn13 != "" {
-		subQuery = subQuery.Distinct("books.id").
-			Where("isbn13 = ?", isbn13)
+	if language != "" {
+		subQuery = subQuery.Where("books.language = ?", language)
 	}
 
 	// Build final query with preloading
@@ -70,7 +64,7 @@ func (s *BookService) GetBooks(query, category, author, isbn10, isbn13 string, p
 
 	// Apply sorting
 	if sortField == "" {
-		sortField = "title"
+		sortField = "created_at"
 		sortOrder = "ascend"
 	}
 

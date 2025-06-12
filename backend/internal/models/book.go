@@ -50,6 +50,7 @@ type Book struct {
 	GoogleVolumeID string         `gorm:"index:idx_books_google_volume_id" json:"google_volume_id"`
 	MainImage      string         `json:"main_image"`
 	Format         BookFormat     `gorm:"type:varchar(20);default:'paperback'" json:"format"`
+	Language       string         `gorm:"type:varchar(2);default:'en';index:idx_books_language" json:"language"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`
@@ -68,6 +69,7 @@ type CreateBookRequest struct {
 	Publisher      string     `json:"publisher"`
 	GoogleVolumeID string     `json:"google_volume_id"`
 	MainImage      string     `json:"main_image"`
+	Language       *string    `json:"language"`
 	Format         BookFormat `json:"format" binding:"required,oneof=paperback hardcover"`
 	AuthorIDs      []string   `json:"author_ids" binding:"required"`
 	CategoryIDs    []string   `json:"category_ids"`

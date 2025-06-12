@@ -21,17 +21,16 @@ const Home: React.FC = () => {
     total: 0,
   });
   const [searchInput, setSearchInput] = useState('');
-  const [isbn13SearchInput, setIsbn13SearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedAuthor, setSelectedAuthor] = useState<string>('');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('');
   const [imageUrls, setImageUrls] = useState<{ [key: string]: string }>({});
   const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
-  const [isbn13, setIsbn13] = useState<string>('');
 
   useEffect(() => {
     loadData();
-  }, [pagination.current, pagination.pageSize, searchQuery, selectedCategory, selectedAuthor, isbn13]);
+  }, [pagination.current, pagination.pageSize, searchQuery, selectedCategory, selectedAuthor, selectedLanguage]);
 
   useEffect(() => {
     const loadImageUrls = async () => {
@@ -52,7 +51,7 @@ const Home: React.FC = () => {
           searchQuery,
           selectedCategory,
           selectedAuthor,
-          isbn13,
+          selectedLanguage,
           pagination.current,
           pagination.pageSize
         ),
@@ -84,6 +83,11 @@ const Home: React.FC = () => {
     setPagination(prev => ({...prev, current: 1}));
   };
 
+  const handleLanguageChange = (value: string) => {
+    setSelectedLanguage(value);
+    setPagination(prev => ({...prev, current: 1}));
+  };
+
   const handlePageChange = (page: number) => {
     setPagination(prev => ({...prev, current: page}));
   };
@@ -103,7 +107,7 @@ const Home: React.FC = () => {
   return (
     <Space direction="vertical" size="large" style={{ width: '100%', minHeight: '85vh', position: 'relative' }}>
       <Row gutter={[16, 16]} align="middle">
-        <Col xs={24} md={8}>
+        <Col xs={24} md={6}>
           <Space>
             <img
               src="/pscit-icon-large.png"
@@ -116,11 +120,11 @@ const Home: React.FC = () => {
             </div>
           </Space>
         </Col>
-        <Col xs={24} md={16}>
+        <Col xs={24} md={18}>
           <Row gutter={[8, 8]}>
             <Col xs={24} sm={12} md={6}>
               <Input.Search
-                placeholder="Search by title or subtitle..."
+                placeholder="Title or subtitle or ISBN..."
                 size="large"
                 allowClear
                 value={searchInput}
@@ -172,17 +176,17 @@ const Home: React.FC = () => {
               </Select>
             </Col>
             <Col xs={24} sm={12} md={6}>
-              <Input.Search
-                  placeholder="Search by ISBN-13..."
-                  size="large"
-                  allowClear
-                  value={isbn13SearchInput}
-                  onChange={(e) => setIsbn13SearchInput(e.target.value)}
-                  onSearch={(value) => {
-                    setIsbn13(value);
-                    setPagination(prev => ({ ...prev, current: 1 }));
-                  }}
-              />
+              <Select
+                placeholder="Select Language"
+                allowClear
+                style={{ width: '100%' }}
+                size="large"
+                onChange={handleLanguageChange}
+                value={selectedLanguage || undefined}
+              >
+                <Option value="en">English</Option>
+                <Option value="vi">Vietnamese</Option>
+              </Select>
             </Col>
           </Row>
         </Col>
