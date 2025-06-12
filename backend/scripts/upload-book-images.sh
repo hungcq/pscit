@@ -100,7 +100,6 @@ for file in "$TEMP_DIR"/*; do
 
     aws s3 cp "$file" "s3://$S3_BUCKET/book-images/$book_id" \
         --region "$AWS_REGION" \
-        --cache-control "max-age=1800,public" \
         --content-type "$mime_type"
 done
 

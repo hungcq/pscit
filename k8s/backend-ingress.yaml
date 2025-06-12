@@ -4,7 +4,7 @@ metadata:
   name: backend-ingress
 spec:
   rules:
-    - host: api.pscit.hungcq.xyz
+    - host: api.pscit.hungcq.com
       http:
         paths:
           - path: /

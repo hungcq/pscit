@@ -53,25 +53,7 @@ jobs:
           aws s3 sync dist/ s3://${{ env.S3_BUCKET }} \
             --region ${{ env.AWS_REGION }} \
             --delete \
-            --cache-control "max-age=31536000,public" \
-            --exclude "*.html" \
-            --exclude "*.json" \
-            --exclude "*.xml"
-
-          # Upload HTML files with no cache
-          aws s3 sync dist/ s3://${{ env.S3_BUCKET }} \
-            --region ${{ env.AWS_REGION }} \
-            --delete \
-            --cache-control "no-cache" \
-            --include "*.html"
-
-          # Upload JSON and XML files with no cache
-          aws s3 sync dist/ s3://${{ env.S3_BUCKET }} \
-            --region ${{ env.AWS_REGION }} \
-            --delete \
-            --cache-control "no-cache" \
-            --include "*.json" \
-            --include "*.xml"
+            --exclude "book-images/*"
 
       - name: Invalidate CloudFront cache
         if: ${{ env.CLOUDFRONT_DISTRIBUTION_ID != '' }}

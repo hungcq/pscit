@@ -18,7 +18,7 @@ const Introduction: React.FC = () => {
         { icon: <WhatsAppOutlined />, href: 'https://wa.me/qr/4EEYREOFSGMVN1', label: 'WhatsApp' },
         { icon: <MailOutlined />, href: 'mailto:hungcqrt@gmail.com', label: 'Email' },
         { icon: <PhoneOutlined />, href: 'tel:+84987134200', label: 'Phone' },
-        { icon: <GlobalOutlined />, href: 'https://portfolio.hungcq.xyz', label: 'Portfolio' }
+        { icon: <GlobalOutlined />, href: 'https://portfolio.hungcq.com', label: 'Portfolio' }
     ];
 
     return (
