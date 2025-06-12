@@ -27,6 +27,7 @@ get_extension_from_mime() {
     esac
 }
 
+# Install imagemagick first: brew install imagemagick
 # Function to download a single image
 download_image() {
     local book_id=$1
@@ -38,6 +39,8 @@ download_image() {
     fi
 
     local temp_file="$TEMP_DIR/$book_id"
+    local final_file="$TEMP_DIR/${book_id}.jpg"
+
     echo "Downloading image for book $book_id"
     curl -s -L -A "Mozilla/5.0" -o "$temp_file" "$image_url"
 
@@ -46,22 +49,27 @@ download_image() {
         return
     fi
 
-    local mime_type=$(file -b --mime-type "$temp_file")
+    local mime_type
+    mime_type=$(file -b --mime-type "$temp_file")
     if [[ ! "$mime_type" =~ ^image/ ]]; then
-        echo "Failed to download image for book $book_id - file is not a valid image"
+        echo "File is not a valid image for book $book_id - MIME: $mime_type"
         rm "$temp_file"
         return
     fi
 
-    local extension=$(get_extension_from_mime "$mime_type")
-    if [ -z "$extension" ]; then
-        echo "Unknown image type for book $book_id - MIME: $mime_type"
-        return
+    if [[ "$mime_type" == "image/jpeg" ]]; then
+        echo "Image is JPEG, renaming to .jpg"
+        mv "$temp_file" "$final_file"
+    else
+        echo "Converting image to JPEG for book $book_id"
+        if convert "$temp_file" "$final_file"; then
+            rm "$temp_file"
+        else
+            echo "Failed to convert image for book $book_id"
+            rm "$temp_file"
+            return
+        fi
     fi
-
-    # Rename the file with the correct extension
-    local final_file="$TEMP_DIR/${book_id}${extension}"
-    mv "$temp_file" "$final_file"
 }
 
 # Query books from database
@@ -91,21 +99,16 @@ aws s3 rm "s3://$S3_BUCKET/book-images/" \
     --region "$AWS_REGION" \
     --recursive
 
-# Upload each image individually without extension in S3 key
-echo "Uploading images to S3 without extension..."
-for file in "$TEMP_DIR"/*; do
-    filename=$(basename "$file")
-    book_id="${filename%%.*}"  # strip extension
-    mime_type=$(file -b --mime-type "$file")
-
-    aws s3 cp "$file" "s3://$S3_BUCKET/book-images/$book_id" \
-        --region "$AWS_REGION" \
-        --content-type "$mime_type"
-done
+# Sync all images to S3
+echo "Syncing images to S3..."
+aws s3 sync "$TEMP_DIR" "s3://$S3_BUCKET/book-images/" \
+    --region "$AWS_REGION" \
+#    --delete
 
 echo "Invalidate cloudfront distribution"
 aws cloudfront create-invalidation \
   --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
-  --paths "/*"
+  --paths "/*" \
+  --no-cli-pager
 
-echo "Done! Images are stored in $TEMP_DIR" 
+echo "Done! Images are stored in $TEMP_DIR"
