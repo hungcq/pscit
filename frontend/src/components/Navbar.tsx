@@ -146,7 +146,7 @@ const Navbar: React.FC = () => {
             <Col>
               <Button
                 icon={<HomeOutlined/>}
-                type="text"
+                type={window.location.pathname === '/' ? 'primary' : 'text'}
                 style={{color: 'white'}}
                 onClick={() => navigate('/')}
               />
@@ -157,7 +157,7 @@ const Navbar: React.FC = () => {
                 >
                   <ShoppingCartOutlined style={{fontSize: '17px'}}/>
                 </Badge>}
-                type="text"
+                type={window.location.pathname === '/cart' ? 'primary' : 'text'}
                 style={{color: 'white'}}
                 onClick={() => navigate('/cart')}
               />
