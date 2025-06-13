@@ -82,7 +82,7 @@ const UserReservations: React.FC = () => {
       render: (_, record: Reservation) => (
         <Space direction="vertical" style={{ width: '100%' }}>
           {record.book_copies.map((bookCopy: BookCopy) => (
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space direction="vertical" style={{ width: '100%' }} key={bookCopy.id}>
               <Text strong>{bookCopy.book.title}</Text>
               <Space>
                 <Tag color={getConditionColor(bookCopy.condition)}>
@@ -161,7 +161,7 @@ const UserReservations: React.FC = () => {
               <Space direction="vertical" style={{ width: '100%' }}>
                 <Title level={4}>Books</Title>
                 {reservation.book_copies.map((bookCopy: BookCopy) => (
-                  <Space direction="vertical" style={{ width: '100%' }}>
+                  <Space direction="vertical" style={{ width: '100%' }} key={bookCopy.id}>
                     <Text strong>{bookCopy.book.title}</Text>
                     <Space>
                       <Tag color={getConditionColor(bookCopy.condition)}>

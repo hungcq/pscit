@@ -133,7 +133,7 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
             render: (_, record: Reservation) => (
                 <Space direction="vertical" style={{ width: '100%' }}>
                     {record.book_copies.map((bookCopy: BookCopy) => (
-                      <Space direction="vertical" style={{ width: '100%' }}>
+                      <Space direction="vertical" style={{ width: '100%' }} key={bookCopy.id}>
                             <Text strong>{bookCopy.book.title}</Text>
                             <Space>
                                 <Tag color={

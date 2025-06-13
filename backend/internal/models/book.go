@@ -44,10 +44,10 @@ type Book struct {
 	Description    string         `json:"description"`
 	ISBN10         *string        `gorm:"uniqueIndex:idx_books_isbn10" json:"isbn10"`
 	ISBN13         *string        `gorm:"uniqueIndex:idx_books_isbn13" json:"isbn13"`
-	PublishedYear  int            `gorm:"index:idx_books_published_year" json:"published_year"`
+	PublishedYear  int            `json:"published_year"`
 	PageCount      int            `json:"page_count"`
-	Publisher      string         `gorm:"index:idx_books_publisher" json:"publisher"`
-	GoogleVolumeID string         `gorm:"index:idx_books_google_volume_id" json:"google_volume_id"`
+	Publisher      string         `json:"publisher"`
+	GoogleVolumeID string         `json:"google_volume_id"`
 	MainImage      string         `json:"main_image"`
 	Format         BookFormat     `gorm:"type:varchar(20);default:'paperback'" json:"format"`
 	Language       string         `gorm:"type:varchar(2);default:'en';index:idx_books_language" json:"language"`
