@@ -155,7 +155,7 @@ func (s *ReservationService) CreateReservation(
 
 	// Load related data
 	if err := s.db.Preload("User").
-		Preload("BookCopies").
+		Unscoped().Preload("BookCopies").
 		Preload("BookCopies.Book").
 		Preload("BookCopies.Book.Authors").
 		First(&reservation, reservation.ID).Error; err != nil {
@@ -194,7 +194,7 @@ func (s *ReservationService) GetReservations(page, limit int, filters models.Res
 
 	query := s.db.Model(&models.Reservation{}).
 		Preload("User").
-		Preload("BookCopies").
+		Unscoped().Preload("BookCopies").
 		Preload("BookCopies.Book").
 		Preload("BookCopies.Book.Authors").
 		Preload("BookCopies.Book.Categories")
@@ -248,7 +248,7 @@ func (s *ReservationService) GetUserReservations(userID string, page, limit int)
 	}
 
 	// Get paginated reservations with preloaded relations
-	if err := s.db.Preload("BookCopies").
+	if err := s.db.Unscoped().Preload("BookCopies").
 		Preload("BookCopies.Book").
 		Preload("BookCopies.Book.Authors").
 		Preload("BookCopies.Book.Categories").
@@ -324,7 +324,11 @@ func (s *ReservationService) UpdateReservationStatus(
 	}
 
 	// Load related data
-	if err := s.db.Preload("User").Preload("BookCopies.Book.Authors").First(&reservation, reservation.ID).Error; err != nil {
+	if err := s.db.Preload("User").
+		Unscoped().Preload("BookCopies").
+		Preload("BookCopies.Book").
+		Preload("BookCopies.Book.Authors").
+		First(&reservation, reservation.ID).Error; err != nil {
 		return nil, err
 	}
 
@@ -352,7 +356,7 @@ func (s *ReservationService) GetReservation(id string) (*models.Reservation, err
 	}
 
 	var reservation models.Reservation
-	if err := s.db.Preload("BookCopies").
+	if err := s.db.Unscoped().Preload("BookCopies").
 		Preload("BookCopies.Book").
 		Preload("BookCopies.Book.Authors").
 		Preload("BookCopies.Book.Categories").

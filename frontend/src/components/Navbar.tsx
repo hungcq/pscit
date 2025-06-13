@@ -1,11 +1,12 @@
 import React, {useEffect, useState} from 'react';
-import {Badge, Button, Col, Drawer, Grid, Layout, Menu, MenuProps, Row, Space, Typography} from 'antd';
-import {useLocation, useNavigate} from 'react-router-dom';
+import {Badge, Button, Col, Drawer, Grid, Layout, Menu, MenuProps, Row, Typography} from 'antd';
+import {useNavigate} from 'react-router-dom';
 import {useAuth} from '../contexts/AuthContext';
 import {useCart} from '../contexts/CartContext';
 import {
   BookOutlined,
   DashboardOutlined,
+  HomeOutlined,
   InfoCircleOutlined,
   LoginOutlined,
   LogoutOutlined,
@@ -20,7 +21,6 @@ const {useBreakpoint} = Grid;
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const {logout, user} = useAuth();
-  const location = useLocation();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const screens = useBreakpoint();
   const {cartItems, reloadCart} = useCart();
@@ -35,6 +35,12 @@ const Navbar: React.FC = () => {
   }, [user]);
 
   const mainMenuItems: MenuProps['items'] = [
+    {
+      key: '/',
+      icon: <HomeOutlined/>,
+      label: 'Home',
+      onClick: () => navigate('/')
+    },
     ...(user ? [{
       key: '/reservations',
       icon: <BookOutlined/>,
@@ -88,29 +94,9 @@ const Navbar: React.FC = () => {
   return (
     <Header style={{padding: '0 24px', zIndex: 10}}>
       <Row align="middle" justify="space-between" wrap={false}>
-        <Col md={4}>
-          <Space onClick={() => navigate('/')} style={{cursor: 'pointer'}}>
-            <img
-              src="/pscit-icon-large.png"
-              alt="PSciT Library"
-              style={{width: '50px', height: '50px'}}
-            />
-            {screens.lg &&
-              <div style={{lineHeight: 'normal',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                display: 'block',
-              }}>
-                <Title level={4} style={{margin: 0}}>PSciT Library</Title>
-                <Text type="secondary">A curated private library in Hanoi</Text>
-              </div>
-            }
-          </Space>
-        </Col>
         {screens.md ? (
           <>
-            <Col md={15}>
+            <Col md={19}>
               <Menu
                 theme="dark"
                 mode="horizontal"
@@ -137,7 +123,7 @@ const Navbar: React.FC = () => {
             />
             <Drawer
               title="Menu"
-              placement="right"
+              placement="left"
               onClose={() => setDrawerVisible(false)}
               open={drawerVisible}
               bodyStyle={{padding: 0}}

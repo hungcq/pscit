@@ -355,7 +355,10 @@ const BooksTab: React.FC = () => {
             key: 'title',
             sorter: true,
             render: (text: string, book: Book) => (
-              <div>
+              <div
+                onClick={() => handleShowCopies(book.id)}
+                style={{ cursor: 'pointer' }}
+              >
                   <img
                     src={getBookImageUrl(book)}
                     alt={book.title}
