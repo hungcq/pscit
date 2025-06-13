@@ -31,7 +31,7 @@ async function createAuthor(name) {
         );
         return response.data.id;
     } catch (error) {
-        if (error.response?.status === 400) {
+        if (error.response?.status === 500) {
             // Author might already exist, try to find them
             const searchResponse = await axios.get(
                 `${BACKEND_BASE}/authors?query=${encodeURIComponent(name)}`,
@@ -54,7 +54,7 @@ async function createCategory(name, description) {
         );
         return response.data.id;
     } catch (error) {
-        if (error.response?.status === 400) {
+        if (error.response?.status === 500) {
             // Category might already exist, try to find it
             const searchResponse = await axios.get(
                 `${BACKEND_BASE}/categories?query=${encodeURIComponent(name)}`,
@@ -71,12 +71,7 @@ async function createCategory(name, description) {
 async function checkBookExists(isbn) {
     try {
         const params = new URLSearchParams();
-        if (isbn.length === 10) {
-            params.append('isbn10', isbn);
-        }
-        if (isbn.length === 13) {
-            params.append('isbn13', isbn);
-        }
+        params.append('query', isbn);
 
         const url = `${BACKEND_BASE}/books?${params.toString()}`
         
@@ -176,4 +171,4 @@ async function processBooks(filePath) {
 }
 
 // Example usage:
-processBooks('/Users/hungcq/drive/isbns-vn.txt');
+processBooks('/Users/hungcq/drive/isbns.txt');

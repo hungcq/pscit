@@ -11,15 +11,18 @@ import (
 	"github.com/hungcq/pscit/backend/internal/services"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type BookHandler struct {
 	bookService *services.BookService
+	tagService  *services.TagService
 }
 
-func NewBookHandler(bookService *services.BookService) *BookHandler {
+func NewBookHandler(bookService *services.BookService, db *gorm.DB) *BookHandler {
 	return &BookHandler{
 		bookService: bookService,
+		tagService:  services.NewTagService(db),
 	}
 }
 
@@ -32,12 +35,13 @@ func (h *BookHandler) GetBooks(c *gin.Context) {
 		return
 	}
 	language := c.Query("language")
+	tagKey := c.Query("tag_key")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	sortField := c.Query("sortField")
 	sortOrder := c.Query("sortOrder")
 
-	books, total, err := h.bookService.GetBooks(query, category, author, language, page, limit, sortField, sortOrder)
+	books, total, err := h.bookService.GetBooks(query, category, author, language, tagKey, page, limit, sortField, sortOrder)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -106,6 +110,17 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 		book.Categories[i] = *category
 	}
 
+	// Load tags
+	book.Tags = make([]models.Tag, len(req.TagIDs))
+	for i, id := range req.TagIDs {
+		tag, err := h.tagService.GetTag(id)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("tag not found: %s", id)})
+			return
+		}
+		book.Tags[i] = *tag
+	}
+
 	if err := h.bookService.CreateBook(book); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -162,6 +177,17 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 			return
 		}
 		existingBook.Categories[i] = *category
+	}
+
+	// Load tags
+	existingBook.Tags = make([]models.Tag, len(req.TagIDs))
+	for i, tagID := range req.TagIDs {
+		tag, err := h.tagService.GetTag(tagID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("tag not found: %s", tagID)})
+			return
+		}
+		existingBook.Tags[i] = *tag
 	}
 
 	if err := h.bookService.UpdateBook(id, existingBook); err != nil {

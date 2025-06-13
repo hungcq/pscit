@@ -1,5 +1,5 @@
 import axios, {AxiosError} from 'axios';
-import {Author, Book, BookCopy, CartItem, Category, Reservation} from './types';
+import {Author, Book, BookCopy, CartItem, Category, Reservation, Tag} from './types';
 
 interface ErrorResponse {
     error: string;
@@ -40,9 +40,9 @@ api.interceptors.response.use(
 
 // Books API
 export const booksAPI = {
-    getBooks: (query?: string, category?: string, author?: string, language?: string, page = 1, limit = 12, sortField?: string, sortOrder?: string) =>
+    getBooks: (query?: string, category?: string, author?: string, language?: string, tagKey?: string, page = 1, limit = 12, sortField?: string, sortOrder?: string) =>
         api.get<{ books: Book[]; total: number }>('/books', {
-            params: { query, category, author, language, page, limit, sortField, sortOrder },
+            params: { query, category, author, language, page, limit, sortField, sortOrder, tag_key: tagKey },
         }),
     getBook: (id: string) => api.get<Book>(`/books/${id}`),
     createBook: (book: Partial<Book>) => api.post<Book>('/books', book),
@@ -131,6 +131,14 @@ export const cartAPI = {
         suggested_pickup_timeslots: data.suggestedPickupTimeslots,
         suggested_return_timeslots: data.suggestedReturnTimeslots,
     }),
+};
+
+// Tags API
+export const tagsAPI = {
+    getTags: () => api.get<Tag[]>('/tags'),
+    createTag: (tag: Partial<Tag>) => api.post<Tag>('/tags', tag),
+    updateTag: (id: string, tag: Partial<Tag>) => api.put<Tag>(`/tags/${id}`, tag),
+    deleteTag: (id: string) => api.delete(`/tags/${id}`),
 };
 
 export default api; 

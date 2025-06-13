@@ -27,6 +27,7 @@ export interface Book {
   updated_at: string;
   authors: Author[];
   categories: Category[];
+  tags: Tag[];
 }
 
 export interface Author {
@@ -76,4 +77,13 @@ export interface CartItem {
   id: string;
   book_copy: BookCopy;
   condition: 'new' | 'like_new' | 'good' | 'fair' | 'poor';
+}
+
+export interface Tag {
+  id: string;
+  key: string;
+  name: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
 }

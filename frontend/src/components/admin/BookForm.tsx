@@ -1,6 +1,6 @@
 import React from 'react';
 import {Button, Form, Input, InputNumber, Modal, Select, Space} from 'antd';
-import {Author, Book, Category} from '../../types';
+import {Author, Book, Category, Tag} from '../../types';
 
 const { TextArea } = Input;
 
@@ -18,6 +18,7 @@ export interface BookFormData {
     format: 'paperback' | 'hardcover';
     author_ids: string[];
     category_ids: string[];
+    tag_ids: string[];
 }
 
 interface BookFormProps {
@@ -27,6 +28,7 @@ interface BookFormProps {
     initialValues: Book | null;
     authors: Author[];
     categories: Category[];
+    tags: Tag[];
     loading?: boolean;
 }
 
@@ -37,6 +39,7 @@ const BookForm: React.FC<BookFormProps> = ({
     initialValues,
     authors,
     categories,
+    tags,
     loading = false,
 }) => {
     const [form] = Form.useForm();
@@ -46,7 +49,8 @@ const BookForm: React.FC<BookFormProps> = ({
             form.setFieldsValue({
                 ...initialValues,
                 author_ids: initialValues.authors.map(a => a.id),
-                category_ids: initialValues.categories.map(c => c.id)
+                category_ids: initialValues.categories.map(c => c.id),
+                tag_ids: initialValues.tags?.map(t => t.id),
             });
         } else {
             form.resetFields();
@@ -181,6 +185,21 @@ const BookForm: React.FC<BookFormProps> = ({
                         options={categories.map(c => ({label: c.name, value: c.id}))}
                         showSearch
                         autoClearSearchValue={false}
+                        filterOption={(input, option) =>
+                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                        }
+                    />
+                </Form.Item>
+
+                <Form.Item
+                    name="tag_ids"
+                    label="Tags"
+                >
+                    <Select
+                        mode="multiple"
+                        placeholder="Select tags"
+                        options={tags.map(t => ({label: t.name, value: t.id}))}
+                        showSearch
                         filterOption={(input, option) =>
                             (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                         }

@@ -56,6 +56,7 @@ type Book struct {
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`
 	Authors        []Author       `gorm:"many2many:book_authors;" json:"authors"`
 	Categories     []Category     `gorm:"many2many:book_categories;" json:"categories"`
+	Tags           []Tag          `gorm:"many2many:book_tags;" json:"tags"`
 }
 
 type CreateBookRequest struct {
@@ -73,6 +74,7 @@ type CreateBookRequest struct {
 	Format         BookFormat `json:"format" binding:"required,oneof=paperback hardcover"`
 	AuthorIDs      []string   `json:"author_ids" binding:"required"`
 	CategoryIDs    []string   `json:"category_ids"`
+	TagIDs         []string   `json:"tag_ids"`
 }
 
 func (b *Book) BeforeCreate(tx *gorm.DB) error {

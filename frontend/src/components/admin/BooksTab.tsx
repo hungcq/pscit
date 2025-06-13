@@ -1,22 +1,32 @@
 import React, {useEffect, useState} from 'react';
 import {Button, Card, Form, Input, message, Modal, Select, Space, Table, Tag, Typography} from 'antd';
 import {DeleteOutlined, EditOutlined, PlusOutlined} from '@ant-design/icons';
-import {authorsAPI, bookCopiesAPI, booksAPI, categoriesAPI} from '../../api';
-import {Author, Book, BookCopy, Category} from '../../types';
+import {bookCopiesAPI, booksAPI} from '../../api';
+import {Author, Book, BookCopy, Category, Tag as TagModel} from '../../types';
 import {getBookImageUrl} from '../../utils';
 import {useLocation, useNavigate} from 'react-router-dom';
 import BookForm, {BookFormData} from './BookForm';
 
 const {Text} = Typography
 
-const BooksTab: React.FC = () => {
+interface BooksTabProps {
+    authors: Author[];
+    categories: Category[];
+    tags: TagModel[];
+    onDataReload: () => Promise<void>;
+}
+
+const BooksTab: React.FC<BooksTabProps> = ({
+    authors,
+    categories,
+    tags,
+    onDataReload,
+}) => {
     const location = useLocation();
     const navigate = useNavigate();
     const searchParams = new URLSearchParams(location.search);
     const editBookId = searchParams.get('edit');
     const [books, setBooks] = useState<Book[]>([]);
-    const [authors, setAuthors] = useState<Author[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState({
         current: 1,
@@ -57,27 +67,22 @@ const BooksTab: React.FC = () => {
     const loadData = async () => {
         try {
             setLoading(true);
-            const [booksResponse, authorsResponse, categoriesResponse] = await Promise.all([
-                booksAPI.getBooks(
-                    searchQuery,
-                    selectedCategory,
-                    selectedAuthor,
-                    selectedLanguage,
-                    pagination.current,
-                    pagination.pageSize,
-                    sortField,
-                    sortOrder
-                ),
-                authorsAPI.getAuthors(),
-                categoriesAPI.getCategories(),
-            ]);
+            const booksResponse = await booksAPI.getBooks(
+                searchQuery,
+                selectedCategory,
+                selectedAuthor,
+                selectedLanguage,
+                undefined,
+                pagination.current,
+                pagination.pageSize,
+                sortField,
+                sortOrder
+            );
             setBooks(booksResponse.data.books);
             setPagination(prev => ({
                 ...prev,
                 total: booksResponse.data.total
             }));
-            setAuthors(authorsResponse.data);
-            setCategories(categoriesResponse.data);
         } catch (error) {
             console.error('Failed to load data:', error);
         } finally {
@@ -131,6 +136,7 @@ const BooksTab: React.FC = () => {
             await booksAPI.deleteBook(id);
             message.success('Book deleted successfully');
             loadData();
+            onDataReload(); // Trigger reload of form data in AdminDashboard
         } catch (error: any) {
             message.error(error.message || 'Failed to delete book');
         }
@@ -142,7 +148,8 @@ const BooksTab: React.FC = () => {
             bookForm.setFieldsValue({
                 ...book,
                 author_ids: book.authors.map(a => a.id),
-                category_ids: book.categories.map(c => c.id)
+                category_ids: book.categories.map(c => c.id),
+                tag_ids: book.tags.map(t => t.id),
             });
         } else {
             bookForm.resetFields();
@@ -167,6 +174,7 @@ const BooksTab: React.FC = () => {
             }
             handleBookCancel();
             loadData();
+            onDataReload(); // Trigger reload of form data in AdminDashboard
         } catch (error: any) {
             message.error(error.message || 'Failed to save book');
         }
@@ -471,15 +479,27 @@ const BooksTab: React.FC = () => {
             <Space direction="vertical" style={{width: '100%', marginBottom: 16}}>
                 <Space wrap>
                     <Input.Search
-                        placeholder="Title or subtitle or ISBN..."
+                        placeholder="Search by title or subtitle or ISBN..."
                         allowClear
                         onSearch={handleSearch}
-                        style={{width: 300}}
+                        style={{width: 400}}
+                    />
+                    <Select
+                      placeholder="Filter by category"
+                      allowClear
+                      style={{width: 350}}
+                      onChange={handleCategoryFilter}
+                      value={selectedCategory || undefined}
+                      showSearch
+                      filterOption={(input, option) =>
+                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                      }
+                      options={categories.map(c => ({label: c.name, value: c.id}))}
                     />
                     <Select
                         placeholder="Filter by author"
                         allowClear
-                        style={{width: 200}}
+                        style={{width: 300}}
                         onChange={handleAuthorFilter}
                         value={selectedAuthor || undefined}
                         showSearch
@@ -487,18 +507,6 @@ const BooksTab: React.FC = () => {
                             (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                         }
                         options={authors.map(a => ({label: a.name, value: a.id}))}
-                    />
-                    <Select
-                        placeholder="Filter by category"
-                        allowClear
-                        style={{width: 200}}
-                        onChange={handleCategoryFilter}
-                        value={selectedCategory || undefined}
-                        showSearch
-                        filterOption={(input, option) =>
-                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                        }
-                        options={categories.map(c => ({label: c.name, value: c.id}))}
                     />
                     <Select
                         placeholder="Filter by language"
@@ -534,6 +542,7 @@ const BooksTab: React.FC = () => {
                 initialValues={editingBook}
                 authors={authors}
                 categories={categories}
+                tags={tags}
                 loading={loading}
             />
 

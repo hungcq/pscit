@@ -24,10 +24,11 @@ import {
     EditOutlined,
     PlusOutlined,
     ShoppingCartOutlined,
+    TagOutlined,
     UserOutlined
 } from '@ant-design/icons';
-import type {Author, Book, BookCopy, Category} from '../types';
-import {authorsAPI, bookCopiesAPI, booksAPI, cartAPI, categoriesAPI, reservationsAPI} from '../api';
+import type {Author, Book, BookCopy, Category, Tag as TagModel} from '../types';
+import {authorsAPI, bookCopiesAPI, booksAPI, cartAPI, categoriesAPI, reservationsAPI, tagsAPI} from '../api';
 import {useAuth} from '../contexts/AuthContext';
 import dayjs, {Dayjs} from 'dayjs';
 import {getBookImageUrl} from '../utils';
@@ -55,6 +56,7 @@ const BookDetails: React.FC = () => {
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [authors, setAuthors] = useState<Author[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [tags, setTags] = useState<TagModel[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [addingToCart, setAddingToCart] = useState(false);
     const {cartItems, reloadCart} = useCart();
@@ -74,14 +76,16 @@ const BookDetails: React.FC = () => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [bookResponse, authorsResponse, categoriesResponse] = await Promise.all([
+                const [bookResponse, authorsResponse, categoriesResponse, tagsResponse] = await Promise.all([
                     booksAPI.getBook(id!),
                     authorsAPI.getAuthors(),
                     categoriesAPI.getCategories(),
+                    tagsAPI.getTags(),
                 ]);
                 setBook(bookResponse.data);
                 setAuthors(authorsResponse.data);
                 setCategories(categoriesResponse.data);
+                setTags(tagsResponse.data);
                 await loadCopies();
             } catch (error) {
                 console.error('Failed to load data:', error);
@@ -313,6 +317,10 @@ const BookDetails: React.FC = () => {
                                 <Space>
                                     <BookOutlined/>
                                     <Text>{book.categories.map(c => c.name).join(', ')}</Text>
+                                </Space>
+                                <Space>
+                                    <TagOutlined/>
+                                    <Text>{book.tags?.map(t => t.name).join(', ')}</Text>
                                 </Space>
                             </Space>
                         </Space>
@@ -584,6 +592,7 @@ const BookDetails: React.FC = () => {
                 initialValues={book}
                 authors={authors}
                 categories={categories}
+                tags={tags}
                 loading={submitting}
             />
         </Space>

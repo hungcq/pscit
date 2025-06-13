@@ -18,15 +18,17 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	authorService := services2.NewAuthorService(db)
 	categoryService := services2.NewCategoryService(db)
 	cartService := services2.NewCartService(db)
+	tagService := services2.NewTagService(db)
 
 	// Initialize handlers
 	authHandler := handlers2.NewAuthHandler(authService)
-	bookHandler := handlers2.NewBookHandler(bookService)
+	bookHandler := handlers2.NewBookHandler(bookService, db)
 	bookCopyHandler := handlers2.NewBookCopyHandler(bookCopyService)
 	reservationHandler := handlers2.NewReservationHandler(reservationService, emailService)
 	authorHandler := handlers2.NewAuthorHandler(authorService)
 	categoryHandler := handlers2.NewCategoryHandler(categoryService)
 	cartHandler := handlers2.NewCartHandler(cartService)
+	tagHandler := handlers2.NewTagHandler(tagService)
 
 	// Custom 404 handler
 	r.NoRoute(func(c *gin.Context) {
@@ -63,6 +65,10 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	api.GET("/categories", categoryHandler.GetCategories)
 	api.GET("/categories/:id", categoryHandler.GetCategory)
 
+	// Tag routes
+	api.GET("/tags", tagHandler.GetTags)
+	api.GET("/tags/:id", tagHandler.GetTag)
+
 	// Protected routes
 	authenticatedApi := api.Use(middleware.AuthMiddleware())
 
@@ -95,6 +101,11 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		admin.POST("/categories", categoryHandler.CreateCategory)
 		admin.PUT("/categories/:id", categoryHandler.UpdateCategory)
 		admin.DELETE("/categories/:id", categoryHandler.DeleteCategory)
+
+		// Tag management
+		admin.POST("/tags", tagHandler.CreateTag)
+		admin.PUT("/tags/:id", tagHandler.UpdateTag)
+		admin.DELETE("/tags/:id", tagHandler.DeleteTag)
 
 		// Reservation management
 		admin.GET("/reservations", reservationHandler.GetReservations)

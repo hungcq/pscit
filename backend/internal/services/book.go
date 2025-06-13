@@ -19,7 +19,7 @@ func NewBookService(db *gorm.DB) *BookService {
 }
 
 // GetBooks retrieves books with pagination and filtering
-func (s *BookService) GetBooks(query, category, author, language string, page, limit int, sortField, sortOrder string) ([]models.Book, int64, error) {
+func (s *BookService) GetBooks(query, category, author, language, tagKey string, page, limit int, sortField, sortOrder string) ([]models.Book, int64, error) {
 	var books []models.Book
 	var total int64
 
@@ -56,10 +56,18 @@ func (s *BookService) GetBooks(query, category, author, language string, page, l
 		subQuery = subQuery.Where("books.language = ?", language)
 	}
 
+	if tagKey != "" {
+		subQuery = subQuery.Distinct("books.id").
+			Joins("JOIN book_tags ON books.id = book_tags.book_id").
+			Joins("JOIN tags ON book_tags.tag_id = tags.id").
+			Where("tags.key = ?", tagKey)
+	}
+
 	// Build final query with preloading
 	dbQuery := s.db.Model(&models.Book{}).
 		Preload("Authors").
 		Preload("Categories").
+		Preload("Tags").
 		Where("id IN (?)", subQuery)
 
 	// Apply sorting
@@ -102,7 +110,7 @@ func (s *BookService) GetBooks(query, category, author, language string, page, l
 // GetBook retrieves a single book by ID
 func (s *BookService) GetBook(id string) (*models.Book, error) {
 	var book models.Book
-	if err := s.db.Preload("Authors").Preload("Categories").First(&book, "id = ?", id).Error; err != nil {
+	if err := s.db.Preload("Authors").Preload("Categories").Preload("Tags").First(&book, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("book not found")
 		}
@@ -132,6 +140,11 @@ func (s *BookService) UpdateBook(id string, book *models.Book) error {
 
 		// Update categories
 		if err := tx.Model(&existingBook).Association("Categories").Replace(book.Categories); err != nil {
+			return err
+		}
+
+		// Update tags
+		if err := tx.Model(&existingBook).Association("Tags").Replace(book.Tags); err != nil {
 			return err
 		}
 

@@ -15,7 +15,7 @@ import {
 } from '@ant-design/icons';
 
 const {Header} = Layout;
-const {Title, Text} = Typography;
+const {Text} = Typography;
 const {useBreakpoint} = Grid;
 
 const Navbar: React.FC = () => {
@@ -36,10 +36,10 @@ const Navbar: React.FC = () => {
 
   const mainMenuItems: MenuProps['items'] = [
     {
-      key: '/',
+      key: '/home',
       icon: <HomeOutlined/>,
       label: 'Home',
-      onClick: () => navigate('/')
+      onClick: () => navigate('/home')
     },
     ...(user ? [{
       key: '/reservations',
@@ -92,27 +92,29 @@ const Navbar: React.FC = () => {
   ];
 
   return (
-    <Header style={{padding: '0 24px', zIndex: 10}}>
+    <Header style={{padding: '0 16px', height: '48px', lineHeight: '48px'}}>
       <Row align="middle" justify="space-between" wrap={false}>
         {screens.md ? (
-          <>
-            <Col md={19}>
+          <Row justify="space-between" align="middle" style={{ width: '100%' }}>
+            <Col>
               <Menu
                 theme="dark"
                 mode="horizontal"
                 selectedKeys={[window.location.pathname]}
                 items={mainMenuItems}
+                style={{ lineHeight: '48px' }}
               />
             </Col>
-            <Col md={5}>
+            <Col>
               <Menu
                 theme="dark"
                 mode="horizontal"
                 selectedKeys={[window.location.pathname]}
                 items={userMenuItems}
+                style={{ lineHeight: '48px'}}
               />
             </Col>
-          </>
+          </Row>
         ) : (
           <Col>
             <Button
