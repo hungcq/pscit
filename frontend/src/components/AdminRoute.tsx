@@ -11,7 +11,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   const location = useLocation();
 
   if (!user || user.role !== 'admin') {
-    return <Navigate to="/home" state={{ from: location }} replace />;
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
 
   return <>{children}</>;

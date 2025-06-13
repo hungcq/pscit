@@ -235,20 +235,32 @@ const Home: React.FC = () => {
                         alt={book.title}
                         src={imageErrors[book.id] ? book.main_image : getBookImageUrl(book)}
                         onError={() => handleImageError(book.id)}
-                        style={{height: '230px', objectFit: 'contain'}}
+                        style={{ width: '100%', maxHeight: '230px', objectFit: 'contain' }}
                       />
                     }
                     onClick={() => navigate(`/books/${book.id}`)}
                   >
-                    {!isMobile && <Meta
-                      title={book.title}
-                      description={
-                        <Text ellipsis style={{width: '100%'}}>
-                          By {book.authors.map(a => a.name).join(', ')}
+                    <Meta
+                      title={
+                        <Text
+                          strong
+                          style={isMobile ? {
+                            whiteSpace: 'normal',
+                            wordBreak: 'break-word',
+                            display: 'block',
+                          } : {}}
+                        >
+                          {book.title}
                         </Text>
                       }
+                      description={
+                        !isMobile && (
+                          <Text ellipsis style={{ width: '100%' }}>
+                            By {book.authors.map(a => a.name).join(', ')}
+                          </Text>
+                        )
+                      }
                     />
-                    }
                   </Card>
                 </Col>
               ))}
@@ -271,4 +283,4 @@ const Home: React.FC = () => {
   );
 };
 
-export default Home; 
+export default Home;

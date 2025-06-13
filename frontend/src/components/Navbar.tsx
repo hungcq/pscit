@@ -36,10 +36,10 @@ const Navbar: React.FC = () => {
 
   const mainMenuItems: MenuProps['items'] = [
     {
-      key: '/home',
+      key: '/',
       icon: <HomeOutlined/>,
       label: 'Home',
-      onClick: () => navigate('/home')
+      onClick: () => navigate('/')
     },
     ...(user ? [{
       key: '/reservations',

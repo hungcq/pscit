@@ -38,6 +38,16 @@ func (s *CartService) AddToCart(userID, bookCopyID string) error {
 		return errors.New("book copy is not available")
 	}
 
+	// Check current cart item count
+	var count int64
+	if err := s.db.Model(&models.CartItem{}).Where("user_id = ?", userUUID).Count(&count).Error; err != nil {
+		return err
+	}
+
+	if count >= 5 {
+		return errors.New("cart limit reached: maximum 5 items allowed")
+	}
+
 	// Check if book copy is already in cart
 	var existingItem models.CartItem
 	err = s.db.Where("user_id = ? AND book_copy_id = ?", userUUID, bookCopyUUID).First(&existingItem).Error
