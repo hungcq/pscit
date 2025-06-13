@@ -1,3 +1,5 @@
-export const getBookImageUrl = (bookId: string): string => {
-    return import.meta.env.VITE_ENV === 'dev' ? '' : `https://pscit.hungcq.com/book-images/${bookId}.jpg`;
+import {Book} from "./types";
+
+export const getBookImageUrl = (book: Book): string => {
+    return import.meta.env.VITE_ENV === 'dev' ? book.main_image : `https://pscit.hungcq.com/book-images/${book.id}.jpg`;
 };

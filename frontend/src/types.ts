@@ -14,28 +14,35 @@ export interface Book {
   title: string;
   subtitle: string;
   description: string;
-  isbn10: string;
-  isbn13: string;
+  isbn10?: string;
+  isbn13?: string;
+  published_year: number;
+  page_count: number;
+  publisher: string;
+  google_volume_id: string;
   main_image: string;
+  format: 'paperback' | 'hardcover';
+  language: string;
+  created_at: string;
+  updated_at: string;
   authors: Author[];
   categories: Category[];
-  published_year: number;
-  publisher: string;
-  page_count: number;
-  format: 'paperback' | 'hardcover';
-  google_volume_id: string;
 }
 
 export interface Author {
   id: string;
   name: string;
-  biography: string;
+  biography?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Category {
   id: string;
   name: string;
-  description: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface BookCopy {
@@ -43,23 +50,30 @@ export interface BookCopy {
   book_id: string;
   condition: 'new' | 'like_new' | 'good' | 'fair' | 'poor';
   status: 'available' | 'borrowed' | 'reserved';
-  notes?: string;
+  notes: string;
+  created_at: string;
+  updated_at: string;
   book: Book;
 }
 
 export interface Reservation {
   id: string;
   user_id: string;
-  book_copy_id: string;
   start_date: string;
   end_date: string;
-  pickup_time: string;
-  return_time: string;
+  pickup_time?: string;
+  return_time?: string;
   status: 'pending' | 'approved' | 'rejected' | 'returned';
   created_at: string;
   updated_at: string;
-  user?: User;
+  user: User;
+  book_copies: BookCopy[];
+  suggested_pickup_timeslots: string[];
+  suggested_return_timeslots: string[];
+}
+
+export interface CartItem {
+  id: string;
   book_copy: BookCopy;
-  suggested_pickup_timeslots?: string[];
-  suggested_return_timeslots?: string[];
+  condition: 'new' | 'like_new' | 'good' | 'fair' | 'poor';
 }

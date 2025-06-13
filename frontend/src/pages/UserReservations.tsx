@@ -77,29 +77,24 @@ const UserReservations: React.FC = () => {
 
   const columns: ColumnsType<Reservation> = [
     {
-      title: 'Book',
-      dataIndex: ['book_copy', 'book', 'title'],
-      key: 'book',
-      render: (text: string, record: Reservation) => record.book_copy?.book?.title || 'N/A',
-    },
-    {
-      title: 'Copy Condition',
-      dataIndex: ['book_copy', 'condition'],
-      key: 'condition',
-      render: (condition: BookCopy['condition']) => (
-        <Tag color={getConditionColor(condition)}>
-          {condition.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Format',
-      dataIndex: ['book_copy', 'book', 'format'],
-      key: 'format',
-      render: (format: string) => (
-        <Tag color={format === 'hardcover' ? 'blue' : 'green'}>
-          {format.charAt(0).toUpperCase() + format.slice(1)}
-        </Tag>
+      title: 'Books',
+      key: 'books',
+      render: (_, record: Reservation) => (
+        <Space direction="vertical" style={{ width: '100%' }}>
+          {record.book_copies.map((bookCopy: BookCopy) => (
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Text strong>{bookCopy.book.title}</Text>
+              <Space>
+                <Tag color={getConditionColor(bookCopy.condition)}>
+                  {bookCopy.condition.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                </Tag>
+                <Tag color={bookCopy.book.format === 'hardcover' ? 'blue' : 'green'}>
+                  {bookCopy.book.format.charAt(0).toUpperCase() + bookCopy.book.format.slice(1)}
+                </Tag>
+              </Space>
+            </Space>
+          ))}
+        </Space>
       ),
     },
     {
@@ -141,18 +136,11 @@ const UserReservations: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => (
-          <Tag color={getStatusColor(status)}>
-            {status?.toUpperCase() || 'UNKNOWN'}
-          </Tag>
+        <Tag color={getStatusColor(status)}>
+          {status?.toUpperCase() || 'UNKNOWN'}
+        </Tag>
       ),
     },
-    // {
-    //   title: 'Created At',
-    //   dataIndex: 'created_at',
-    //   key: 'created_at',
-    //   responsive: ['lg'],
-    //   render: (date: string) => date ? new Date(date).toLocaleString('en-GB') : 'N/A',
-    // },
   ];
 
   if (loading) {
@@ -164,28 +152,27 @@ const UserReservations: React.FC = () => {
   }
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%' }}>
-      <Title level={2}>My Reservations</Title>
-      
+    <Card title="My Reservations">
       {isMobile ? (
         // Mobile Card View
         <Space direction="vertical" style={{ width: '100%' }}>
           {reservations.map((reservation) => (
             <Card key={reservation.id} style={{ marginBottom: '16px' }}>
               <Space direction="vertical" style={{ width: '100%' }}>
-                <Title level={4}>{reservation.book_copy?.book?.title || 'N/A'}</Title>
-                
-                <Space wrap>
-                  <Tag color={getConditionColor(reservation.book_copy?.condition || 'new')}>
-                    {reservation.book_copy.condition?.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                  </Tag>
-                  <Tag color={reservation.book_copy?.book?.format === 'hardcover' ? 'blue' : 'green'}>
-                    {reservation.book_copy.book?.format?.charAt(0).toUpperCase() + reservation.book_copy?.book?.format?.slice(1)}
-                  </Tag>
-                  <Tag color={getStatusColor(reservation.status)}>
-                    {reservation.status?.toUpperCase() || 'UNKNOWN'}
-                  </Tag>
-                </Space>
+                <Title level={4}>Books</Title>
+                {reservation.book_copies.map((bookCopy: BookCopy) => (
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <Text strong>{bookCopy.book.title}</Text>
+                    <Space>
+                      <Tag color={getConditionColor(bookCopy.condition)}>
+                        {bookCopy.condition.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                      </Tag>
+                      <Tag color={bookCopy.book.format === 'hardcover' ? 'blue' : 'green'}>
+                        {bookCopy.book.format.charAt(0).toUpperCase() + bookCopy.book.format.slice(1)}
+                      </Tag>
+                    </Space>
+                  </Space>
+                ))}
 
                 <div>
                   <Text strong>Period: </Text>
@@ -207,8 +194,10 @@ const UserReservations: React.FC = () => {
                 </div>
 
                 <div>
-                  <Text strong>Created: </Text>
-                  <Text>{new Date(reservation.created_at).toLocaleString('en-GB')}</Text>
+                  <Text strong>Status: </Text>
+                  <Tag color={getStatusColor(reservation.status)}>
+                    {reservation.status?.toUpperCase() || 'UNKNOWN'}
+                  </Tag>
                 </div>
               </Space>
             </Card>
@@ -227,10 +216,9 @@ const UserReservations: React.FC = () => {
             onChange: (page) => setCurrentPage(page),
           }}
           locale={{ emptyText: 'No reservations found' }}
-          style={{height: '75vh'}}
         />
       )}
-    </Space>
+    </Card>
   );
 };
 

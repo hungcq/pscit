@@ -4,10 +4,11 @@ import {Card, Col, Empty, Input, message, Pagination, Row, Select, Space, Spin, 
 import {authorsAPI, booksAPI, categoriesAPI} from '../api';
 import {Author, Book, Category} from '../types';
 import {getBookImageUrl} from '../utils';
+import useBreakpoint from "antd/es/grid/hooks/useBreakpoint";
 
-const { Title, Text } = Typography;
-const { Option } = Select;
-const { Meta } = Card;
+const {Text} = Typography;
+const {Option} = Select;
+const {Meta} = Card;
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -25,23 +26,14 @@ const Home: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedAuthor, setSelectedAuthor] = useState<string>('');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
-  const [imageUrls, setImageUrls] = useState<{ [key: string]: string }>({});
   const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
+
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   useEffect(() => {
     loadData();
   }, [pagination.current, pagination.pageSize, searchQuery, selectedCategory, selectedAuthor, selectedLanguage]);
-
-  useEffect(() => {
-    const loadImageUrls = async () => {
-      const newImageUrls: { [key: string]: string } = {};
-      for (const book of books) {
-        newImageUrls[book.id] = getBookImageUrl(book.id);
-      }
-      setImageUrls(newImageUrls);
-    };
-    loadImageUrls();
-  }, [books]);
 
   const loadData = async () => {
     try {
@@ -93,107 +85,90 @@ const Home: React.FC = () => {
   };
 
   const handleImageError = (bookId: string) => {
-    setImageErrors(prev => ({ ...prev, [bookId]: true }));
+    setImageErrors(prev => ({...prev, [bookId]: true}));
   };
 
   if (loading) {
     return (
-      <Space direction="vertical" align="center" style={{ width: '100%', marginTop: '100px' }}>
-        <Spin size="large" />
+      <Space direction="vertical" align="center" style={{width: '100%', marginTop: '100px'}}>
+        <Spin size="large"/>
       </Space>
     );
   }
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%', minHeight: '85vh', position: 'relative' }}>
+    <Space direction="vertical" size="large" style={{width: '100%', minHeight: '85vh', position: 'relative'}}>
       <Row gutter={[16, 16]} align="middle">
-        <Col xs={24} md={6}>
-          <Space>
-            <img
-              src="/pscit-icon-large.png"
-              alt="PSciT Library"
-              style={{ width: '50px', height: '50px' }}
-            />
-            <div>
-              <Title level={3} style={{ margin: 0 }}>PSciT Library</Title>
-              <Text type="secondary">A curated physical library in Hanoi</Text>
-            </div>
-          </Space>
+        <Col xs={24} sm={12} md={6}>
+          <Input.Search
+            placeholder="Title or subtitle or ISBN..."
+            size="large"
+            allowClear
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onSearch={(value) => {
+              setSearchQuery(value);
+              setPagination(prev => ({...prev, current: 1}));
+            }}
+          />
         </Col>
-        <Col xs={24} md={18}>
-          <Row gutter={[8, 8]}>
-            <Col xs={24} sm={12} md={6}>
-              <Input.Search
-                placeholder="Title or subtitle or ISBN..."
-                size="large"
-                allowClear
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onSearch={(value) => {
-                  setSearchQuery(value);
-                  setPagination(prev => ({ ...prev, current: 1 }));
-                }}
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Select
-                placeholder="Select Category"
-                allowClear
-                style={{ width: '100%' }}
-                size="large"
-                onChange={handleCategoryChange}
-                value={selectedCategory || undefined}
-                showSearch
-                filterOption={(input, option) =>
-                  String(option?.children).toLowerCase().includes(input.toLowerCase())
-                }
-              >
-                {categories.map(category => (
-                  <Option key={category.id} value={category.name}>
-                    {category.name}
-                  </Option>
-                ))}
-              </Select>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Select
-                placeholder="Select Author"
-                allowClear
-                style={{ width: '100%' }}
-                size="large"
-                onChange={handleAuthorChange}
-                value={selectedAuthor || undefined}
-                showSearch
-                filterOption={(input, option) =>
-                  String(option?.children).toLowerCase().includes(input.toLowerCase())
-                }
-              >
-                {authors.map(author => (
-                  <Option key={author.id} value={author.name}>
-                    {author.name}
-                  </Option>
-                ))}
-              </Select>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Select
-                placeholder="Select Language"
-                allowClear
-                style={{ width: '100%' }}
-                size="large"
-                onChange={handleLanguageChange}
-                value={selectedLanguage || undefined}
-              >
-                <Option value="en">English</Option>
-                <Option value="vi">Vietnamese</Option>
-              </Select>
-            </Col>
-          </Row>
+        <Col xs={24} sm={12} md={6}>
+          <Select
+            placeholder="Select Category"
+            allowClear
+            style={{width: '100%'}}
+            size="large"
+            onChange={handleCategoryChange}
+            value={selectedCategory || undefined}
+            showSearch
+            filterOption={(input, option) =>
+              String(option?.children).toLowerCase().includes(input.toLowerCase())
+            }
+          >
+            {categories.map(category => (
+              <Option key={category.id} value={category.name}>
+                {category.name}
+              </Option>
+            ))}
+          </Select>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Select
+            placeholder="Select Author"
+            allowClear
+            style={{width: '100%'}}
+            size="large"
+            onChange={handleAuthorChange}
+            value={selectedAuthor || undefined}
+            showSearch
+            filterOption={(input, option) =>
+              String(option?.children).toLowerCase().includes(input.toLowerCase())
+            }
+          >
+            {authors.map(author => (
+              <Option key={author.id} value={author.name}>
+                {author.name}
+              </Option>
+            ))}
+          </Select>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Select
+            placeholder="Select Language"
+            allowClear
+            style={{width: '100%'}}
+            size="large"
+            onChange={handleLanguageChange}
+            value={selectedLanguage || undefined}
+          >
+            <Option value="en">English</Option>
+            <Option value="vi">Vietnamese</Option>
+          </Select>
         </Col>
       </Row>
 
       {books.length === 0 ? (
-        <Empty description="No books found" />
+        <Empty description="No books found"/>
       ) : (
         <>
           <Row gutter={[24, 24]}>
@@ -204,35 +179,36 @@ const Home: React.FC = () => {
                   cover={
                     <img
                       alt={book.title}
-                      src={imageErrors[book.id] ? book.main_image : getBookImageUrl(book.id)}
+                      src={imageErrors[book.id] ? book.main_image : getBookImageUrl(book)}
                       onError={() => handleImageError(book.id)}
-                      style={{ height: '230px', objectFit: 'contain' }}
+                      style={{height: '230px', objectFit: 'contain'}}
                     />
                   }
                   onClick={() => navigate(`/books/${book.id}`)}
                 >
-                  <Meta
+                  {!isMobile && <Meta
                     title={book.title}
                     description={
-                      <Text ellipsis style={{ width: '100%' }}>
+                      <Text ellipsis style={{width: '100%'}}>
                         By {book.authors.map(a => a.name).join(', ')}
                       </Text>
                     }
                   />
+                  }
                 </Card>
               </Col>
             ))}
           </Row>
 
           <Row justify="center">
-              <Pagination
-                current={pagination.current}
-                total={pagination.total}
-                pageSize={pagination.pageSize}
-                onChange={handlePageChange}
-                showSizeChanger={false}
-              />
-            </Row>
+            <Pagination
+              current={pagination.current}
+              total={pagination.total}
+              pageSize={pagination.pageSize}
+              onChange={handlePageChange}
+              showSizeChanger={false}
+            />
+          </Row>
         </>
       )}
     </Space>

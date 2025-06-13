@@ -180,6 +180,7 @@ const BookForm: React.FC<BookFormProps> = ({
                         placeholder="Select categories"
                         options={categories.map(c => ({label: c.name, value: c.id}))}
                         showSearch
+                        autoClearSearchValue={false}
                         filterOption={(input, option) =>
                             (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                         }

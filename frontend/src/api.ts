@@ -1,5 +1,5 @@
 import axios, {AxiosError} from 'axios';
-import {Author, Book, BookCopy, Category, Reservation, User} from './types';
+import {Author, Book, BookCopy, CartItem, Category, Reservation} from './types';
 
 interface ErrorResponse {
     error: string;
@@ -38,19 +38,6 @@ api.interceptors.response.use(
     }
 );
 
-// Auth API
-export const authAPI = {
-    login: (email: string, password: string) =>
-        api.post<{ token: string; user: User }>('/auth/login', { email, password }),
-    register: (username: string, email: string, password: string) =>
-        api.post<{ token: string; user: User }>('/auth/register', {
-            username,
-            email,
-            password,
-        }),
-    getCurrentUser: () => api.get<User>('/auth/me'),
-};
-
 // Books API
 export const booksAPI = {
     getBooks: (query?: string, category?: string, author?: string, language?: string, page = 1, limit = 12, sortField?: string, sortOrder?: string) =>
@@ -58,7 +45,6 @@ export const booksAPI = {
             params: { query, category, author, language, page, limit, sortField, sortOrder },
         }),
     getBook: (id: string) => api.get<Book>(`/books/${id}`),
-    getBookCopies: (bookId: string) => api.get<BookCopy[]>(`/books/${bookId}/copies`),
     createBook: (book: Partial<Book>) => api.post<Book>('/books', book),
     updateBook: (id: string, book: Partial<Book>) => api.put<Book>(`/books/${id}`, book),
     deleteBook: (id: string) => api.delete(`/books/${id}`),
@@ -67,22 +53,19 @@ export const booksAPI = {
 // Book Copies API
 export const bookCopiesAPI = {
     getBookCopies: (bookId: string) => api.get<BookCopy[]>(`/books/${bookId}/copies`),
-    getBookCopy: (id: string) => api.get<BookCopy>(`/books/copies/${id}`),
     createBookCopy: (bookId: string, copy: Partial<BookCopy>) =>
         api.post<BookCopy>(`/books/${bookId}/copies`, copy),
     updateBookCopy: (id: string, copy: Partial<BookCopy>) =>
         api.put<BookCopy>(`/books/copies/${id}`, copy),
     deleteBookCopy: (id: string) => api.delete(`/books/copies/${id}`),
-    bulkCreateBookCopies: (bookId: string, count: number, condition: BookCopy['condition']) =>
-        api.post<BookCopy[]>(`/books/${bookId}/copies/bulk`, { count, condition }),
 };
 
 // Reservations API
 export const reservationsAPI = {
     getReservations: (page = 1, limit = 10, filters?: { email?: string; status?: string; bookTitle?: string }) =>
         api.get<{ reservations: Reservation[]; total: number }>('/reservations', {
-            params: { 
-                page, 
+            params: {
+                page,
                 limit,
                 email: filters?.email,
                 status: filters?.status,
@@ -93,10 +76,10 @@ export const reservationsAPI = {
         api.get<{ reservations: Reservation[]; total: number }>('/reservations/user', {
             params: { page, limit },
         }),
-    createReservation: (data: { 
-        bookCopyId: string; 
-        startDate: string; 
-        endDate: string; 
+    createReservation: (data: {
+        bookCopyId: string;
+        startDate: string;
+        endDate: string;
         suggestedPickupTimeslots: string[];
         suggestedReturnTimeslots: string[];
     }) =>
@@ -108,30 +91,16 @@ export const reservationsAPI = {
             suggested_return_timeslots: data.suggestedReturnTimeslots,
         }),
     updateReservation: (id: string, status: string, pickupTime?: string, returnTime?: string) =>
-        api.put<Reservation>(`/reservations/${id}/status`, { 
-            status, 
+        api.put<Reservation>(`/reservations/${id}/status`, {
+            status,
             pickup_time: pickupTime,
-            return_time: returnTime 
+            return_time: returnTime
         }),
-};
-
-// User API
-export const userAPI = {
-    updateProfile: async (userData: Partial<User>) => {
-        const response = await api.put('/users/profile', userData);
-        return response.data;
-    },
-
-    toggleSubscription: async () => {
-        const response = await api.put('/users/subscription');
-        return response.data;
-    },
 };
 
 // Authors API
 export const authorsAPI = {
     getAuthors: () => api.get<Author[]>('/authors'),
-    getAuthor: (id: string) => api.get<Author>(`/authors/${id}`),
     createAuthor: (author: Partial<Author>) => api.post<Author>('/authors', author),
     updateAuthor: (id: string, author: Partial<Author>) => api.put<Author>(`/authors/${id}`, author),
     deleteAuthor: (id: string) => api.delete(`/authors/${id}`),
@@ -140,10 +109,28 @@ export const authorsAPI = {
 // Categories API
 export const categoriesAPI = {
     getCategories: () => api.get<Category[]>('/categories'),
-    getCategory: (id: string) => api.get<Category>(`/categories/${id}`),
     createCategory: (category: Partial<Category>) => api.post<Category>('/categories', category),
     updateCategory: (id: string, category: Partial<Category>) => api.put<Category>(`/categories/${id}`, category),
     deleteCategory: (id: string) => api.delete(`/categories/${id}`),
+};
+
+// Cart API
+export const cartAPI = {
+    getCartItems: () => api.get<CartItem[]>('/cart'),
+    addToCart: (bookCopyId: string) => api.post('/cart', { book_copy_id: bookCopyId }),
+    removeFromCart: (bookCopyId: string) => api.delete(`/cart/${bookCopyId}`),
+    clearCart: () => api.delete('/cart'),
+    checkoutCart: (data: {
+        startDate: string;
+        endDate: string;
+        suggestedPickupTimeslots: string[];
+        suggestedReturnTimeslots: string[];
+    }) => api.post<Reservation>('/reservations', {
+        start_date: data.startDate,
+        end_date: data.endDate,
+        suggested_pickup_timeslots: data.suggestedPickupTimeslots,
+        suggested_return_timeslots: data.suggestedReturnTimeslots,
+    }),
 };
 
 export default api; 

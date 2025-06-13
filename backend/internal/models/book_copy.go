@@ -28,7 +28,7 @@ const (
 type BookCopy struct {
 	ID        uuid.UUID      `gorm:"type:uuid;primary_key" json:"id"`
 	BookID    uuid.UUID      `gorm:"type:uuid;index:idx_book_copies_book_id" json:"book_id"`
-	Condition BookCondition  `gorm:"type:varchar(20);index:idx_book_copies_condition" json:"condition"`
+	Condition BookCondition  `gorm:"type:varchar(20)" json:"condition"`
 	Status    BookCopyStatus `gorm:"type:varchar(20);index:idx_book_copies_status;default:'available'" json:"status"`
 	Notes     string         `json:"notes"`
 	CreatedAt time.Time      `json:"created_at"`

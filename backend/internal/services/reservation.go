@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type ReservationService struct {
@@ -24,67 +26,124 @@ func NewReservationService(db *gorm.DB, emailService *EmailService) *Reservation
 	}
 }
 
+// Helper to count user's reserved/borrowed books
+func (s *ReservationService) countUserActiveBooks(tx *gorm.DB, userID uuid.UUID) (int64, error) {
+	var count int64
+	err := tx.Table("reservation_book_copies").
+		Joins("JOIN reservations ON reservations.id = reservation_book_copies.reservation_id").
+		Where("reservations.user_id = ? AND reservations.status IN ?", userID, []string{"pending", "approved"}).
+		Count(&count).Error
+	return count, err
+}
+
 // CreateReservation creates a new reservation
 func (s *ReservationService) CreateReservation(
-	userID string, bookCopyID string, startDate time.Time, endDate time.Time, suggestedPickTimes []string, suggestedReturnTimes []string,
+	userID string, startDate time.Time, endDate time.Time,
+	suggestedPickTimes []string, suggestedReturnTimes []string,
 ) (*models.Reservation, error) {
 	var reservation models.Reservation
 
-	err := s.db.Transaction(func(tx *gorm.DB) error {
-		// Check if book copy exists and is available
-		var bookCopy models.BookCopy
-		if err := tx.First(&bookCopy, "id = ?", bookCopyID).Error; err != nil {
-			return err
+	// Get cart items
+	cartService := NewCartService(s.db)
+	items, err := cartService.GetCartItems(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(items) == 0 {
+		return nil, errors.New("cart is empty")
+	}
+
+	var bookCopyIDs []string
+	for _, item := range items {
+		bookCopyIDs = append(bookCopyIDs, item.BookCopyID.String())
+	}
+
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		userUUID, err := uuid.Parse(userID)
+		if err != nil {
+			return fmt.Errorf("invalid user ID: %w", err)
 		}
 
-		if bookCopy.Status != models.BookCopyStatusAvailable {
-			return errors.New("book copy is not available")
+		// Enforce max 5 reserved/borrowed books
+		activeCount, err := s.countUserActiveBooks(tx, userUUID)
+		if err != nil {
+			return fmt.Errorf("failed to count user's active books: %w", err)
+		}
+		if activeCount+int64(len(bookCopyIDs)) > 5 {
+			return fmt.Errorf("you cannot reserve or borrow more than 5 books at a time (currently %d books)", activeCount)
 		}
 
-		// Check if user has any active reservations for this book copy
-		var existingReservation models.Reservation
-		if err := tx.Where("book_copy_id = ? AND user_id = ? AND status = ?", bookCopyID, userID, models.ReservationStatusPending).First(&existingReservation).Error; err == nil {
-			return errors.New("user already has a pending reservation for this book")
+		var bookCopies []models.BookCopy
+		for _, bookCopyID := range bookCopyIDs {
+			bookCopyUUID, err := uuid.Parse(bookCopyID)
+			if err != nil {
+				return fmt.Errorf("invalid book copy ID: %w", err)
+			}
+
+			var bookCopy models.BookCopy
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+				First(&bookCopy, "id = ?", bookCopyUUID).Error; err != nil {
+				return fmt.Errorf("failed to lock book copy %s: %w", bookCopyUUID, err)
+			}
+
+			if bookCopy.Status != models.BookCopyStatusAvailable {
+				return fmt.Errorf("book copy %s is not available", bookCopyUUID)
+			}
+
+			bookCopies = append(bookCopies, bookCopy)
+		}
+
+		// Check if user has any active reservations for these book copies
+		for _, bookCopy := range bookCopies {
+			var count int64
+			if err := tx.Model(&models.Reservation{}).
+				Joins("JOIN reservation_book_copies ON reservation_book_copies.reservation_id = reservations.id").
+				Where("reservation_book_copies.book_copy_id = ? AND reservations.user_id = ? AND reservations.status = ?",
+					bookCopy.ID, userUUID, models.ReservationStatusPending).
+				Count(&count).Error; err != nil {
+				return fmt.Errorf("failed to check existing reservations: %w", err)
+			}
+			if count > 0 {
+				return fmt.Errorf("user already has a pending reservation for book copy %s", bookCopy.ID)
+			}
 		}
 
 		if err := checkTimeOverlap(suggestedPickTimes); err != nil {
-			return err
+			return fmt.Errorf("invalid pick time: %w", err)
 		}
 		if err := checkTimeOverlap(suggestedReturnTimes); err != nil {
-			return err
+			return fmt.Errorf("invalid return time: %w", err)
 		}
 
-		// Parse UUIDs
-		userUUID, err := uuid.Parse(userID)
-		if err != nil {
-			return errors.New("invalid user ID")
-		}
-
-		bookCopyUUID, err := uuid.Parse(bookCopyID)
-		if err != nil {
-			return errors.New("invalid book copy ID")
-		}
-
-		// Create reservation
 		reservation = models.Reservation{
 			UserID:                   userUUID,
-			BookCopyID:               bookCopyUUID,
 			StartDate:                startDate,
 			EndDate:                  endDate,
-			PickupTime:               nil, // Will be set when approved
-			ReturnTime:               nil, // Will be set when approved
+			Status:                   models.ReservationStatusPending,
 			SuggestedPickupTimeslots: suggestedPickTimes,
 			SuggestedReturnTimeslots: suggestedReturnTimes,
-			Status:                   models.ReservationStatusPending,
 		}
 
 		if err := tx.Create(&reservation).Error; err != nil {
-			return err
+			return fmt.Errorf("failed to create reservation: %w", err)
 		}
 
-		// Update book copy status
-		if err := tx.Model(&bookCopy).Update("status", models.BookCopyStatusReserved).Error; err != nil {
-			return err
+		// Associate book copies with reservation using GORM's association
+		if err := tx.Model(&reservation).Association("BookCopies").Append(bookCopies); err != nil {
+			return fmt.Errorf("failed to associate book copies: %w", err)
+		}
+
+		// Update book copy statuses
+		if err := tx.Model(&models.BookCopy{}).
+			Where("id IN ?", bookCopyIDs).
+			Update("status", models.BookCopyStatusReserved).Error; err != nil {
+			return fmt.Errorf("failed to update book copy status: %w", err)
+		}
+
+		// Clear cart within the same transaction
+		if err := cartService.ClearCartTx(tx, userID); err != nil {
+			return fmt.Errorf("failed to clear cart: %w", err)
 		}
 
 		return nil
@@ -94,8 +153,12 @@ func (s *ReservationService) CreateReservation(
 		return nil, err
 	}
 
-	// Load related data with preloaded book and authors
-	if err := s.db.Preload("User").Preload("BookCopy.Book.Authors").First(&reservation, reservation.ID).Error; err != nil {
+	// Load related data
+	if err := s.db.Preload("User").
+		Preload("BookCopies").
+		Preload("BookCopies.Book").
+		Preload("BookCopies.Book.Authors").
+		First(&reservation, reservation.ID).Error; err != nil {
 		return nil, err
 	}
 
@@ -131,8 +194,10 @@ func (s *ReservationService) GetReservations(page, limit int, filters models.Res
 
 	query := s.db.Model(&models.Reservation{}).
 		Preload("User").
-		Preload("BookCopy").
-		Preload("BookCopy.Book")
+		Preload("BookCopies").
+		Preload("BookCopies.Book").
+		Preload("BookCopies.Book.Authors").
+		Preload("BookCopies.Book.Categories")
 
 	if filters.Email != "" {
 		query = query.Joins("JOIN users ON users.id = reservations.user_id").
@@ -144,7 +209,8 @@ func (s *ReservationService) GetReservations(page, limit int, filters models.Res
 	}
 
 	if filters.BookTitle != "" {
-		query = query.Joins("JOIN book_copies ON book_copies.id = reservations.book_copy_id").
+		query = query.Joins("JOIN reservation_book_copies ON reservation_book_copies.reservation_id = reservations.id").
+			Joins("JOIN book_copies ON book_copies.id = reservation_book_copies.book_copy_id").
 			Joins("JOIN books ON books.id = book_copies.book_id").
 			Where("LOWER(books.title) LIKE ?", "%"+strings.ToLower(filters.BookTitle)+"%")
 	}
@@ -182,7 +248,11 @@ func (s *ReservationService) GetUserReservations(userID string, page, limit int)
 	}
 
 	// Get paginated reservations with preloaded relations
-	if err := s.db.Preload("BookCopy.Book").Preload("User").
+	if err := s.db.Preload("BookCopies").
+		Preload("BookCopies.Book").
+		Preload("BookCopies.Book.Authors").
+		Preload("BookCopies.Book.Categories").
+		Preload("User").
 		Where("user_id = ?", userUUID).
 		Offset(offset).Limit(limit).
 		Order("created_at DESC").
@@ -204,9 +274,9 @@ func (s *ReservationService) UpdateReservationStatus(
 			return err
 		}
 
-		// If status is approved, require a pickup slot
+		// If status is approved, require pickup and return times
 		if status == models.ReservationStatusApproved && (pickupTime.IsZero() || returnTime.IsZero()) {
-			return errors.New("pickup slot is required when approving a reservation")
+			return errors.New("pickup and return times are required when approving a reservation")
 		}
 
 		// Update reservation
@@ -223,12 +293,7 @@ func (s *ReservationService) UpdateReservationStatus(
 			return err
 		}
 
-		// Update book copy status
-		var bookCopy models.BookCopy
-		if err := tx.First(&bookCopy, "id = ?", reservation.BookCopyID).Error; err != nil {
-			return err
-		}
-
+		// Update all book copies status in a single query
 		bookCopyStatus := models.BookCopyStatusAvailable
 		switch status {
 		case models.ReservationStatusApproved:
@@ -239,7 +304,15 @@ func (s *ReservationService) UpdateReservationStatus(
 			bookCopyStatus = models.BookCopyStatusAvailable
 		}
 
-		if err := tx.Model(&bookCopy).Update("status", bookCopyStatus).Error; err != nil {
+		// Use raw SQL to update with FROM clause
+		if err := tx.Exec(`
+			UPDATE book_copies
+			SET status = ?, updated_at = ?
+			FROM reservation_book_copies
+			WHERE reservation_book_copies.book_copy_id = book_copies.id
+			  AND reservation_book_copies.reservation_id = ?
+			  AND book_copies.deleted_at IS NULL
+		`, bookCopyStatus, time.Now(), reservation.ID).Error; err != nil {
 			return err
 		}
 
@@ -251,7 +324,7 @@ func (s *ReservationService) UpdateReservationStatus(
 	}
 
 	// Load related data
-	if err := s.db.Preload("User").Preload("BookCopy.Book.Authors").First(&reservation, reservation.ID).Error; err != nil {
+	if err := s.db.Preload("User").Preload("BookCopies.Book.Authors").First(&reservation, reservation.ID).Error; err != nil {
 		return nil, err
 	}
 
@@ -279,38 +352,61 @@ func (s *ReservationService) GetReservation(id string) (*models.Reservation, err
 	}
 
 	var reservation models.Reservation
-	if err := s.db.Preload("BookCopy.Book").Preload("User").First(&reservation, "id = ?", reservationUUID).Error; err != nil {
+	if err := s.db.Preload("BookCopies").
+		Preload("BookCopies.Book").
+		Preload("BookCopies.Book.Authors").
+		Preload("BookCopies.Book.Categories").
+		Preload("User").
+		First(&reservation, "id = ?", reservationUUID).Error; err != nil {
 		return nil, err
 	}
 	return &reservation, nil
 }
 
-func (s *ReservationService) CheckExpiredReservations() error {
-	now := time.Now()
-	var reservations []models.Reservation
-
-	// Find expired reservations
-	if err := s.db.Where("status = ? AND expires_at < ?", "pending", now).Find(&reservations).Error; err != nil {
-		return err
+// CheckoutCart creates a reservation from the user's cart
+func (s *ReservationService) CheckoutCart(
+	userID string, startDate time.Time, endDate time.Time, suggestedPickTimes []string, suggestedReturnTimes []string,
+) (*models.Reservation, error) {
+	// Get cart items
+	cartService := NewCartService(s.db)
+	items, err := cartService.GetCartItems(userID)
+	if err != nil {
+		return nil, err
 	}
 
-	// Update expired reservations
-	for _, reservation := range reservations {
-		reservation.Status = "expired"
-		if err := s.db.Save(&reservation).Error; err != nil {
-			return err
-		}
-
-		// Make book available again
-		var bookCopy models.BookCopy
-		if err := s.db.First(&bookCopy, "id = ?", reservation.BookCopyID).Error; err != nil {
-			return err
-		}
-		bookCopy.Status = models.BookCopyStatusAvailable
-		if err := s.db.Save(&bookCopy).Error; err != nil {
-			return err
-		}
+	if len(items) == 0 {
+		return nil, errors.New("cart is empty")
 	}
 
-	return nil
+	// Enforce max 5 reserved/borrowed books
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, errors.New("invalid user ID")
+	}
+	activeCount, err := s.countUserActiveBooks(s.db, userUUID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count user's active books: %w", err)
+	}
+	if activeCount+int64(len(items)) > 5 {
+		return nil, errors.New("You cannot reserve or borrow more than 5 books at a time.")
+	}
+
+	// Get book copy IDs
+	var bookCopyIDs []string
+	for _, item := range items {
+		bookCopyIDs = append(bookCopyIDs, item.BookCopyID.String())
+	}
+
+	// Create reservation
+	reservation, err := s.CreateReservation(userID, startDate, endDate, suggestedPickTimes, suggestedReturnTimes)
+	if err != nil {
+		return nil, err
+	}
+
+	// Clear cart
+	if err := cartService.ClearCartTx(nil, userID); err != nil {
+		log.Printf("Failed to clear cart after checkout: %v", err)
+	}
+
+	return reservation, nil
 }

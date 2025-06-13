@@ -13,6 +13,8 @@ import UserProfile from "./pages/UserProfile";
 import AdminRoute from "./components/AdminRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import Footer from './components/Footer';
+import Cart from './pages/Cart';
+import {CartProvider} from './contexts/CartContext';
 
 const {Content} = Layout;
 
@@ -24,22 +26,17 @@ const App: React.FC = () => {
             }}>
             <AntApp>
                 <AuthProvider>
-                    <Router>
-                        <Layout style={{minHeight: '100vh'}}>
-                            <Navbar/>
-                            <Layout className="main-content">
-                                <Content style={{
-                                    margin: '24px 16px',
-                                    padding: 24,
-                                    minHeight: 280,
-                                    background: '#141414',
-                                    borderRadius: '8px'
-                                }}>
+                    <CartProvider>
+                        <Router>
+                            <Layout style={{minHeight: '100vh'}}>
+                                <Navbar/>
+                                <Content style={{padding: '24px'}}>
                                     <Routes>
                                         <Route path="/login" element={<Login/>}/>
                                         <Route path="/about" element={<About/>}/>
                                         <Route path="/" element={<Home/>}/>
                                         <Route path="/books/:id" element={<BookDetails/>}/>
+                                        <Route path="/cart" element={<Cart />} />
                                         <Route
                                             path="/reservations"
                                             element={
@@ -52,7 +49,7 @@ const App: React.FC = () => {
                                             path="/profile"
                                             element={
                                                 <PrivateRoute>
-                                                    <UserProfile/>
+                                                    <UserProfile />
                                                 </PrivateRoute>
                                             }
                                         />
@@ -60,31 +57,18 @@ const App: React.FC = () => {
                                             path="/admin"
                                             element={
                                                 <AdminRoute>
-                                                    <AdminDashboard/>
+                                                    <AdminDashboard />
                                                 </AdminRoute>
                                             }
                                         />
                                     </Routes>
                                 </Content>
-                                <Footer/>
+                                <Footer />
                             </Layout>
-                        </Layout>
-                    </Router>
+                        </Router>
+                    </CartProvider>
                 </AuthProvider>
             </AntApp>
-            <style>
-                {`
-                    .main-content {
-                        margin-left: 200px;
-                    }
-                    @media (max-width: 768px) {
-                        .main-content {
-                            margin-left: 0 !important;
-                            padding-top: 50px !important;
-                        }
-                    }
-                `}
-            </style>
         </ConfigProvider>
     );
 };

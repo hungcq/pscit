@@ -1,9 +1,11 @@
 import React, {useEffect, useState} from 'react';
-import {Button, Card, Form, Input, message, Modal, Select, Space, Table, Tag} from 'antd';
+import {Button, Card, Form, Input, message, Modal, Select, Space, Table, Tag, Typography} from 'antd';
 import {reservationsAPI} from '../../api';
 import {BookCopy, Reservation} from '../../types';
 import dayjs from 'dayjs';
 import {ColumnsType} from 'antd/es/table';
+
+const { Text } = Typography;
 
 interface ReservationsTabProps {
     onDataReload?: () => void;
@@ -97,21 +99,20 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
     };
 
     const handleApprove = async () => {
-        if (!selectedReservation || !selectedPickupTimeslot || !selectedReturnTimeslot) {
-            message.error('Please select both pickup and return times');
-            return;
-        }
+        if (!selectedReservation || !selectedPickupTimeslot || !selectedReturnTimeslot) return;
 
         try {
-            await reservationsAPI.updateReservation(selectedReservation.id, 'approved', selectedPickupTimeslot, selectedReturnTimeslot);
+            await reservationsAPI.updateReservation(
+                selectedReservation.id,
+                'approved',
+                selectedPickupTimeslot,
+                selectedReturnTimeslot
+            );
             message.success('Reservation approved successfully');
             setApproveModalVisible(false);
-            setSelectedReservation(null);
-            setSelectedPickupTimeslot('');
-            setSelectedReturnTimeslot('');
             loadData();
-        } catch (error: any) {
-            message.error(error.message || 'Failed to approve reservation');
+        } catch (error) {
+            message.error('Failed to approve reservation');
         }
     };
 
@@ -127,39 +128,30 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
 
     const reservationColumns: ColumnsType<Reservation> = [
         {
-            title: 'Book',
-            dataIndex: ['book_copy', 'book', 'title'],
-            key: 'book',
-            render: (text: string, record: Reservation) => (
-                <span style={{ fontWeight: 'bold' }}>
-                    {record.book_copy?.book?.title || 'N/A'}
-                </span>
-            ),
-        },
-        {
-            title: 'Copy Condition',
-            dataIndex: ['book_copy', 'condition'],
-            key: 'condition',
-            render: (condition: BookCopy['condition']) => (
-                <Tag color={
-                    condition === 'new' ? 'green' :
-                        condition === 'like_new' ? 'lime' :
-                            condition === 'good' ? 'blue' :
-                                condition === 'fair' ? 'orange' :
+            title: 'Books',
+            key: 'books',
+            render: (_, record: Reservation) => (
+                <Space direction="vertical" style={{ width: '100%' }}>
+                    {record.book_copies.map((bookCopy: BookCopy) => (
+                      <Space direction="vertical" style={{ width: '100%' }}>
+                            <Text strong>{bookCopy.book.title}</Text>
+                            <Space>
+                                <Tag color={
+                                    bookCopy.condition === 'new' ? 'green' :
+                                    bookCopy.condition === 'like_new' ? 'lime' :
+                                    bookCopy.condition === 'good' ? 'blue' :
+                                    bookCopy.condition === 'fair' ? 'orange' :
                                     'red'
-                }>
-                    {condition.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                </Tag>
-            ),
-        },
-        {
-            title: 'Format',
-            dataIndex: ['book_copy', 'book', 'format'],
-            key: 'format',
-            render: (format: string) => (
-                <Tag color={format === 'hardcover' ? 'blue' : 'green'}>
-                    {format.charAt(0).toUpperCase() + format.slice(1)}
-                </Tag>
+                                }>
+                                    {bookCopy.condition.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                </Tag>
+                                <Tag color={bookCopy.book.format === 'hardcover' ? 'blue' : 'green'}>
+                                    {bookCopy.book.format.charAt(0).toUpperCase() + bookCopy.book.format.slice(1)}
+                                </Tag>
+                            </Space>
+                      </Space>
+                    ))}
+                </Space>
             ),
         },
         {

@@ -1,11 +1,13 @@
 import React, {useEffect, useState} from 'react';
-import {Button, Card, Form, Input, message, Modal, Select, Space, Table, Tag} from 'antd';
+import {Button, Card, Form, Input, message, Modal, Select, Space, Table, Tag, Typography} from 'antd';
 import {DeleteOutlined, EditOutlined, PlusOutlined} from '@ant-design/icons';
 import {authorsAPI, bookCopiesAPI, booksAPI, categoriesAPI} from '../../api';
 import {Author, Book, BookCopy, Category} from '../../types';
 import {getBookImageUrl} from '../../utils';
 import {useLocation, useNavigate} from 'react-router-dom';
 import BookForm, {BookFormData} from './BookForm';
+
+const {Text} = Typography
 
 const BooksTab: React.FC = () => {
     const location = useLocation();
@@ -33,8 +35,6 @@ const BooksTab: React.FC = () => {
     const [copyForm] = Form.useForm();
     const [bookCopies, setBookCopies] = useState<{ [key: string]: BookCopy[] }>({});
     const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
-    const [imageUrls, setImageUrls] = useState<{ [key: string]: string }>({});
-    const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
     const [editingCopy, setEditingCopy] = useState<BookCopy | null>(null);
     const [isEditCopyModalVisible, setIsEditCopyModalVisible] = useState(false);
     const [sortField, setSortField] = useState<string>('');
@@ -53,17 +53,6 @@ const BooksTab: React.FC = () => {
             }
         }
     }, [editBookId, books]);
-
-    useEffect(() => {
-        const loadImageUrls = async () => {
-            const newImageUrls: { [key: string]: string } = {};
-            for (const book of books) {
-                newImageUrls[book.id] = getBookImageUrl(book.id);
-            }
-            setImageUrls(newImageUrls);
-        };
-        loadImageUrls();
-    }, [books]);
 
     const loadData = async () => {
         try {
@@ -270,10 +259,6 @@ const BooksTab: React.FC = () => {
         }
     };
 
-    const handleImageError = (bookId: string) => {
-        setImageErrors(prev => ({ ...prev, [bookId]: true }));
-    };
-
     const expandedRowRender = (book: Book) => {
         const copies = bookCopies[book.id] || [];
 
@@ -365,37 +350,23 @@ const BooksTab: React.FC = () => {
 
     const bookColumns = [
         {
-            title: '',
-            key: 'image',
-            render: (record: Book) => (
-                <div 
-                    onClick={() => handleShowCopies(record.id)}
-                    style={{ cursor: 'pointer' }}
-                >
-                    <img 
-                        src={imageErrors[record.id] ? record.main_image : getBookImageUrl(record.id)}
-                        alt={record.title}
-                        onError={() => handleImageError(record.id)}
-                        style={{ 
-                            width: '100px',
-                            objectFit: 'contain',
-                        }}
-                    />
-                </div>
-            ),
-        },
-        {
             title: 'Title',
             dataIndex: 'title',
             key: 'title',
             sorter: true,
-            render: (text: string, record: Book) => (
-                <span 
-                    style={{ fontWeight: 'bold', cursor: 'pointer' }}
-                    onClick={() => handleShowCopies(record.id)}
-                >
-                    {text || 'N/A'}
-                </span>
+            render: (text: string, book: Book) => (
+              <div>
+                  <img
+                    src={getBookImageUrl(book)}
+                    alt={book.title}
+                    style={{
+                        width: '100px',
+                        objectFit: 'contain',
+                        marginRight: '1vw'
+                    }}
+                  />
+                  <Text strong>{book.title}</Text>
+              </div>
             ),
         },
         {

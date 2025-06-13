@@ -83,6 +83,24 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 		)
 	}
 
+	// Format book copies information
+	bookCopiesInfo := make([]string, len(reservation.BookCopies))
+	for i, copy := range reservation.BookCopies {
+		bookCopiesInfo[i] = fmt.Sprintf(`
+			<div class="book-copy">
+				<h4>%s</h4>
+				<p><strong>Author(s):</strong> %s</p>
+				<p><strong>Format:</strong> %s</p>
+				<p><strong>Condition:</strong> %s</p>
+			</div>
+		`,
+			copy.Book.Title,
+			formatAuthors(copy.Book.Authors),
+			copy.Book.Format,
+			strings.Title(strings.ReplaceAll(string(copy.Condition), "_", " ")),
+		)
+	}
+
 	userMsg.SetBody("text/html", fmt.Sprintf(`
 		<!DOCTYPE html>
 		<html>
@@ -97,6 +115,7 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 				.timeslot { background-color: #e8f4fd; padding: 10px; margin: 5px 0; border-radius: 3px; }
 				.status { display: inline-block; padding: 5px 10px; background-color: #ffd700; color: #333; border-radius: 3px; }
 				.timezone { color: #666; font-size: 0.9em; }
+				.book-copy { background-color: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
 			</style>
 		</head>
 		<body>
@@ -110,10 +129,13 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 					
 					<div class="details">
 						<h3>Reservation Details</h3>
-						<p><strong>Book:</strong> %s</p>
-						<p><strong>Author(s):</strong> %s</p>
 						<p><strong>Borrow Period:</strong> %s to %s</p>
 						<p><strong>Status:</strong> <span class="status">%s</span></p>
+					</div>
+
+					<div class="details">
+						<h3>Books Reserved</h3>
+						%s
 					</div>
 
 					<div class="details">
@@ -138,11 +160,10 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 		</html>
 	`,
 		reservation.User.Name,
-		reservation.BookCopy.Book.Title,
-		formatAuthors(reservation.BookCopy.Book.Authors),
 		reservation.StartDate.Format("January 2, 2006"),
 		reservation.EndDate.Format("January 2, 2006"),
 		strings.Title(string(reservation.Status)),
+		strings.Join(bookCopiesInfo, ""),
 		formatTimeslots(pickupTimeslots),
 		formatTimeslots(returnTimeslots),
 	))
@@ -164,6 +185,7 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 				.footer { text-align: center; padding: 20px; color: #666; font-size: 0.9em; }
 				.details { background-color: white; padding: 15px; border-radius: 5px; margin: 15px 0; }
 				.timeslot { background-color: #e8f4fd; padding: 10px; margin: 5px 0; border-radius: 3px; }
+				.book-copy { background-color: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
 			</style>
 		</head>
 		<body>
@@ -179,10 +201,8 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 					</div>
 
 					<div class="details">
-						<h3>Book Information</h3>
-						<p><strong>Title:</strong> %s</p>
-						<p><strong>Author(s):</strong> %s</p>
-						<p><strong>Copy ID:</strong> %s</p>
+						<h3>Books Reserved</h3>
+						%s
 					</div>
 
 					<div class="details">
@@ -213,9 +233,7 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 	`,
 		reservation.User.Name,
 		reservation.User.Email,
-		reservation.BookCopy.Book.Title,
-		formatAuthors(reservation.BookCopy.Book.Authors),
-		reservation.BookCopyID,
+		strings.Join(bookCopiesInfo, ""),
 		reservation.StartDate.Format("January 2, 2006"),
 		reservation.EndDate.Format("January 2, 2006"),
 		formatTimeslots(pickupTimeslots),
@@ -282,15 +300,23 @@ func (s *EmailService) SendNewBookNotification(book *models.Book, subscribers []
 	return nil
 }
 
+func capitalize(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
+}
+
 func (s *EmailService) SendReservationStatusUpdate(reservation *models.Reservation) error {
 	userMsg := gomail.NewMessage()
 	userMsg.SetHeader("From", config.AppConfig.SMTPUsername)
 	userMsg.SetHeader("To", reservation.User.Email)
 	userMsg.SetHeader("Subject", fmt.Sprintf("Book Reservation %s", strings.Title(string(reservation.Status))))
 
-	// Format pickup and return times with timezone
-	var pickupTimeStr, returnTimeStr string
+	// Format book copies information with their pickup and return times
+	bookCopiesInfo := make([]string, len(reservation.BookCopies))
 	loc := time.FixedZone("GMT+7", 7*60*60)
+	var pickupTimeStr, returnTimeStr string
 	if reservation.PickupTime != nil {
 		t := *reservation.PickupTime
 		t = t.In(loc)
@@ -329,13 +355,29 @@ func (s *EmailService) SendReservationStatusUpdate(reservation *models.Reservati
 		)
 	}
 
+	for i, bookCopy := range reservation.BookCopies {
+		bookCopiesInfo[i] = fmt.Sprintf(`
+			<div class="book-copy">
+				<h4>%s</h4>
+				<p><strong>Author(s):</strong> %s</p>
+				<p><strong>Format:</strong> %s</p>
+				<p><strong>Condition:</strong> %s</p>
+			</div>
+		`,
+			bookCopy.Book.Title,
+			formatAuthors(bookCopy.Book.Authors),
+			capitalize(string(bookCopy.Book.Format)),
+			strings.Title(strings.ReplaceAll(string(bookCopy.Condition), "_", " ")),
+		)
+	}
+
 	// Get status-specific message
 	var statusMessage string
 	switch reservation.Status {
 	case models.ReservationStatusApproved:
 		statusMessage = `
 			<p>Your book reservation request has been approved!</p>
-			<p>Please make sure to pick up and return the book at the specified times.</p>
+			<p>Please make sure to pick up and return the books at the specified times.</p>
 		`
 	case models.ReservationStatusRejected:
 		statusMessage = `
@@ -344,8 +386,8 @@ func (s *EmailService) SendReservationStatusUpdate(reservation *models.Reservati
 		`
 	case models.ReservationStatusReturned:
 		statusMessage = `
-			<p>Thank you for returning the book!</p>
-			<p>We hope you enjoyed reading it.</p>
+			<p>Thank you for returning the books!</p>
+			<p>We hope you enjoyed reading them.</p>
 		`
 	}
 
@@ -357,7 +399,7 @@ func (s *EmailService) SendReservationStatusUpdate(reservation *models.Reservati
 	case models.ReservationStatusRejected:
 		statusTitle = "Book Reservation Rejected"
 	case models.ReservationStatusReturned:
-		statusTitle = "Book Returned"
+		statusTitle = "Books Returned"
 	default:
 		statusTitle = "Book Reservation Update"
 	}
@@ -379,6 +421,7 @@ func (s *EmailService) SendReservationStatusUpdate(reservation *models.Reservati
 				.location { background-color: #e8f4fd; padding: 15px; margin: 15px 0; border-radius: 5px; }
 				.location a { color: #4a90e2; text-decoration: none; }
 				.location a:hover { text-decoration: underline; }
+				.book-copy { background-color: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
 			</style>
 		</head>
 		<body>
@@ -392,12 +435,15 @@ func (s *EmailService) SendReservationStatusUpdate(reservation *models.Reservati
 					
 					<div class="details">
 						<h3>Reservation Details</h3>
-						<p><strong>Book:</strong> %s</p>
-						<p><strong>Author(s):</strong> %s</p>
 						<p><strong>Borrow Period:</strong> %s to %s</p>
 						<p><strong>Status:</strong> <span class="status">%s</span></p>
 					</div>
 
+					<div class="details">
+						<h3>Books Reserved</h3>
+						%s
+					</div>
+					
 					%s
 
 					%s
@@ -416,11 +462,10 @@ func (s *EmailService) SendReservationStatusUpdate(reservation *models.Reservati
 		statusTitle,
 		reservation.User.Name,
 		statusMessage,
-		reservation.BookCopy.Book.Title,
-		formatAuthors(reservation.BookCopy.Book.Authors),
 		reservation.StartDate.Format("January 2, 2006"),
 		reservation.EndDate.Format("January 2, 2006"),
 		strings.Title(string(reservation.Status)),
+		strings.Join(bookCopiesInfo, ""),
 		getTimeDetails(reservation.Status, pickupTimeStr, returnTimeStr),
 		getLocationDetails(reservation.Status),
 	))
@@ -447,14 +492,11 @@ func getTimeDetails(status models.ReservationStatus, pickupTime, returnTime stri
 	}
 
 	return fmt.Sprintf(`
-		<div class="details">
-			<h3>Approved Times</h3>
-			<div class="timeslot">
-				<strong>Pickup Time:</strong> %s
-			</div>
-			<div class="timeslot">
-				<strong>Return Time:</strong> %s
-			</div>
+		<div class="timeslot">
+			<strong>Pickup Time:</strong> %s
+		</div>
+		<div class="timeslot">
+			<strong>Return Time:</strong> %s
 		</div>
 	`, pickupTime, returnTime)
 }
@@ -466,12 +508,12 @@ func getLocationDetails(status models.ReservationStatus) string {
 
 	return `
 		<div class="location">
-			<h3>Pickup Location</h3>
-			<p>Reserved books can be picked up at my place at <a href='https://maps.app.goo.gl/yEbHKpyqVknWia6L8'>
+			<h4>Pickup Location</h4>
+			<p>Reserved books can be picked up at our place at <a href='https://maps.app.goo.gl/yEbHKpyqVknWia6L8'>
 				No 57, 38 alley, 189 lane, Hoi Phu hamlet, Dong Hoi commune,
 				Dong Anh district, Hanoi, Vietnam.
 			</a></p>
-			<p>When you arrive, you can contact me via:</p>
+			<p>When you arrive, you can contact us via:</p>
 			<ul>
 				<li>WhatsApp/Mobile: <a href="tel:+84987134200">+84 987 134 200</a></li>
 			</ul>

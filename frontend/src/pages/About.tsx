@@ -49,7 +49,7 @@ const Introduction: React.FC = () => {
                                 For me, books are among the most reliable and structured paths to knowledge.
                                 As a dedicated reader who has struggled to find truly valuable books,
                                 I understand how rare and precious good ones are.
-                                That's why I created the <b>PSciT Library - a curated physical library located in Hanoi, Vietnam</b>,
+                                That's why I created the <b>PSciT Library - a curated private library located in Hanoi, Vietnam</b>,
                                 filled with books I've personally selected and mostly read.
                             </Paragraph>
                             <Paragraph style={{ fontSize: '13pt' }}>
@@ -61,7 +61,7 @@ const Introduction: React.FC = () => {
                             </Paragraph>
                             <Paragraph style={{ fontSize: '13pt' }}>
                                 Feel free to browse the library, reserve a book, or just reach out for a chat over coffee.
-                                <b>Reserved books can be picked up at my place at <a href='https://maps.app.goo.gl/yEbHKpyqVknWia6L8'>
+                                <b> Reserved books can be picked up at my place at <a href='https://maps.app.goo.gl/yEbHKpyqVknWia6L8'>
                                     No 57, 38 alley, 189 lane, Hoi Phu hamlet, Dong Hoi commune,
                                     Dong Anh district, Hanoi, Vietnam.</a></b>
                             </Paragraph>

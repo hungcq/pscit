@@ -7,8 +7,6 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-
-	"github.com/hungcq/pscit/backend/internal/models"
 )
 
 func InitDB() *gorm.DB {
@@ -25,19 +23,6 @@ func InitDB() *gorm.DB {
 	})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
-	}
-
-	// Auto-migrate the schema
-	err = db.AutoMigrate(
-		&models.User{},
-		&models.Author{},
-		&models.Category{},
-		&models.Book{},
-		&models.BookCopy{},
-		&models.Reservation{},
-	)
-	if err != nil {
-		panic(err)
 	}
 
 	return db

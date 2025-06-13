@@ -1,8 +1,8 @@
 .idea
 .env
 .vscode
-backend/scripts/node_modules
-frontend/node_modules
 *.iml
+frontend/node_modules
 k8s/secret.yaml
 backend/temp
+backend/scripts/node_modules

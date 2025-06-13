@@ -7,6 +7,7 @@ import {
     DatePicker,
     Descriptions,
     Form,
+    Grid,
     message,
     Modal,
     Row,
@@ -17,15 +18,24 @@ import {
     TimePicker,
     Typography
 } from 'antd';
-import {BookOutlined, DeleteOutlined, EditOutlined, PlusOutlined, UserOutlined} from '@ant-design/icons';
+import {
+    BookOutlined,
+    DeleteOutlined,
+    EditOutlined,
+    PlusOutlined,
+    ShoppingCartOutlined,
+    UserOutlined
+} from '@ant-design/icons';
 import type {Author, Book, BookCopy, Category} from '../types';
-import {authorsAPI, bookCopiesAPI, booksAPI, categoriesAPI, reservationsAPI} from '../api';
+import {authorsAPI, bookCopiesAPI, booksAPI, cartAPI, categoriesAPI, reservationsAPI} from '../api';
 import {useAuth} from '../contexts/AuthContext';
 import dayjs, {Dayjs} from 'dayjs';
 import {getBookImageUrl} from '../utils';
 import BookForm, {BookFormData} from '../components/admin/BookForm';
+import {useCart} from '../contexts/CartContext';
 
 const {Title, Text, Paragraph} = Typography;
+const { useBreakpoint } = Grid;
 
 const MAX_SUGGESTED_TIMESLOTS = 5;
 
@@ -41,12 +51,15 @@ const BookDetails: React.FC = () => {
     const [selectedCopy, setSelectedCopy] = useState<BookCopy | null>(null);
     const [selectedPickupTimeslots, setSelectedPickupTimeslots] = useState<Dayjs[]>([]);
     const [selectedReturnTimeslots, setSelectedReturnTimeslots] = useState<Dayjs[]>([]);
-    const [imageUrl, setImageUrl] = useState<string>('');
     const [imageError, setImageError] = useState(false);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [authors, setAuthors] = useState<Author[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [submitting, setSubmitting] = useState(false);
+    const [addingToCart, setAddingToCart] = useState(false);
+    const {cartItems, reloadCart} = useCart();
+    const screens = useBreakpoint();
+    const isMobile = !screens.md;
 
     const loadCopies = async () => {
         try {
@@ -80,16 +93,6 @@ const BookDetails: React.FC = () => {
 
         loadData();
     }, [id]);
-
-    useEffect(() => {
-        const loadImageUrl = async () => {
-            if (book) {
-                const url = getBookImageUrl(book.id);
-                setImageUrl(url);
-            }
-        };
-        loadImageUrl();
-    }, [book]);
 
     const handleAddTimeslot = () => {
         if (!selectedDates) return;
@@ -189,6 +192,19 @@ const BookDetails: React.FC = () => {
         }
     };
 
+    const handleAddToCart = async (bookCopyId: string) => {
+        try {
+            setAddingToCart(true);
+            await cartAPI.addToCart(bookCopyId);
+            message.success('Added to cart');
+            reloadCart();
+        } catch (error: any) {
+            message.error(error.message || 'Failed to add to cart');
+        } finally {
+            setAddingToCart(false);
+        }
+    };
+
     if (loading) {
         return (
             <Space direction="vertical" align="center" style={{width: '100%', marginTop: '100px'}}>
@@ -211,6 +227,52 @@ const BookDetails: React.FC = () => {
     const availableCopies = copies.filter((copy) => copy.status === 'available');
     const isBookAvailable = availableCopies.length > 0;
 
+    const columns = [
+        {
+            title: 'Condition',
+            dataIndex: 'condition',
+            key: 'condition',
+            render: (condition: BookCopy['condition']) => (
+                <Tag color={
+                    condition === 'new' ? 'green' :
+                        condition === 'like_new' ? 'lime' :
+                            condition === 'good' ? 'blue' :
+                                condition === 'fair' ? 'orange' :
+                                    'red'
+                }>
+                    {condition.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                </Tag>
+            ),
+        },
+        {
+            title: 'Notes',
+            dataIndex: 'notes',
+            key: 'notes',
+        },
+        {
+            title: 'Action',
+            key: 'action',
+            render: (_: any, record: BookCopy) => {
+                const inCart = cartItems.some((item: any) => item.book_copy.id === record.id);
+                return (
+                    <Space>
+                        {record.status === 'available' && (
+                            <Button
+                                type="primary"
+                                icon={<ShoppingCartOutlined />}
+                                onClick={() => handleAddToCart(record.id)}
+                                loading={addingToCart}
+                                disabled={inCart}
+                            >
+                                {inCart ? 'In Cart' : 'Add to Cart'}
+                            </Button>
+                        )}
+                    </Space>
+                );
+            },
+        },
+    ];
+
     return (
         <Space direction="vertical" size="large" style={{width: '100%'}}>
             <Card>
@@ -219,7 +281,7 @@ const BookDetails: React.FC = () => {
                     <Col xs={24} md={8}>
                         <Space direction="vertical" size="large" style={{width: '100%'}}>
                             <img
-                                src={imageError ? book?.main_image : getBookImageUrl(book?.id || '')}
+                                src={imageError ? book?.main_image : getBookImageUrl(book)}
                                 alt={book?.title}
                                 onError={handleImageError}
                                 style={{
@@ -260,7 +322,7 @@ const BookDetails: React.FC = () => {
                     <Col xs={24} md={16}>
                         <Space direction="vertical" size="large" style={{width: '100%'}}>
                             <Descriptions
-                                title="Book Details"
+                                title={<Title level={4}>Book Details</Title>}
                                 bordered
                                 column={{xs: 1, sm: 2}}
                                 size="small"
@@ -283,57 +345,56 @@ const BookDetails: React.FC = () => {
                             </Descriptions>
 
                             <div>
-                                <Title level={3}>Description</Title>
-                                <Paragraph style={{ whiteSpace: 'pre-wrap' }}>{book.description}</Paragraph>
+                                <Title level={4}>Available Copies</Title>
+                                {availableCopies.length === 0 ? (
+                                  <Text type="secondary">No copies available for reservation</Text>
+                                ) : (
+                                  isMobile ? (
+                                    <Space direction="vertical" style={{width: '100%'}}>
+                                        {availableCopies.map((copy) => {
+                                            const inCart = cartItems.some((item: any) => item.book_copy.id === copy.id);
+                                            return (
+                                              <Card key={copy.id} style={{marginBottom: '16px'}}>
+                                                  <Space direction="vertical" align="center" style={{width: '100%'}}>
+                                                      <Tag color={
+                                                          copy.condition === 'new' ? 'green' :
+                                                            copy.condition === 'like_new' ? 'lime' :
+                                                              copy.condition === 'good' ? 'blue' :
+                                                                copy.condition === 'fair' ? 'orange' :
+                                                                  'red'
+                                                      }>
+                                                          {copy.condition.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                                      </Tag>
+                                                      <Text type="secondary">{copy.notes}</Text>
+                                                      <Button
+                                                        type="primary"
+                                                        icon={<ShoppingCartOutlined />}
+                                                        onClick={() => handleAddToCart(copy.id)}
+                                                        loading={addingToCart}
+                                                        disabled={inCart}
+                                                        block
+                                                      >
+                                                          {inCart ? 'In Cart' : 'Add to Cart'}
+                                                      </Button>
+                                                  </Space>
+                                              </Card>
+                                            );
+                                        })}
+                                    </Space>
+                                  ) : (
+                                    <Table<BookCopy>
+                                      dataSource={availableCopies}
+                                      columns={columns}
+                                      rowKey="id"
+                                      pagination={false}
+                                    />
+                                  )
+                                )}
                             </div>
 
                             <div>
-                                <Title level={3}>Available Copies</Title>
-                                {availableCopies.length === 0 ? (
-                                    <Text type="secondary">No copies available for reservation</Text>
-                                ) : (
-                                    <Table<BookCopy>
-                                        dataSource={availableCopies}
-                                        columns={[
-                                            {
-                                                title: 'Condition',
-                                                dataIndex: 'condition',
-                                                key: 'condition',
-                                                render: (condition: BookCopy['condition']) => (
-                                                    <Tag color={
-                                                        condition === 'new' ? 'green' :
-                                                            condition === 'like_new' ? 'lime' :
-                                                                condition === 'good' ? 'blue' :
-                                                                    condition === 'fair' ? 'orange' :
-                                                                        'red'
-                                                    }>
-                                                        {condition.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                                                    </Tag>
-                                                ),
-                                            },
-                                            {
-                                                title: 'Notes',
-                                                dataIndex: 'notes',
-                                                key: 'notes',
-                                                responsive: ['md'],
-                                            },
-                                            {
-                                                title: 'Action',
-                                                key: 'action',
-                                                render: (_, record) => (
-                                                    <Button
-                                                        type="primary"
-                                                        onClick={() => showReservationModal(record)}
-                                                    >
-                                                        Reserve
-                                                    </Button>
-                                                ),
-                                            },
-                                        ]}
-                                        rowKey="id"
-                                        pagination={false}
-                                    />
-                                )}
+                                <Title level={4}>Description</Title>
+                                <Paragraph style={{ whiteSpace: 'pre-wrap' }}>{book.description}</Paragraph>
                             </div>
                         </Space>
                     </Col>

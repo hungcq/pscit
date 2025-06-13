@@ -17,6 +17,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	emailService := services2.NewEmailService()
 	authorService := services2.NewAuthorService(db)
 	categoryService := services2.NewCategoryService(db)
+	cartService := services2.NewCartService(db)
 
 	// Initialize handlers
 	authHandler := handlers2.NewAuthHandler(authService)
@@ -25,6 +26,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	reservationHandler := handlers2.NewReservationHandler(reservationService, emailService)
 	authorHandler := handlers2.NewAuthorHandler(authorService)
 	categoryHandler := handlers2.NewCategoryHandler(categoryService)
+	cartHandler := handlers2.NewCartHandler(cartService)
 
 	// Custom 404 handler
 	r.NoRoute(func(c *gin.Context) {
@@ -63,6 +65,12 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 
 	// Protected routes
 	authenticatedApi := api.Use(middleware.AuthMiddleware())
+
+	// Cart routes
+	authenticatedApi.GET("/cart", cartHandler.GetCart)
+	authenticatedApi.POST("/cart", cartHandler.AddToCart)
+	authenticatedApi.DELETE("/cart/:id", cartHandler.RemoveFromCart)
+	authenticatedApi.DELETE("/cart", cartHandler.ClearCart)
 
 	// Reservation routes
 	authenticatedApi.POST("/reservations", reservationHandler.CreateReservation)
