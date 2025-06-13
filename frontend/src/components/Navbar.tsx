@@ -24,6 +24,7 @@ const Navbar: React.FC = () => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const screens = useBreakpoint();
   const {cartItems, reloadCart} = useCart();
+  const [hovered, setHovered] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -71,9 +72,19 @@ const Navbar: React.FC = () => {
     {
       key: '/cart',
       icon: <ShoppingCartOutlined style={{fontSize: '17px'}}/>,
-      label: <Badge size='small' count={cartItems.length}>
-        <Text style={{color: 'rgba(255,255,255,0.65)'}}>Cart</Text>
-      </Badge>,
+      label:
+        <Badge size='small' count={cartItems.length}
+        >
+          <Text style={{
+            color:
+              window.location.pathname === '/cart' || hovered
+                ? '#ccc' // selected color
+                : 'rgba(204, 204, 204, 0.65)'
+          }}
+                onMouseEnter={() => setHovered(true)}
+                onMouseLeave={() => setHovered(false)}
+          >Cart</Text>
+        </Badge>,
       onClick: () => navigate('/cart')
     },
     {
@@ -92,17 +103,23 @@ const Navbar: React.FC = () => {
   ];
 
   return (
-    <Header style={{padding: '0 16px', height: '48px', lineHeight: '48px'}}>
+    <Header style={{
+      padding: '0 16px',
+      height: '48px',
+      lineHeight: '48px',
+      backgroundColor: '#222'
+    }
+    }>
       <Row align="middle" justify="space-between" wrap={false}>
         {screens.md ? (
-          <Row justify="space-between" align="middle" style={{ width: '100%' }}>
+          <Row justify="space-between" align="middle" style={{width: '100%'}}>
             <Col>
               <Menu
                 theme="dark"
                 mode="horizontal"
                 selectedKeys={[window.location.pathname]}
                 items={mainMenuItems}
-                style={{ lineHeight: '48px' }}
+                style={{lineHeight: '48px'}}
               />
             </Col>
             <Col>
@@ -111,7 +128,7 @@ const Navbar: React.FC = () => {
                 mode="horizontal"
                 selectedKeys={[window.location.pathname]}
                 items={userMenuItems}
-                style={{ lineHeight: '48px'}}
+                style={{lineHeight: '48px'}}
               />
             </Col>
           </Row>

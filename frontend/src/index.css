@@ -1,0 +1,7 @@
+.ant-menu-dark .ant-menu-item-selected {
+    background-color: #333 !important;  /* or any dark gray */
+}
+
+.ant-menu-item {
+    background-color: #222 !important;  /* or any dark gray */
+}
