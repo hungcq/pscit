@@ -36,12 +36,13 @@ const Navbar: React.FC = () => {
   }, [user]);
 
   const mainMenuItems: MenuProps['items'] = [
-    {
+    ...(screens.md ? [{
       key: '/',
       icon: <HomeOutlined/>,
       label: 'Home',
       onClick: () => navigate('/')
     },
+    ] : []),
     ...(user ? [{
       key: '/reservations',
       icon: <BookOutlined/>,
@@ -69,7 +70,7 @@ const Navbar: React.FC = () => {
     //   label: 'Profile',
     //   onClick: () => navigate('/profile')
     // },
-    {
+    ...(screens.md ? [{
       key: '/cart',
       icon: <ShoppingCartOutlined style={{fontSize: '17px'}}/>,
       label:
@@ -86,7 +87,7 @@ const Navbar: React.FC = () => {
           >Cart</Text>
         </Badge>,
       onClick: () => navigate('/cart')
-    },
+    }] : []),
     {
       key: 'logout',
       icon: <LogoutOutlined/>,
@@ -133,28 +134,49 @@ const Navbar: React.FC = () => {
             </Col>
           </Row>
         ) : (
-          <Col>
-            <Button
-              icon={<MenuOutlined/>}
-              type="text"
-              onClick={() => setDrawerVisible(true)}
-              style={{color: 'white'}}
-            />
-            <Drawer
-              title="Menu"
-              placement="left"
-              onClose={() => setDrawerVisible(false)}
-              open={drawerVisible}
-              bodyStyle={{padding: 0}}
-            >
-              <Menu
-                mode="vertical"
-                selectedKeys={[window.location.pathname]}
-                items={[...mainMenuItems, {type: 'divider'}, ...userMenuItems]}
-                onClick={() => setDrawerVisible(false)}
+          <Row justify="space-between" align="middle" style={{width: '100%'}}>
+            <Col>
+              <Button
+                icon={<MenuOutlined/>}
+                type="text"
+                onClick={() => setDrawerVisible(true)}
+                style={{color: 'white'}}
               />
-            </Drawer>
-          </Col>
+            </Col>
+            <Col>
+              <Button
+                icon={<HomeOutlined/>}
+                type="text"
+                style={{color: 'white'}}
+                onClick={() => navigate('/')}
+              />
+            </Col>
+            <Col>
+              <Button
+                icon={<Badge size='small' count={cartItems.length}
+                >
+                  <ShoppingCartOutlined style={{fontSize: '17px'}}/>
+                </Badge>}
+                type="text"
+                style={{color: 'white'}}
+                onClick={() => navigate('/cart')}
+              />
+              <Drawer
+                title="Menu"
+                placement="left"
+                onClose={() => setDrawerVisible(false)}
+                open={drawerVisible}
+                bodyStyle={{padding: 0}}
+              >
+                <Menu
+                  mode="vertical"
+                  selectedKeys={[window.location.pathname]}
+                  items={[...mainMenuItems, ...userMenuItems]}
+                  onClick={() => setDrawerVisible(false)}
+                />
+              </Drawer>
+            </Col>
+          </Row>
         )}
       </Row>
     </Header>
