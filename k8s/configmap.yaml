@@ -50,10 +50,18 @@ data:
         
         pipeline_stages:
           - regex:
-              expression: '^[^ ]+ [^ ]+ [^ ]+ (?P<json>\{.*\})$'
+              expression: '^[^ ]+ [^ ]+ [^ ]+ (?P<json_log>\{.*\})'
           - json:
-              source: json
+              source: json_log
+              expressions:
+                level: level
+                ts: ts
+                msg: msg
+                latency: latency
           - labels:
               level:
-              method:
-              path:
+              ts:
+              msg:
+              latency:
+          - output:
+              source: json_log
