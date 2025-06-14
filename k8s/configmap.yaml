@@ -49,19 +49,6 @@ data:
               __path__: /var/log/containers/*backend*.log
         
         pipeline_stages:
-          - regex:
-              expression: '^[^ ]+ [^ ]+ [^ ]+ (?P<json_log>\{.*\})'
-          - json:
-              source: json_log
-              expressions:
-                level: level
-                ts: ts
-                msg: msg
-                latency: latency
-          - labels:
-              level:
-              ts:
-              msg:
-              latency:
+          - docker: {}
           - output:
-              source: json_log
+              source: log
