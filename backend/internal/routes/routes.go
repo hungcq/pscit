@@ -5,6 +5,7 @@ import (
 	handlers2 "github.com/hungcq/pscit/backend/internal/handlers"
 	"github.com/hungcq/pscit/backend/internal/middleware"
 	services2 "github.com/hungcq/pscit/backend/internal/services"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -32,6 +33,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 
 	// Custom 404 handler
 	r.NoRoute(func(c *gin.Context) {
+		zap.L().Error("Route not found", zap.String("path", c.Request.URL.Path))
 		c.JSON(404, gin.H{
 			"error":   "Route not found",
 			"message": "The requested endpoint does not exist",

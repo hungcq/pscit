@@ -8,6 +8,7 @@ import (
 	"github.com/hungcq/pscit/backend/internal/config"
 	"github.com/hungcq/pscit/backend/internal/models"
 
+	"go.uber.org/zap"
 	"gopkg.in/gomail.v2"
 )
 
@@ -41,6 +42,7 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 	for i, slot := range reservation.SuggestedPickupTimeslots {
 		t, err := time.ParseInLocation(time.RFC3339, slot, time.UTC)
 		if err != nil {
+			zap.L().Error("SendReservationNotification: Failed to parse pickup timeslot", zap.String("slot", slot), zap.Error(err))
 			return err
 		}
 		t = t.In(loc)
@@ -64,6 +66,7 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 	for i, slot := range reservation.SuggestedReturnTimeslots {
 		t, err := time.ParseInLocation(time.RFC3339, slot, time.UTC)
 		if err != nil {
+			zap.L().Error("SendReservationNotification: Failed to parse return timeslot", zap.String("slot", slot), zap.Error(err))
 			return err
 		}
 		t = t.In(loc)
@@ -96,7 +99,7 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 		`,
 			copy.Book.Title,
 			formatAuthors(copy.Book.Authors),
-			copy.Book.Format,
+			capitalize(string(copy.Book.Format)),
 			strings.Title(strings.ReplaceAll(string(copy.Condition), "_", " ")),
 		)
 	}
@@ -242,9 +245,10 @@ func (s *EmailService) SendReservationNotification(reservation *models.Reservati
 
 	// Send both emails
 	if err := s.dialer.DialAndSend(userMsg, adminMsg); err != nil {
+		zap.L().Error("SendReservationNotification: Failed to send reservation notification emails", zap.String("userID", reservation.User.ID.String()), zap.String("reservationID", reservation.ID.String()), zap.Error(err))
 		return err
 	}
-
+	zap.L().Info("SendReservationNotification: Reservation notification emails sent successfully", zap.String("userID", reservation.User.ID.String()), zap.String("reservationID", reservation.ID.String()))
 	return nil
 }
 
@@ -290,13 +294,16 @@ func (s *EmailService) SendNewBookNotification(book *models.Book, subscribers []
 			<p>By: %s</p>
 			<p>%s</p>
 			<p>Visit our library to check it out!</p>
-		`, user.Name, book.Title, authorsStr, book.Description))
+		`,
+			user.Name, book.Title, authorsStr, book.Description))
 
 		if err := s.dialer.DialAndSend(msg); err != nil {
+			zap.L().Error("SendNewBookNotification: Failed to send new book notification to user", zap.String("bookID", book.ID.String()), zap.String("userID", user.ID.String()), zap.Error(err))
 			return err
 		}
+		zap.L().Info("SendNewBookNotification: New book notification sent successfully", zap.String("bookID", book.ID.String()), zap.String("userID", user.ID.String()))
 	}
-
+	zap.L().Info("SendNewBookNotification: All new book notifications sent", zap.String("bookID", book.ID.String()), zap.Int("subscribersCount", len(subscribers)))
 	return nil
 }
 
@@ -470,7 +477,12 @@ func (s *EmailService) SendReservationStatusUpdate(reservation *models.Reservati
 		getLocationDetails(reservation.Status),
 	))
 
-	return s.dialer.DialAndSend(userMsg)
+	if err := s.dialer.DialAndSend(userMsg); err != nil {
+		zap.L().Error("SendReservationStatusUpdate: Failed to send reservation status update email", zap.String("userID", reservation.User.ID.String()), zap.String("reservationID", reservation.ID.String()), zap.String("status", string(reservation.Status)), zap.Error(err))
+		return err
+	}
+	zap.L().Info("SendReservationStatusUpdate: Reservation status update email sent successfully", zap.String("userID", reservation.User.ID.String()), zap.String("reservationID", reservation.ID.String()), zap.String("status", string(reservation.Status)))
+	return nil
 }
 
 func getStatusColor(status models.ReservationStatus) string {

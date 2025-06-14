@@ -1,14 +1,15 @@
 package config
 
 import (
-	"log"
 	"os"
 	"strconv"
 
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 )
 
 type Config struct {
+	env string
 	// Server
 	Port string
 
@@ -33,13 +34,18 @@ type Config struct {
 	AdminEmail   string
 }
 
+func (c Config) IsProd() bool {
+	return c.env == "prod"
+}
+
 var AppConfig Config
 
 func init() {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found")
+		zap.L().Warn("No .env file found", zap.Error(err))
 	}
+	AppConfig.env = getEnv("ENV", "prod")
 	// Server
 	AppConfig.Port = getEnv("PORT", "8080")
 

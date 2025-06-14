@@ -1,12 +1,13 @@
 package handlers
 
 import (
-	"github.com/hungcq/pscit/backend/internal/config"
-	"github.com/hungcq/pscit/backend/internal/services"
-	"log"
 	"net/http"
 
+	"github.com/hungcq/pscit/backend/internal/config"
+	"github.com/hungcq/pscit/backend/internal/services"
+
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"google.golang.org/api/idtoken"
 )
 
@@ -27,7 +28,7 @@ func NewAuthHandler(authService *services.AuthService) *AuthHandler {
 func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	var req GoogleCallbackRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Printf("GoogleCallback: Invalid request body: %v", err)
+		zap.L().Error("GoogleCallback: Invalid request body", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_request"})
 		return
 	}
@@ -35,7 +36,7 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	ctx := c.Request.Context()
 	payload, err := idtoken.Validate(ctx, req.Credential, config.AppConfig.GoogleClientID)
 	if err != nil {
-		log.Printf("GoogleCallback: Token exchange failed: %v", err)
+		zap.L().Error("GoogleCallback: Token exchange failed", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "token_exchange_failed"})
 		return
 	}
@@ -47,7 +48,7 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 		payload.Claims["sub"].(string),
 	)
 	if err != nil {
-		log.Printf("GoogleCallback: Failed to get/create user: %v", err)
+		zap.L().Error("GoogleCallback: Failed to get/create user", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "user_creation_failed"})
 		return
 	}
@@ -55,7 +56,7 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	// Generate JWT token
 	token, err := h.authService.GenerateToken(user.ID, user.Email, user.Role)
 	if err != nil {
-		log.Printf("GoogleCallback: Failed to generate JWT token: %v", err)
+		zap.L().Error("GoogleCallback: Failed to generate JWT token", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "token_generation_failed"})
 		return
 	}

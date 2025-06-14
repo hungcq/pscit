@@ -11,6 +11,7 @@ import (
 	"github.com/hungcq/pscit/backend/internal/services"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -31,6 +32,7 @@ func (h *BookHandler) GetBooks(c *gin.Context) {
 	category := c.Query("category")
 	author, err := url.QueryUnescape(c.Query("author"))
 	if err != nil {
+		zap.L().Error("GetBooks: Invalid author parameter", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid author parameter"})
 		return
 	}
@@ -43,6 +45,7 @@ func (h *BookHandler) GetBooks(c *gin.Context) {
 
 	books, total, err := h.bookService.GetBooks(query, category, author, language, tagKey, page, limit, sortField, sortOrder)
 	if err != nil {
+		zap.L().Error("GetBooks: Failed to get books", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -59,6 +62,7 @@ func (h *BookHandler) GetBook(c *gin.Context) {
 	id := c.Param("id")
 	book, err := h.bookService.GetBook(id)
 	if err != nil {
+		zap.L().Error("GetBook: Book not found", zap.String("id", id), zap.Error(err))
 		c.JSON(http.StatusNotFound, gin.H{"error": "book not found"})
 		return
 	}
@@ -69,6 +73,7 @@ func (h *BookHandler) GetBook(c *gin.Context) {
 func (h *BookHandler) CreateBook(c *gin.Context) {
 	var req models.CreateBookRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		zap.L().Error("CreateBook: Invalid request body", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -93,6 +98,7 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 	for i, id := range req.AuthorIDs {
 		author, err := h.bookService.GetAuthor(id)
 		if err != nil {
+			zap.L().Error("CreateBook: Author not found", zap.String("authorID", id), zap.Error(err))
 			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("author not found: %s", id)})
 			return
 		}
@@ -104,6 +110,7 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 	for i, id := range req.CategoryIDs {
 		category, err := h.bookService.GetCategory(id)
 		if err != nil {
+			zap.L().Error("CreateBook: Category not found", zap.String("categoryID", id), zap.Error(err))
 			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("category not found: %s", id)})
 			return
 		}
@@ -115,6 +122,7 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 	for i, id := range req.TagIDs {
 		tag, err := h.tagService.GetTag(id)
 		if err != nil {
+			zap.L().Error("CreateBook: Tag not found", zap.String("tagID", id), zap.Error(err))
 			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("tag not found: %s", id)})
 			return
 		}
@@ -122,6 +130,7 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 	}
 
 	if err := h.bookService.CreateBook(book); err != nil {
+		zap.L().Error("CreateBook: Failed to create book", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -133,6 +142,7 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 	id := c.Param("id")
 	var req models.CreateBookRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		zap.L().Error("UpdateBook: Invalid request body", zap.String("id", id), zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -140,6 +150,7 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 	// Get existing book
 	existingBook, err := h.bookService.GetBook(id)
 	if err != nil {
+		zap.L().Error("UpdateBook: Book not found", zap.String("id", id), zap.Error(err))
 		c.JSON(http.StatusNotFound, gin.H{"error": "book not found"})
 		return
 	}
@@ -162,6 +173,7 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 	for i, authorID := range req.AuthorIDs {
 		author, err := h.bookService.GetAuthor(authorID)
 		if err != nil {
+			zap.L().Error("UpdateBook: Author not found", zap.String("bookID", id), zap.String("authorID", authorID), zap.Error(err))
 			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("author not found: %s", authorID)})
 			return
 		}
@@ -173,6 +185,7 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 	for i, categoryID := range req.CategoryIDs {
 		category, err := h.bookService.GetCategory(categoryID)
 		if err != nil {
+			zap.L().Error("UpdateBook: Category not found", zap.String("bookID", id), zap.String("categoryID", categoryID), zap.Error(err))
 			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("category not found: %s", categoryID)})
 			return
 		}
@@ -184,6 +197,7 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 	for i, tagID := range req.TagIDs {
 		tag, err := h.tagService.GetTag(tagID)
 		if err != nil {
+			zap.L().Error("UpdateBook: Tag not found", zap.String("bookID", id), zap.String("tagID", tagID), zap.Error(err))
 			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("tag not found: %s", tagID)})
 			return
 		}
@@ -191,6 +205,7 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 	}
 
 	if err := h.bookService.UpdateBook(id, existingBook); err != nil {
+		zap.L().Error("UpdateBook: Failed to update book", zap.String("id", id), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -201,6 +216,7 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 func (h *BookHandler) DeleteBook(c *gin.Context) {
 	id := c.Param("id")
 	if err := h.bookService.DeleteBook(id); err != nil {
+		zap.L().Error("DeleteBook: Failed to delete book", zap.String("id", id), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -212,6 +228,7 @@ func (h *BookHandler) SearchBooks(c *gin.Context) {
 	query := c.Query("q")
 	books, err := h.bookService.SearchBooks(query)
 	if err != nil {
+		zap.L().Error("SearchBooks: Failed to search books", zap.String("query", query), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -222,11 +239,13 @@ func (h *BookHandler) SearchBooks(c *gin.Context) {
 func (h *BookHandler) BulkCreateBooks(c *gin.Context) {
 	var books []models.Book
 	if err := c.ShouldBindJSON(&books); err != nil {
+		zap.L().Error("BulkCreateBooks: Invalid request body", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if err := h.bookService.BulkCreateBooks(books); err != nil {
+		zap.L().Error("BulkCreateBooks: Failed to bulk create books", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

@@ -1,13 +1,15 @@
 package handlers
 
 import (
-	"github.com/google/uuid"
-	"github.com/hungcq/pscit/backend/internal/models"
-	"github.com/hungcq/pscit/backend/internal/services"
 	"net/http"
 	"strconv"
 
+	"github.com/google/uuid"
+	"github.com/hungcq/pscit/backend/internal/models"
+	"github.com/hungcq/pscit/backend/internal/services"
+
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type BookCopyHandler struct {
@@ -25,6 +27,7 @@ func (h *BookCopyHandler) GetBookCopies(c *gin.Context) {
 	bookID := c.Param("id")
 	copies, err := h.bookCopyService.GetBookCopies(bookID)
 	if err != nil {
+		zap.L().Error("GetBookCopies: Failed to get book copies", zap.String("bookId", bookID), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -37,6 +40,7 @@ func (h *BookCopyHandler) GetBookCopy(c *gin.Context) {
 	id := c.Param("id")
 	copy, err := h.bookCopyService.GetBookCopy(id)
 	if err != nil {
+		zap.L().Error("GetBookCopy: Failed to get book copy", zap.String("id", id), zap.Error(err))
 		c.JSON(http.StatusNotFound, gin.H{"error": "book copy not found"})
 		return
 	}
@@ -48,6 +52,7 @@ func (h *BookCopyHandler) GetBookCopy(c *gin.Context) {
 func (h *BookCopyHandler) CreateBookCopy(c *gin.Context) {
 	var copy models.BookCopy
 	if err := c.ShouldBindJSON(&copy); err != nil {
+		zap.L().Error("CreateBookCopy: Invalid request body", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -55,6 +60,7 @@ func (h *BookCopyHandler) CreateBookCopy(c *gin.Context) {
 	copy.BookID = uuid.MustParse(bookId)
 
 	if err := h.bookCopyService.CreateBookCopy(&copy); err != nil {
+		zap.L().Error("CreateBookCopy: Failed to create book copy", zap.String("bookId", bookId), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -67,11 +73,13 @@ func (h *BookCopyHandler) UpdateBookCopy(c *gin.Context) {
 	id := c.Param("id")
 	var copy models.BookCopy
 	if err := c.ShouldBindJSON(&copy); err != nil {
+		zap.L().Error("UpdateBookCopy: Invalid request body", zap.String("id", id), zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if err := h.bookCopyService.UpdateBookCopy(id, &copy); err != nil {
+		zap.L().Error("UpdateBookCopy: Failed to update book copy", zap.String("id", id), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -83,6 +91,7 @@ func (h *BookCopyHandler) UpdateBookCopy(c *gin.Context) {
 func (h *BookCopyHandler) DeleteBookCopy(c *gin.Context) {
 	id := c.Param("id")
 	if err := h.bookCopyService.DeleteBookCopy(id); err != nil {
+		zap.L().Error("DeleteBookCopy: Failed to delete book copy", zap.String("id", id), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -100,6 +109,7 @@ func (h *BookCopyHandler) BulkCreateBookCopies(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
+		zap.L().Error("BulkCreateBookCopies: Invalid request body", zap.String("bookId", bookID), zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -109,6 +119,7 @@ func (h *BookCopyHandler) BulkCreateBookCopies(c *gin.Context) {
 	}
 
 	if err := h.bookCopyService.BulkCreateBookCopies(bookID, request.Count, request.Condition); err != nil {
+		zap.L().Error("BulkCreateBookCopies: Failed to bulk create book copies", zap.String("bookId", bookID), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -124,11 +135,13 @@ func (h *BookCopyHandler) UpdateBookCopyAvailability(c *gin.Context) {
 	id := c.Param("id")
 	available, err := strconv.ParseBool(c.PostForm("available"))
 	if err != nil {
+		zap.L().Error("UpdateBookCopyAvailability: Invalid availability status", zap.String("id", id), zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid availability status"})
 		return
 	}
 
 	if err := h.bookCopyService.UpdateBookCopyAvailability(id, available); err != nil {
+		zap.L().Error("UpdateBookCopyAvailability: Failed to update book copy availability", zap.String("id", id), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
