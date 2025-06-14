@@ -114,7 +114,7 @@ const Navbar: React.FC = () => {
       <Row align="middle" justify="space-between" wrap={false}>
         {screens.md ? (
           <Row justify="space-between" align="middle" style={{width: '100%'}}>
-            <Col>
+            <Col span={17}>
               <Menu
                 theme="dark"
                 mode="horizontal"

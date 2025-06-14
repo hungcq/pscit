@@ -5,3 +5,7 @@
 .ant-menu-item {
     background-color: #222 !important;  /* or any dark gray */
 }
+
+.ant-menu-overflow {
+    background-color: #222 !important;  /* or any dark gray */
+}
