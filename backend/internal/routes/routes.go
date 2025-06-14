@@ -48,6 +48,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 			"status": "healthy",
 		})
 	})
+	api.GET("/metrics", middleware.PrometheusHandler())
 	api.POST("/auth/google/callback", authHandler.GoogleCallback)
 
 	// Book routes

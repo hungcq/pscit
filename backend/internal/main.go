@@ -1,12 +1,14 @@
 package main
 
 import (
-	"github.com/hungcq/pscit/backend/internal/config"
-	"github.com/hungcq/pscit/backend/internal/routes"
 	"os"
 	"time"
 
+	"github.com/hungcq/pscit/backend/internal/config"
+	"github.com/hungcq/pscit/backend/internal/routes"
+
 	"github.com/gin-gonic/gin"
+	"github.com/hungcq/pscit/backend/internal/middleware"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -49,6 +51,7 @@ func main() {
 	// Create Gin router
 	r := gin.New()
 	r.Use(ginZapLogger(logger), gin.Recovery())
+	r.Use(middleware.MetricsMiddleware())
 
 	// Setup CORS
 	r.Use(config.CORSMiddleware())

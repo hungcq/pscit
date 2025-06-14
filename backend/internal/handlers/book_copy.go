@@ -27,7 +27,7 @@ func (h *BookCopyHandler) GetBookCopies(c *gin.Context) {
 	bookID := c.Param("id")
 	copies, err := h.bookCopyService.GetBookCopies(bookID)
 	if err != nil {
-		zap.L().Error("GetBookCopies: Failed to get book copies", zap.String("bookId", bookID), zap.Error(err))
+		zap.L().Error("GetBookCopies: Failed to get book copies", zap.String("bookID", bookID), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -60,7 +60,7 @@ func (h *BookCopyHandler) CreateBookCopy(c *gin.Context) {
 	copy.BookID = uuid.MustParse(bookId)
 
 	if err := h.bookCopyService.CreateBookCopy(&copy); err != nil {
-		zap.L().Error("CreateBookCopy: Failed to create book copy", zap.String("bookId", bookId), zap.Error(err))
+		zap.L().Error("CreateBookCopy: Failed to create book copy", zap.String("bookID", bookId), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -109,7 +109,7 @@ func (h *BookCopyHandler) BulkCreateBookCopies(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		zap.L().Error("BulkCreateBookCopies: Invalid request body", zap.String("bookId", bookID), zap.Error(err))
+		zap.L().Error("BulkCreateBookCopies: Invalid request body", zap.String("bookID", bookID), zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -119,7 +119,7 @@ func (h *BookCopyHandler) BulkCreateBookCopies(c *gin.Context) {
 	}
 
 	if err := h.bookCopyService.BulkCreateBookCopies(bookID, request.Count, request.Condition); err != nil {
-		zap.L().Error("BulkCreateBookCopies: Failed to bulk create book copies", zap.String("bookId", bookID), zap.Error(err))
+		zap.L().Error("BulkCreateBookCopies: Failed to bulk create book copies", zap.String("bookID", bookID), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
