@@ -13,19 +13,29 @@ import (
 
 func main() {
 	// Initialize Zap logger
-	encoderConfig := zap.NewProductionEncoderConfig()
-	encoderConfig.TimeKey = "ts"
-	encoderConfig.EncodeTime = zapcore.EpochMillisTimeEncoder
+	encoder := zapcore.NewJSONEncoder(zapcore.EncoderConfig{
+		TimeKey:        "ts",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		MessageKey:     "msg",
+		StacktraceKey:  "stacktrace",
+		EncodeLevel:    zapcore.LowercaseLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder, // readable timestamp
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
+	})
 	if !config.AppConfig.IsProd() {
-		encoderConfig = zap.NewDevelopmentEncoderConfig()
-		encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-		encoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
+		encoderCfg := zap.NewDevelopmentEncoderConfig()
+		encoderCfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
+		encoderCfg.EncodeTime = zapcore.RFC3339TimeEncoder
+		encoder = zapcore.NewConsoleEncoder(encoderCfg)
 	}
 
 	core := zapcore.NewCore(
-		zapcore.NewConsoleEncoder(encoderConfig),
-		zapcore.Lock(os.Stdout),
-		zapcore.InfoLevel,
+		encoder,
+		zapcore.AddSync(os.Stdout),
+		zap.NewAtomicLevelAt(zap.InfoLevel),
 	)
 
 	logger := zap.New(core)

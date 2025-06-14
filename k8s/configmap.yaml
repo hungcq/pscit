@@ -45,5 +45,5 @@ data:
           - targets:
               - localhost
             labels:
-              job: backend
+              app: backend
               __path__: /var/log/containers/*backend*.log
