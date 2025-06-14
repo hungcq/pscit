@@ -84,12 +84,19 @@ spec:
           ports:
             - containerPort: 3100
           volumeMounts:
-            - name: config
+            - name: loki-config
               mountPath: /etc/loki
             - name: loki-storage
               mountPath: /tmp/loki
-            - name: loki-storage   # <-- same PVC also used for WAL
+            - name: loki-storage
               mountPath: /wal
+      volumes:
+        - name: loki-config
+          configMap:
+            name: loki-config
+        - name: loki-storage
+          persistentVolumeClaim:
+            claimName: loki-storage
 ---
 apiVersion: v1
 kind: Service
