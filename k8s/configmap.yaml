@@ -50,7 +50,7 @@ data:
         
         pipeline_stages:
           - regex:
-              expression: '^(?P<ts>[^ ]+) (?P<stream>stdout|stderr) (?P<flag>[FP]) (?P<json>.+)$'
+              expression: '^[^ ]+ [^ ]+ [^ ]+ (?P<json>{.*})$'
           - json:
               source: json
               expressions:
