@@ -31,6 +31,9 @@ data:
       chunk_retain_period: 30s
       max_transfer_retries: 0
 
+    compactor:
+      working_directory: /tmp/loki/compactor
+
     schema_config:
       configs:
         - from: 2020-10-24
