@@ -155,16 +155,6 @@ const BookDetails: React.FC = () => {
         }
     };
 
-    const showReservationModal = (copy: BookCopy) => {
-        if (!user) {
-            navigate("/login")
-            return
-        }
-
-        setSelectedCopy(copy);
-        setReservationModalVisible(true);
-    };
-
     const handleImageError = () => {
         setImageError(true);
     };
@@ -177,8 +167,8 @@ const BookDetails: React.FC = () => {
         setIsEditModalVisible(false);
     };
 
-    const handleEditSubmit = async (values: BookFormData) => {
-        if (!book) return;
+    const handleEditSubmit = async (values: BookFormData): Promise<boolean> => {
+        if (!book) return false;
 
         try {
             setSubmitting(true);
@@ -189,8 +179,10 @@ const BookDetails: React.FC = () => {
             // Reload book data
             const response = await booksAPI.getBook(book.id);
             setBook(response.data);
+            return true
         } catch (error: any) {
             message.error(error.message || 'Failed to update book');
+            return false
         } finally {
             setSubmitting(false);
         }

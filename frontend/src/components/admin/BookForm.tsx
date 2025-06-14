@@ -24,7 +24,7 @@ export interface BookFormData {
 interface BookFormProps {
     visible: boolean;
     onCancel: () => void;
-    onSubmit: (values: BookFormData) => Promise<void>;
+    onSubmit: (values: BookFormData) => Promise<boolean>;
     initialValues: Book | null;
     authors: Author[];
     categories: Category[];
@@ -59,8 +59,8 @@ const BookForm: React.FC<BookFormProps> = ({
 
     const handleSubmit = async (values: BookFormData) => {
         try {
-            await onSubmit(values);
-            form.resetFields();
+            const success = await onSubmit(values);
+            success && form.resetFields();
         } catch (error) {
             // Error handling is done in the parent component
         }

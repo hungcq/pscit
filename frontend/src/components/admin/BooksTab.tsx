@@ -163,7 +163,7 @@ const BooksTab: React.FC<BooksTabProps> = ({
     bookForm.resetFields();
   };
 
-  const handleBookSubmit = async (values: BookFormData) => {
+  const handleBookSubmit = async (values: BookFormData): Promise<boolean> => {
     try {
       if (editingBook) {
         await booksAPI.updateBook(editingBook.id, values);
@@ -175,8 +175,10 @@ const BooksTab: React.FC<BooksTabProps> = ({
       handleBookCancel();
       loadData();
       onDataReload(); // Trigger reload of form data in AdminDashboard
+      return true
     } catch (error: any) {
       message.error(error.message || 'Failed to save book');
+      return false
     }
   };
 
