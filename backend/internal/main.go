@@ -22,8 +22,8 @@ func main() {
 		StacktraceKey:  "stacktrace",
 		EncodeLevel:    zapcore.LowercaseLevelEncoder,
 		EncodeTime:     zapcore.ISO8601TimeEncoder, // readable timestamp
-		EncodeDuration: zapcore.SecondsDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
+		EncodeDuration: zapcore.MillisDurationEncoder,
+		EncodeCaller:   zapcore.FullCallerEncoder,
 	})
 	if !config.AppConfig.IsProd() {
 		encoderCfg := zap.NewDevelopmentEncoderConfig()

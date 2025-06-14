@@ -5,10 +5,15 @@ on:
     workflows: ["Build Backend Docker Image"]
     types:
       - completed
+  push:
+    paths:
+      - 'k8s/**'
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: >
+      github.event_name == 'push' ||
+      (github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
