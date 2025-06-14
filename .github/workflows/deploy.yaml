@@ -50,9 +50,11 @@ jobs:
           kubectl apply -f k8s/backend-ingress.yaml
 
       - name: Set deployment image tag
+        if: github.event_name == 'workflow_run'
         run: |
           VERSION=$(date +'%Y%m%d')-$(git rev-parse --short HEAD)
           kubectl set image deployment/backend backend=${{ secrets.DOCKERHUB_USERNAME }}/pscit-backend:$VERSION
 
       - name: Wait for rollout
+        if: github.event_name == 'workflow_run'
         run: kubectl rollout status deployment/backend --timeout=300s
