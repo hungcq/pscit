@@ -46,7 +46,7 @@ spec:
               mountPath: /var/log/myapp
           command: ["/bin/sh", "-c"]
           args:
-            - ./your-backend-binary 2>&1 | tee /var/log/myapp/app.log
+            - ./main 2>&1 | tee /var/log/myapp/app.log
 
         - name: promtail
           image: grafana/promtail:2.9.2

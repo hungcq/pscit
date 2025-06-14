@@ -4,12 +4,11 @@ on:
   push:
     branches: [ master ]
     paths:
+      - '.github/workflows/build.yaml'
       - 'backend/*'
       - 'backend/*/**'     # include all subdirs *except* scripts
       - '!backend/scripts/**'
       - '!k8s/**'
-      - '.github/workflows/build.yaml'
-      - '.github/workflows/deploy.yaml'
 
 jobs:
   build:
