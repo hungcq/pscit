@@ -85,13 +85,8 @@ spec:
               mountPath: /etc/loki
             - name: loki-storage
               mountPath: /tmp/loki
-      volumes:
-        - name: config
-          configMap:
-            name: loki-config
-        - name: loki-storage
-          persistentVolumeClaim:
-            claimName: loki-storage
+            - name: loki-storage   # <-- same PVC also used for WAL
+              mountPath: /wal
 ---
 apiVersion: v1
 kind: Service
