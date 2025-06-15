@@ -1,10 +1,11 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
-import {Card, Col, Empty, Input, message, Pagination, Row, Select, Space, Spin, Tabs, Typography} from 'antd';
+import {Card, Col, Empty, Input, message, Pagination, Row, Select, Space, Spin, Tabs, Typography, Modal, ConfigProvider} from 'antd';
 import {authorsAPI, booksAPI, categoriesAPI, tagsAPI} from '../api';
 import {Author, Book, Category, Tag} from '../types';
 import {getBookImageUrl} from '../utils';
 import useBreakpoint from "antd/es/grid/hooks/useBreakpoint";
+import WelcomeModal from '../components/WelcomeModal';
 
 const {Text, Title} = Typography;
 const {Option} = Select;
@@ -30,6 +31,7 @@ const Home: React.FC = () => {
   const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
   const [tags, setTags] = useState<Tag[]>([]);
   const [selectedTagKey, setSelectedTagKey] = useState<string>(searchParams.get('tag') || '');
+  const [showWelcomeModal, setShowWelcomeModal] = useState<boolean>(false);
 
   const screens = useBreakpoint();
   const isMobile = !screens.md;
@@ -47,6 +49,14 @@ const Home: React.FC = () => {
     loadData();
     // eslint-disable-next-line
   }, [pagination.current, searchQuery, selectedCategory, selectedAuthor, selectedLanguage, selectedTagKey]);
+
+  useEffect(() => {
+    const hasSeenWelcomeModal = localStorage.getItem('hasSeenWelcomeModal');
+    if (!hasSeenWelcomeModal) {
+      setShowWelcomeModal(true);
+      localStorage.setItem('hasSeenWelcomeModal', 'true');
+    }
+  }, []);
 
   useEffect(() => {
     // Fetch tags on mount
@@ -114,6 +124,10 @@ const Home: React.FC = () => {
   const handleTagChange = (key: string) => {
     setSelectedTagKey(key);
     setPagination(prev => ({...prev, current: 1}));
+  };
+
+  const handleCloseWelcomeModal = () => {
+    setShowWelcomeModal(false);
   };
 
   if (loading) {
@@ -269,7 +283,6 @@ const Home: React.FC = () => {
         )}
       </Space>
 
-
       <Row justify="center">
         <Pagination
           current={pagination.current}
@@ -279,6 +292,11 @@ const Home: React.FC = () => {
           showSizeChanger={false}
         />
       </Row>
+
+      <WelcomeModal
+        visible={showWelcomeModal}
+        onClose={handleCloseWelcomeModal}
+      />
     </>
   );
 };

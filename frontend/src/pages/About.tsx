@@ -100,7 +100,7 @@ const Introduction: React.FC = () => {
                                 this is a production-grade system. It includes <b>automated builds and deployments,
                                 strong security, flexible configuration, and observability</b>.
                                 The backend is powered by <b>Golang, PostgreSQL, Docker, Kubernetes, GitHub Actions, and HAProxy</b>,
-                                observed using <b>Prometheus, Grafana, ElasticSearch, and Kibana</b>.
+                                observed using <b>Loki, Prometheus, and Grafana</b>.
                                 The frontend is built with <b>React.js, hosted on AWS S3, and served via AWS CloudFront. </b>
                                 I manage the domain using <b>AWS Route 53 and Certificate Manager</b>.
                             </Paragraph>
