@@ -55,10 +55,15 @@ data:
               source: json_log
               expressions:
                 level: level
-                ts: ts
-                msg: msg
-                latency: latency
+                method: method
+                path: path
+                status: status
+          # ✅ Use as labels: values with < 50 possible values (e.g., app, env, method, status)
+          # ❌ Avoid as labels: values with many or unique values (msg, ts, latency, id, etc.)
           - labels:
               level:
+              method:
+              path:
+              status:
           - output:
               source: json_log
