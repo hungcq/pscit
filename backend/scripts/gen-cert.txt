@@ -1,6 +1,6 @@
 sudo apt install certbot
 # point domain to machine public IP
-sudo certbot certonly --standalone -d api.pscit.hungcq.com -d api.knowledge-repo-rag.hungcq.com
+sudo certbot certonly --standalone -d api.pscit.hungcq.com -d api.knowledge-repo-rag.hungcq.com -d grafana.hungcq.com
 
 # concat cert to be used by HAproxy
 cat /etc/letsencrypt/live/api.pscit.hungcq.com/fullchain.pem \
