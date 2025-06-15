@@ -101,8 +101,11 @@ spec:
                 secretKeyRef:
                   name: backend-secrets
                   key: DB_PASSWORD
-            - name: DATA_SOURCE_NAME
-              value: "postgresql://postgres:$(DB_PASSWORD)@postgres:5432/pscit?sslmode=disable"
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              export DATA_SOURCE_NAME="postgresql://postgres:${DB_PASSWORD}@postgres:5432/pscit?sslmode=disable" && \
+              /bin/postgres_exporter
           ports:
             - containerPort: 9187
 ---
