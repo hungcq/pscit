@@ -96,16 +96,11 @@ spec:
         - name: postgres-exporter
           image: prometheuscommunity/postgres-exporter:v0.15.0
           env:
-            - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: backend-secrets
-                  key: DB_PASSWORD
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              export DATA_SOURCE_NAME="postgresql://postgres:${DB_PASSWORD}@postgres:5432/pscit?sslmode=disable" && \
-              /bin/postgres_exporter
+          - name: DATA_SOURCE_NAME
+            valueFrom:
+              secretKeyRef:
+                name: backend-secrets
+                key: DATA_SOURCE_NAME
           ports:
             - containerPort: 9187
 ---
