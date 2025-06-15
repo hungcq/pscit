@@ -60,8 +60,5 @@ data:
                 latency: latency
           - labels:
               level:
-              ts:
-              msg:
-              latency:
           - output:
               source: json_log
