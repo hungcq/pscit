@@ -49,7 +49,7 @@ const Introduction: React.FC = () => {
                                 For me, books are among the most reliable and structured paths to knowledge.
                                 As a dedicated reader who has struggled to find truly valuable books,
                                 I understand how rare and precious good ones are.
-                                That's why I created the <b>PSciT Library - a curated private library located in Hanoi, Vietnam</b>,
+                                That's why I created <b>PSciT Library - a curated private library located in Hanoi, Vietnam</b>,
                                 filled with books I've personally selected and <b><a href='http://goodreads.com/hungcq' target="_blank">
                                 mostly read.</a></b>
                             </Paragraph>
