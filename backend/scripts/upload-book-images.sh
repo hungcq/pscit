@@ -41,6 +41,12 @@ download_image() {
     local temp_file="$TEMP_DIR/$book_id"
     local final_file="$TEMP_DIR/${book_id}.jpg"
 
+    # Skip download if final JPEG already exists
+    if [ -f "$final_file" ]; then
+        echo "Image for book $book_id already exists locally, skipping download."
+        return
+    fi
+
     echo "Downloading image for book $book_id"
     curl -s -L -A "Mozilla/5.0" -o "$temp_file" "$image_url"
 
@@ -70,6 +76,15 @@ download_image() {
             return
         fi
     fi
+
+    # Resize image if larger than 200KB
+    file_size_kb=$(du -k "$final_file" | awk '{print $1}')
+    if (( file_size_kb > 100 )); then
+        echo "Resizing image for book $book_id from ${file_size_kb}KB to max 100KB"
+        if ! magick "$final_file" -define jpeg:extent=100kb "$final_file"; then
+            echo "Failed to resize image for book $book_id"
+        fi
+    fi
 }
 
 # Query books from database
@@ -84,14 +99,14 @@ books=$(PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_
 ")
 
 # Download all images first
-echo "Downloading all images..."
-echo "$books" | while read -r book; do
-    if [ -n "$book" ]; then
-        book_id=$(echo "$book" | jq -r '.id')
-        image_url=$(echo "$book" | jq -r '.main_image')
-        download_image "$book_id" "$image_url"
-    fi
-done
+#echo "Downloading all images..."
+#echo "$books" | while read -r book; do
+#    if [ -n "$book" ]; then
+#        book_id=$(echo "$book" | jq -r '.id')
+#        image_url=$(echo "$book" | jq -r '.main_image')
+#        download_image "$book_id" "$image_url"
+#    fi
+#done
 
 # Clean up existing book images in S3
 echo "Cleaning up existing book images in S3..."
@@ -103,7 +118,7 @@ aws s3 rm "s3://$S3_BUCKET/book-images/" \
 echo "Syncing images to S3..."
 aws s3 sync "$TEMP_DIR" "s3://$S3_BUCKET/book-images/" \
     --region "$AWS_REGION" \
-#    --delete
+    --delete
 
 echo "Invalidate cloudfront distribution"
 aws cloudfront create-invalidation \
