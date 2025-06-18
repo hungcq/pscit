@@ -38,12 +38,17 @@ func (h *BookHandler) GetBooks(c *gin.Context) {
 	}
 	language := c.Query("language")
 	tagKey := c.Query("tag_key")
+	availableStr := c.Query("available")
+	available := false
+	if availableStr == "true" {
+		available = true
+	}
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	sortField := c.Query("sortField")
 	sortOrder := c.Query("sortOrder")
 
-	books, total, err := h.bookService.GetBooks(query, category, author, language, tagKey, page, limit, sortField, sortOrder)
+	books, total, err := h.bookService.GetBooks(query, category, author, language, tagKey, available, page, limit, sortField, sortOrder)
 	if err != nil {
 		zap.L().Error("GetBooks: Failed to get books", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

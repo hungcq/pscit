@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
-import {Card, Col, Empty, Input, message, Pagination, Row, Select, Space, Spin, Tabs, Typography, Modal, ConfigProvider} from 'antd';
+import {Card, Col, Empty, Input, message, Pagination, Row, Select, Space, Spin, Tabs, Typography} from 'antd';
 import {authorsAPI, booksAPI, categoriesAPI, tagsAPI} from '../api';
 import {Author, Book, Category, Tag} from '../types';
 import {getBookImageUrl} from '../utils';
@@ -32,6 +32,7 @@ const Home: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>([]);
   const [selectedTagKey, setSelectedTagKey] = useState<string>(searchParams.get('tag') || '');
   const [showWelcomeModal, setShowWelcomeModal] = useState<boolean>(false);
+  const [availableFilter, setAvailableFilter] = useState<string>(searchParams.get('available') || '');
 
   const screens = useBreakpoint();
   const isMobile = !screens.md;
@@ -44,11 +45,11 @@ const Home: React.FC = () => {
     if (selectedAuthor) params.author = selectedAuthor;
     if (selectedLanguage) params.lang = selectedLanguage;
     if (selectedTagKey) params.tag = selectedTagKey;
+    if (availableFilter) params.available = availableFilter;
     if (pagination.current > 1) params.page = pagination.current;
     setSearchParams(params, {replace: true});
     loadData();
-    // eslint-disable-next-line
-  }, [pagination.current, searchQuery, selectedCategory, selectedAuthor, selectedLanguage, selectedTagKey]);
+  }, [pagination.current, searchQuery, selectedCategory, selectedAuthor, selectedLanguage, selectedTagKey, availableFilter]);
 
   useEffect(() => {
     const hasSeenWelcomeModal = localStorage.getItem('hasSeenWelcomeModal');
@@ -77,6 +78,7 @@ const Home: React.FC = () => {
           selectedAuthor,
           selectedLanguage,
           selectedTagKey,
+          availableFilter === 'true' ? true : availableFilter === 'false' ? false : undefined,
           pagination.current,
           pagination.pageSize,
         ),
@@ -126,6 +128,11 @@ const Home: React.FC = () => {
     setPagination(prev => ({...prev, current: 1}));
   };
 
+  const handleAvailabilityFilter = (value: string) => {
+    setAvailableFilter(value);
+    setPagination(prev => ({...prev, current: 1}));
+  };
+
   const handleCloseWelcomeModal = () => {
     setShowWelcomeModal(false);
   };
@@ -157,7 +164,7 @@ const Home: React.FC = () => {
           </Col>
           <Col xs={24} md={18}>
             <Row gutter={[8, 8]}>
-              <Col xs={24} sm={12} md={8}>
+              <Col xs={24} sm={12} md={7}>
                 <Input.Search
                   placeholder="Search by title or subtitle or ISBN..."
                   allowClear
@@ -188,7 +195,7 @@ const Home: React.FC = () => {
                   ))}
                 </Select>
               </Col>
-              <Col xs={24} sm={12} md={5}>
+              <Col xs={24} sm={12} md={4}>
                 <Select
                   placeholder="Select Author"
                   allowClear
@@ -207,7 +214,7 @@ const Home: React.FC = () => {
                   ))}
                 </Select>
               </Col>
-              <Col xs={24} sm={12} md={4}>
+              <Col xs={24} sm={12} md={3}>
                 <Select
                   placeholder="Select Language"
                   allowClear
@@ -217,6 +224,18 @@ const Home: React.FC = () => {
                 >
                   <Option value="en">English</Option>
                   <Option value="vi">Vietnamese</Option>
+                </Select>
+              </Col>
+              <Col xs={24} sm={12} md={3}>
+                <Select
+                  placeholder="Availability"
+                  allowClear
+                  style={{width: '100%'}}
+                  onChange={handleAvailabilityFilter}
+                  value={availableFilter || undefined}
+                >
+                  <Option value="true">Available</Option>
+                  <Option value="false">All</Option>
                 </Select>
               </Col>
             </Row>

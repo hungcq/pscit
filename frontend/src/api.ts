@@ -40,9 +40,9 @@ api.interceptors.response.use(
 
 // Books API
 export const booksAPI = {
-    getBooks: (query?: string, category?: string, author?: string, language?: string, tagKey?: string, page = 1, limit = 12, sortField?: string, sortOrder?: string) =>
+    getBooks: (query?: string, category?: string, author?: string, language?: string, tagKey?: string, available?: boolean, page = 1, limit = 12, sortField?: string, sortOrder?: string) =>
         api.get<{ books: Book[]; total: number }>('/books', {
-            params: { query, category, author, language, page, limit, sortField, sortOrder, tag_key: tagKey },
+            params: { query, category, author, language, page, limit, sortField, sortOrder, tag_key: tagKey, available },
         }),
     getBook: (id: string) => api.get<Book>(`/books/${id}`),
     createBook: (book: Partial<Book>) => api.post<Book>('/books', book),

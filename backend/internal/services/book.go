@@ -20,7 +20,7 @@ func NewBookService(db *gorm.DB) *BookService {
 }
 
 // GetBooks retrieves books with pagination and filtering
-func (s *BookService) GetBooks(query, category, author, language, tagKey string, page, limit int, sortField, sortOrder string) ([]models.Book, int64, error) {
+func (s *BookService) GetBooks(query, category, author, language, tagKey string, available bool, page, limit int, sortField, sortOrder string) ([]models.Book, int64, error) {
 	var books []models.Book
 	var total int64
 
@@ -62,6 +62,12 @@ func (s *BookService) GetBooks(query, category, author, language, tagKey string,
 			Joins("JOIN book_tags ON books.id = book_tags.book_id").
 			Joins("JOIN tags ON book_tags.tag_id = tags.id").
 			Where("tags.key = ?", tagKey)
+	}
+
+	if available {
+		subQuery = subQuery.Distinct("books.id").
+			Joins("JOIN book_copies bc ON bc.book_id = books.id").
+			Where("bc.status = ? AND bc.deleted_at IS NULL", "available")
 	}
 
 	// Build final query with preloading
@@ -202,6 +208,10 @@ func (s *BookService) DeleteBook(id string) error {
 			zap.L().Error("DeleteBook: Failed to clear categories association", zap.String("id", id), zap.Error(err))
 			return err
 		}
+		if err := tx.Model(&models.Book{ID: uuid.MustParse(id)}).Association("Tags").Clear(); err != nil {
+			zap.L().Error("DeleteBook: Failed to clear tags association", zap.String("id", id), zap.Error(err))
+			return err
+		}
 
 		// Delete the book
 		result := tx.Unscoped().Delete(&models.Book{}, "id = ?", id)
@@ -225,10 +235,10 @@ func (s *BookService) DeleteBook(id string) error {
 // SearchBooks performs a full-text search on books
 func (s *BookService) SearchBooks(query string) ([]models.Book, error) {
 	var books []models.Book
-	query = "%" + strings.ToLower(query) + "%"
+	query = "%" + query + "%"
 
 	if err := s.db.Preload("Authors").Preload("Categories").Where(
-		"LOWER(title) LIKE ? OR LOWER(subtitle) LIKE ?",
+		"unaccent(LOWER(title)) LIKE unaccent(?) OR unaccent(LOWER(subtitle)) LIKE unaccent(?)",
 		query, query,
 	).Find(&books).Error; err != nil {
 		zap.L().Error("SearchBooks: Failed to search books", zap.String("query", query), zap.Error(err))
@@ -236,32 +246,6 @@ func (s *BookService) SearchBooks(query string) ([]models.Book, error) {
 	}
 	zap.L().Info("SearchBooks: Successfully searched books", zap.String("query", query), zap.Int("count", len(books)))
 	return books, nil
-}
-
-// GetAvailableBooks retrieves all available books
-func (s *BookService) GetAvailableBooks() ([]models.Book, error) {
-	var books []models.Book
-	if err := s.db.Preload("Authors").Preload("Categories").Where("available = ?", true).Find(&books).Error; err != nil {
-		zap.L().Error("GetAvailableBooks: Failed to retrieve available books", zap.Error(err))
-		return nil, err
-	}
-	zap.L().Info("GetAvailableBooks: Successfully retrieved available books", zap.Int("count", len(books)))
-	return books, nil
-}
-
-// UpdateBookAvailability updates a book's availability status
-func (s *BookService) UpdateBookAvailability(id string, available bool) error {
-	result := s.db.Model(&models.Book{}).Where("id = ?", id).Update("available", available)
-	if result.Error != nil {
-		zap.L().Error("UpdateBookAvailability: Failed to update book availability", zap.String("id", id), zap.Bool("available", available), zap.Error(result.Error))
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		zap.L().Warn("UpdateBookAvailability: Book not found for availability update", zap.String("id", id))
-		return errors.New("book not found")
-	}
-	zap.L().Info("UpdateBookAvailability: Successfully updated book availability", zap.String("id", id), zap.Bool("available", available))
-	return nil
 }
 
 // GetBooksByCategory retrieves books by category

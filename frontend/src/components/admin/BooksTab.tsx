@@ -49,10 +49,11 @@ const BooksTab: React.FC<BooksTabProps> = ({
   const [isEditCopyModalVisible, setIsEditCopyModalVisible] = useState(false);
   const [sortField, setSortField] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<string>('');
+  const [availableFilter, setAvailableFilter] = useState<string>('');
 
   useEffect(() => {
     loadData();
-  }, [pagination.current, pagination.pageSize, searchQuery, selectedAuthor, selectedCategory, selectedLanguage, sortField, sortOrder]);
+  }, [pagination.current, pagination.pageSize, searchQuery, selectedAuthor, selectedCategory, selectedLanguage, sortField, sortOrder, availableFilter]);
 
   useEffect(() => {
     if (editBookId) {
@@ -73,6 +74,7 @@ const BooksTab: React.FC<BooksTabProps> = ({
         selectedAuthor,
         selectedLanguage,
         undefined,
+        availableFilter === 'true' ? true : availableFilter === 'false' ? false : undefined,
         pagination.current,
         pagination.pageSize,
         sortField,
@@ -123,11 +125,17 @@ const BooksTab: React.FC<BooksTabProps> = ({
     setPagination(prev => ({...prev, current: 1}));
   };
 
+  const handleAvailabilityFilter = (value: string) => {
+    setAvailableFilter(value);
+    setPagination(prev => ({...prev, current: 1}));
+  };
+
   const handleResetFilters = () => {
     setSearchQuery('');
     setSelectedAuthor('');
     setSelectedCategory('');
     setSelectedLanguage('');
+    setAvailableFilter('');
     setPagination(prev => ({...prev, current: 1}));
   };
 
@@ -534,6 +542,16 @@ const BooksTab: React.FC<BooksTabProps> = ({
           >
             <Select.Option value="en">English</Select.Option>
             <Select.Option value="vi">Vietnamese</Select.Option>
+          </Select>
+          <Select
+            placeholder="Filter by availability"
+            allowClear
+            style={{width: 200}}
+            onChange={handleAvailabilityFilter}
+            value={availableFilter || undefined}
+          >
+            <Select.Option value="true">Available</Select.Option>
+            <Select.Option value="false">All</Select.Option>
           </Select>
           <Button onClick={handleResetFilters}>Reset Filters</Button>
         </Space>
