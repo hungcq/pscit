@@ -522,8 +522,7 @@ func getLocationDetails(status models.ReservationStatus) string {
 		<div class="location">
 			<h4>Pickup Location</h4>
 			<p>Reserved books can be picked up at our place at <a href='https://maps.app.goo.gl/yEbHKpyqVknWia6L8'>
-				No 57, 38 alley, 189 lane, Hoi Phu hamlet, Dong Hoi commune,
-				Dong Anh district, Hanoi, Vietnam.
+				No. 57, Alley 38, Lane 189, Dong Hoi Street, Dong Hoi Commune, Dong Anh District, Hanoi, Vietnam.
 			</a></p>
 			<p>When you arrive, you can contact us via:</p>
 			<ul>
