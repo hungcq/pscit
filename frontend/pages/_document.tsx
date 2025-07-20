@@ -3,8 +3,11 @@ import React from 'react';
 
 export default function Document() {
   return (
-    <Html lang="en" title="PSciT Library">
-      <Head />
+    <Html lang="en">
+      <Head>
+        <title>PSciT Library</title>
+        <link rel="icon" type="image/webp" href="/pscit-icon-large.webp" />
+      </Head>
       <body>
         <Main />
         <NextScript />
