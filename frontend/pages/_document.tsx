@@ -3,7 +3,7 @@ import React from 'react';
 
 export default function Document() {
   return (
-    <Html lang="en">
+    <Html lang="en" title="PSciT Library">
       <Head />
       <body>
         <Main />
