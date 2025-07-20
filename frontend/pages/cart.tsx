@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import { useRouter } from 'next/router';
+import {useRouter} from 'next/router';
 import {
   Button,
   Card,
@@ -119,7 +119,7 @@ const Cart: React.FC = () => {
       setSelectedPickupTimeslots([]);
       setSelectedReturnTimeslots([]);
       await reloadCart();
-      router.push('/reservations');
+      router.push('/reservations/');
     } catch (error: any) {
       message.error(error.message || 'Failed to submit reservation request');
     } finally {

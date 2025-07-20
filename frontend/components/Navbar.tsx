@@ -47,19 +47,19 @@ const Navbar: React.FC = () => {
       key: '/reservations/',
       icon: <BookOutlined/>,
       label: 'My Reservations',
-      onClick: () => router.push('/reservations')
+      onClick: () => router.push('/reservations/')
     }] : []),
     ...(user && user.role === 'admin' ? [{
       key: '/admin/',
       icon: <DashboardOutlined/>,
       label: 'Admin Dashboard',
-      onClick: () => router.push('/admin')
+      onClick: () => router.push('/admin/')
     }] : []),
     {
       key: '/about/',
       icon: <InfoCircleOutlined/>,
       label: 'About',
-      onClick: () => router.push('/about')
+      onClick: () => router.push('/about/')
     }
   ];
 
@@ -80,7 +80,7 @@ const Navbar: React.FC = () => {
                 onMouseLeave={() => setHovered(false)}
           >Cart</Text>
         </Badge>,
-      onClick: () => router.push('/cart')
+      onClick: () => router.push('/cart/')
     }] : []),
     {
       key: '/logout/',
@@ -153,7 +153,7 @@ const Navbar: React.FC = () => {
                 </Badge>}
                 type={window.location.pathname === '/cart' ? 'primary' : 'text'}
                 style={{color: 'white'}}
-                onClick={() => router.push('/cart')}
+                onClick={() => router.push('/cart/')}
               />
               <Drawer
                 title="Menu"
