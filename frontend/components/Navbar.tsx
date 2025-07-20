@@ -28,7 +28,7 @@ const Navbar: React.FC = () => {
 
   const handleLogout = () => {
     logout();
-    router.push('/login');
+    router.push('/login/');
   };
 
   useEffect(() => {
@@ -90,10 +90,10 @@ const Navbar: React.FC = () => {
     }
   ] : [
     {
-      key: '/login',
+      key: '/login/',
       icon: <LoginOutlined/>,
       label: 'Login',
-      onClick: () => router.push('/login')
+      onClick: () => router.push('/login/')
     }
   ];
 
