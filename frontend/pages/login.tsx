@@ -10,6 +10,7 @@ const { Title } = Typography;
 const Login: React.FC = () => {
     const router = useRouter();
     const { login } = useAuth();
+    const { from } = router.query;
 
     const handleGoogleSuccess = async (credentialResponse: any) => {
         try {
@@ -20,7 +21,7 @@ const Login: React.FC = () => {
             if (response.data.token && response.data.user) {
                 login(response.data.token, response.data.user);
                 message.success('Login successful!');
-                router.push('/');
+                router.push(from ? String(from) : '/');
             } else {
                 message.error('Invalid response from server');
             }

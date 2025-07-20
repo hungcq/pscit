@@ -1,11 +1,16 @@
 import axios, {AxiosError} from 'axios';
 import {Author, Book, BookCopy, CartItem, Category, Reservation, Tag} from './types';
+import Router from 'next/router';
 
 interface ErrorResponse {
     error: string;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+export function redirectToLogin() {
+    Router.push('/login/');
+  }
 
 const api = axios.create({
     baseURL: API_URL,
@@ -33,7 +38,7 @@ api.interceptors.response.use(
         if (error.response?.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            window.location.href = '/login/';
+            redirectToLogin();
         }
     }
         // Extract error message from backend response
