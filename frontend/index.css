@@ -1,3 +1,9 @@
+html, body, #__next {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
 .ant-menu-dark .ant-menu-item-selected {
     background-color: #333 !important;  /* or any dark gray */
 }

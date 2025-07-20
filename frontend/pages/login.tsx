@@ -1,5 +1,5 @@
 import React from 'react';
-import {useNavigate} from 'react-router-dom';
+import { useRouter } from 'next/router';
 import {GoogleLogin, GoogleOAuthProvider} from '@react-oauth/google';
 import {useAuth} from '../contexts/AuthContext';
 import api from '../api';
@@ -8,7 +8,7 @@ import {Card, message, Space, Typography} from 'antd';
 const { Title } = Typography;
 
 const Login: React.FC = () => {
-    const navigate = useNavigate();
+    const router = useRouter();
     const { login } = useAuth();
 
     const handleGoogleSuccess = async (credentialResponse: any) => {
@@ -20,7 +20,7 @@ const Login: React.FC = () => {
             if (response.data.token && response.data.user) {
                 login(response.data.token, response.data.user);
                 message.success('Login successful!');
-                navigate('/');
+                router.push('/');
             } else {
                 message.error('Invalid response from server');
             }
@@ -35,7 +35,7 @@ const Login: React.FC = () => {
             <Card>
                 <Title level={2}>Login</Title>
                 <Space direction="vertical" align="center" style={{ width: '100%', marginTop: '24px' }}>
-                    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+                    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}>
                         <GoogleLogin
                             onSuccess={handleGoogleSuccess}
                             onError={() => {

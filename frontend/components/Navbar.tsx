@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Badge, Button, Col, Drawer, Grid, Layout, Menu, MenuProps, Row, Typography} from 'antd';
-import {useNavigate} from 'react-router-dom';
+import { useRouter } from 'next/router';
 import {useAuth} from '../contexts/AuthContext';
 import {useCart} from '../contexts/CartContext';
 import {
@@ -19,7 +19,7 @@ const {Text} = Typography;
 const {useBreakpoint} = Grid;
 
 const Navbar: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const {logout, user} = useAuth();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const screens = useBreakpoint();
@@ -28,7 +28,7 @@ const Navbar: React.FC = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    router.push('/login');
   };
 
   useEffect(() => {
@@ -40,45 +40,39 @@ const Navbar: React.FC = () => {
       key: '/',
       icon: <HomeOutlined/>,
       label: 'Home',
-      onClick: () => navigate('/')
+      onClick: () => router.push('/')
     },
     ] : []),
     ...(user ? [{
-      key: '/reservations',
+      key: '/reservations/',
       icon: <BookOutlined/>,
       label: 'My Reservations',
-      onClick: () => navigate('/reservations')
+      onClick: () => router.push('/reservations')
     }] : []),
     ...(user && user.role === 'admin' ? [{
-      key: '/admin',
+      key: '/admin/',
       icon: <DashboardOutlined/>,
       label: 'Admin Dashboard',
-      onClick: () => navigate('/admin')
+      onClick: () => router.push('/admin')
     }] : []),
     {
-      key: '/about',
+      key: '/about/',
       icon: <InfoCircleOutlined/>,
       label: 'About',
-      onClick: () => navigate('/about')
+      onClick: () => router.push('/about')
     }
   ];
 
   const userMenuItems: MenuProps['items'] = user ? [
-    // {
-    //   key: '/profile',
-    //   icon: <UserOutlined/>,
-    //   label: 'Profile',
-    //   onClick: () => navigate('/profile')
-    // },
     ...(screens.md ? [{
-      key: '/cart',
+      key: '/cart/',
       icon: <ShoppingCartOutlined style={{fontSize: '17px'}}/>,
       label:
         <Badge size='small' count={cartItems.length}
         >
           <Text style={{
             color:
-              window.location.pathname === '/cart' || hovered
+              window.location.pathname === '/cart/' || hovered
                 ? '#ccc' // selected color
                 : 'rgba(204, 204, 204, 0.65)'
           }}
@@ -86,20 +80,20 @@ const Navbar: React.FC = () => {
                 onMouseLeave={() => setHovered(false)}
           >Cart</Text>
         </Badge>,
-      onClick: () => navigate('/cart')
+      onClick: () => router.push('/cart')
     }] : []),
     {
-      key: 'logout',
+      key: '/logout/',
       icon: <LogoutOutlined/>,
       label: 'Logout',
       onClick: handleLogout
     }
   ] : [
     {
-      key: '/login',
+      key: '/login/',
       icon: <LoginOutlined/>,
       label: 'Login',
-      onClick: () => navigate('/login')
+      onClick: () => router.push('/login')
     }
   ];
 
@@ -123,7 +117,7 @@ const Navbar: React.FC = () => {
                 style={{lineHeight: '48px'}}
               />
             </Col>
-            <Col>
+            <Col style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <Menu
                 theme="dark"
                 mode="horizontal"
@@ -146,9 +140,9 @@ const Navbar: React.FC = () => {
             <Col>
               <Button
                 icon={<HomeOutlined/>}
-                type={window.location.pathname === '/' ? 'primary' : 'text'}
+                type={window.location.pathname === '' ? 'primary' : 'text'}
                 style={{color: 'white'}}
-                onClick={() => navigate('/')}
+                onClick={() => router.push('/')}
               />
             </Col>
             <Col>
@@ -159,7 +153,7 @@ const Navbar: React.FC = () => {
                 </Badge>}
                 type={window.location.pathname === '/cart' ? 'primary' : 'text'}
                 style={{color: 'white'}}
-                onClick={() => navigate('/cart')}
+                onClick={() => router.push('/cart')}
               />
               <Drawer
                 title="Menu"

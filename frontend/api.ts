@@ -5,7 +5,7 @@ interface ErrorResponse {
     error: string;
 }
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const api = axios.create({
     baseURL: API_URL,
@@ -16,10 +16,12 @@ const api = axios.create({
 
 // Add token to requests if it exists
 api.interceptors.request.use((config) => {
+    if (typeof window !== 'undefined') {
     const token = localStorage.getItem('token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
+}
     return config;
 });
 
@@ -27,20 +29,23 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
     (response) => response,
     (error: AxiosError<ErrorResponse>) => {
+        if (typeof window !== 'undefined') {
         if (error.response?.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             window.location.href = '/login';
         }
+    }
         // Extract error message from backend response
         const errorMessage = error.response?.data?.error || 'An error occurred';
+        console.log(error)
         return Promise.reject(new Error(errorMessage));
     }
 );
 
 // Books API
 export const booksAPI = {
-    getBooks: (query?: string, category?: string, author?: string, language?: string, tagKey?: string, available?: boolean, page = 1, limit = 12, sortField?: string, sortOrder?: string) =>
+    getBooks: (query?: string, category?: string, author?: string, language?: string, tagKey?: string, available?: boolean, page = 1, limit = 1000, sortField?: string, sortOrder?: string) =>
         api.get<{ books: Book[]; total: number }>('/books', {
             params: { query, category, author, language, page, limit, sortField, sortOrder, tag_key: tagKey, available },
         }),

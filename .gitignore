@@ -3,6 +3,8 @@
 .vscode
 *.iml
 frontend/node_modules
+frontend/out
+frontend/.next
 k8s/secret.yaml
 backend/temp
 backend/scripts/node_modules

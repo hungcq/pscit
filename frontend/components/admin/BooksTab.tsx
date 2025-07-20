@@ -4,7 +4,7 @@ import {DeleteOutlined, EditOutlined, PlusOutlined} from '@ant-design/icons';
 import {bookCopiesAPI, booksAPI} from '../../api';
 import {Author, Book, BookCopy, Category, Tag as TagModel} from '../../types';
 import {getBookImageUrl} from '../../utils';
-import {useLocation, useNavigate} from 'react-router-dom';
+import { useRouter } from 'next/router';
 import BookForm, {BookFormData} from './BookForm';
 
 const {Text} = Typography
@@ -22,10 +22,8 @@ const BooksTab: React.FC<BooksTabProps> = ({
                                              tags,
                                              onDataReload,
                                            }) => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const searchParams = new URLSearchParams(location.search);
-  const editBookId = searchParams.get('edit');
+  const router = useRouter();
+  const { edit: editBookId } = router.query; // Get 'edit' query param
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -60,7 +58,7 @@ const BooksTab: React.FC<BooksTabProps> = ({
       const bookToEdit = books.find(b => b.id === editBookId);
       if (bookToEdit) {
         showBookModal(bookToEdit);
-        navigate(location.pathname, {replace: true});
+        router.replace(router.pathname);
       }
     }
   }, [editBookId, books]);

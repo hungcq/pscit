@@ -82,3 +82,29 @@ src/
 3. Commit your changes
 4. Push to the branch
 5. Create a new Pull Request
+
+## Next.js Migration
+
+This project is being migrated to Next.js for improved SEO and static site generation (SSG/ISR). Pages are generated at build time and can be hosted on S3 + CDN.
+
+### Development
+
+```
+npm run dev
+```
+
+### Build static site
+
+```
+npm run build
+```
+
+### Start production server (for SSR/ISR)
+
+```
+npm run start
+```
+
+### S3/CDN Hosting
+- After `npm run build`, use `.next/static` and `out/` for static export if needed.
+- See Next.js docs for [Static HTML Export](https://nextjs.org/docs/pages/building-your-application/deploying/static-exports).

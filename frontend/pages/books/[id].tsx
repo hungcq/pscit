@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useRouter} from 'next/router';
 import {
     Button,
     Card,
@@ -27,76 +27,108 @@ import {
     TagOutlined,
     UserOutlined
 } from '@ant-design/icons';
-import type {Author, Book, BookCopy, Category, Tag as TagModel} from '../types';
-import {authorsAPI, bookCopiesAPI, booksAPI, cartAPI, categoriesAPI, reservationsAPI, tagsAPI} from '../api';
-import {useAuth} from '../contexts/AuthContext';
+import type {Author, Book, BookCopy, Category, Tag as TagModel} from '../../types';
+import {authorsAPI, bookCopiesAPI, booksAPI, cartAPI, categoriesAPI, reservationsAPI, tagsAPI} from '../../api';
+import {useAuth} from '../../contexts/AuthContext';
 import dayjs, {Dayjs} from 'dayjs';
-import {getBookImageUrl} from '../utils';
-import BookForm, {BookFormData} from '../components/admin/BookForm';
-import {useCart} from '../contexts/CartContext';
+import {getBookImageUrl} from '../../utils';
+import BookForm, {BookFormData} from '../../components/admin/BookForm';
+import {useCart} from '../../contexts/CartContext';
 
 const {Title, Text, Paragraph} = Typography;
 const { useBreakpoint } = Grid;
 
 const MAX_SUGGESTED_TIMESLOTS = 5;
 
-const BookDetails: React.FC = () => {
-    const {id} = useParams<{ id: string }>();
-    const navigate = useNavigate();
-    const {user} = useAuth();
-    const [book, setBook] = useState<Book | null>(null);
-    const [copies, setCopies] = useState<BookCopy[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [reservationModalVisible, setReservationModalVisible] = useState(false);
-    const [selectedDates, setSelectedDates] = useState<[Dayjs, Dayjs] | null>(null);
-    const [selectedCopy, setSelectedCopy] = useState<BookCopy | null>(null);
-    const [selectedPickupTimeslots, setSelectedPickupTimeslots] = useState<Dayjs[]>([]);
-    const [selectedReturnTimeslots, setSelectedReturnTimeslots] = useState<Dayjs[]>([]);
-    const [imageError, setImageError] = useState(false);
-    const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-    const [authors, setAuthors] = useState<Author[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [tags, setTags] = useState<TagModel[]>([]);
-    const [submitting, setSubmitting] = useState(false);
-    const [addingToCart, setAddingToCart] = useState(false);
-    const {cartItems, reloadCart} = useCart();
-    const screens = useBreakpoint();
-    const isMobile = !screens.md;
+// Remove interface BookDetailsProps as data is no longer passed as props
 
-    const loadCopies = async () => {
-        try {
-            const response = await bookCopiesAPI.getBookCopies(id!);
-            setCopies(response.data);
-        } catch (error) {
-            console.error('Failed to load book copies:', error);
-            message.error('Failed to load book copies');
-        }
+const BookDetails: React.FC = () => {
+  const router = useRouter();
+  const { id } = router.query; // Get ID from router query
+  const { user } = useAuth();
+  const [book, setBook] = useState<Book | null>(null);
+  const [copies, setCopies] = useState<BookCopy[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [reservationModalVisible, setReservationModalVisible] = useState(false);
+  const [selectedDates, setSelectedDates] = useState<[Dayjs, Dayjs] | null>(null);
+  const [selectedCopy, setSelectedCopy] = useState<BookCopy | null>(null);
+  const [selectedPickupTimeslots, setSelectedPickupTimeslots] = useState<Dayjs[]>([]);
+  const [selectedReturnTimeslots, setSelectedReturnTimeslots] = useState<Dayjs[]>([]);
+  const [imageError, setImageError] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [authors, setAuthors] = useState<Author[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<TagModel[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const { cartItems, reloadCart } = useCart();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
+
+  // Client-side data fetching using useEffect
+  useEffect(() => {
+    if (!id) return;
+
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const [bookResponse, authorsResponse, categoriesResponse, tagsResponse, copiesResponse] = await Promise.all([
+          booksAPI.getBook(id as string),
+          authorsAPI.getAuthors(),
+          categoriesAPI.getCategories(),
+          tagsAPI.getTags(),
+          bookCopiesAPI.getBookCopies(id as string),
+        ]);
+        setBook(bookResponse.data);
+        setAuthors(authorsResponse.data);
+        setCategories(categoriesResponse.data);
+        setTags(tagsResponse.data);
+        setCopies(copiesResponse.data);
+      } catch (error) {
+        console.error('Failed to load book details:', error);
+        message.error('Failed to load book details');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                const [bookResponse, authorsResponse, categoriesResponse, tagsResponse] = await Promise.all([
-                    booksAPI.getBook(id!),
-                    authorsAPI.getAuthors(),
-                    categoriesAPI.getCategories(),
-                    tagsAPI.getTags(),
-                ]);
-                setBook(bookResponse.data);
-                setAuthors(authorsResponse.data);
-                setCategories(categoriesResponse.data);
-                setTags(tagsResponse.data);
-                await loadCopies();
-            } catch (error) {
-                console.error('Failed to load data:', error);
-                message.error('Failed to load book details');
-            } finally {
-                setLoading(false);
-            }
-        };
+    loadData();
+  }, [id]); // Re-run when ID changes
 
-        loadData();
-    }, [id]);
+    // const loadCopies = async () => {
+    //     try {
+    //         const response = await bookCopiesAPI.getBookCopies(staleBook.id);
+    //         setCopies(response.data);
+    //     } catch (error) {
+    //         console.error('Failed to load book copies:', error);
+    //         message.error('Failed to load book copies');
+    //     }
+    // };
+
+    // useEffect(() => {
+    //     const loadData = async () => {
+    //         try {
+    //             const [bookResponse, authorsResponse, categoriesResponse, tagsResponse] = await Promise.all([
+    //                 booksAPI.getBook(staleBook.id),
+    //                 authorsAPI.getAuthors(),
+    //                 categoriesAPI.getCategories(),
+    //                 tagsAPI.getTags(),
+    //             ]);
+    //             setBook(bookResponse.data);
+    //             setAuthors(authorsResponse.data);
+    //             setCategories(categoriesResponse.data);
+    //             setTags(tagsResponse.data);
+    //             await loadCopies();
+    //         } catch (error) {
+    //             console.error('Failed to load data:', error);
+    //             message.error('Failed to load book details');
+    //         } finally {
+    //             setLoading(false);
+    //         }
+    //     };
+
+    //     loadData();
+    // }, [staleBook.id]);
 
     const handleAddTimeslot = () => {
         if (!selectedDates) return;
@@ -147,7 +179,7 @@ const BookDetails: React.FC = () => {
             setSelectedDates(null);
             setSelectedPickupTimeslots([]);
             setSelectedReturnTimeslots([]);
-            await loadCopies();
+            // await loadCopies(); // This line is removed as loadCopies is removed
         } catch (error: any) {
             message.error(error.message || 'Failed to submit reservation request');
         } finally {
@@ -213,7 +245,7 @@ const BookDetails: React.FC = () => {
         return (
             <Space direction="vertical" align="center" style={{width: '100%', marginTop: '100px'}}>
                 <Title level={3}>Book not found</Title>
-                <Button type="primary" onClick={() => navigate('/')}>
+                <Button type="primary" onClick={() => router.push('/')}>
                     Back to Home
                 </Button>
             </Space>

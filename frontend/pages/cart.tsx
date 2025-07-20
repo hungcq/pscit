@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {useNavigate} from 'react-router-dom';
+import { useRouter } from 'next/router';
 import {
   Button,
   Card,
@@ -40,7 +40,7 @@ const MAX_SUGGESTED_TIMESLOTS = 5;
 const {useBreakpoint} = Grid;
 
 const Cart: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [checkoutModalVisible, setCheckoutModalVisible] = useState(false);
   const [selectedDates, setSelectedDates] = useState<[Dayjs, Dayjs] | null>(null);
   const [selectedPickupTimeslots, setSelectedPickupTimeslots] = useState<Dayjs[]>([]);
@@ -119,7 +119,7 @@ const Cart: React.FC = () => {
       setSelectedPickupTimeslots([]);
       setSelectedReturnTimeslots([]);
       await reloadCart();
-      navigate('/reservations');
+      router.push('/reservations');
     } catch (error: any) {
       message.error(error.message || 'Failed to submit reservation request');
     } finally {

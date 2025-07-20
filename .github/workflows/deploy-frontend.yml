@@ -44,13 +44,14 @@ jobs:
       - name: Create environment file
         run: cp .env.prod .env
 
-      - name: Build application
-        run: npm run build
+      - name: Build application (static export)
+        run: |
+          npm run build
+          npm run export
 
       - name: Deploy to S3
         run: |
-          # Upload static assets with long cache
-          aws s3 sync dist/ s3://${{ env.S3_BUCKET }} \
+          aws s3 sync out/ s3://${{ env.S3_BUCKET }} \
             --region ${{ env.AWS_REGION }} \
             --delete \
             --exclude "book-images/*"

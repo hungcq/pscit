@@ -1,44 +1,57 @@
 import React, {useEffect, useState} from 'react';
-import {useNavigate, useSearchParams} from 'react-router-dom';
-import {Card, Col, Empty, Input, message, Pagination, Row, Select, Space, Spin, Tabs, Typography} from 'antd';
+import {useRouter} from 'next/router';
+import {Card, Col, Empty, Input, message, Pagination, Row, Select, Space, Spin, Tabs, Typography, Grid} from 'antd';
 import {authorsAPI, booksAPI, categoriesAPI, tagsAPI} from '../api';
 import {Author, Book, Category, Tag} from '../types';
 import {getBookImageUrl} from '../utils';
-import useBreakpoint from "antd/es/grid/hooks/useBreakpoint";
 import WelcomeModal from '../components/WelcomeModal';
 
 const {Text, Title} = Typography;
 const {Option} = Select;
 const {Meta} = Card;
+const useBreakpoint = Grid.useBreakpoint;
 
-const Home: React.FC = () => {
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [books, setBooks] = useState<Book[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [authors, setAuthors] = useState<Author[]>([]);
-  const [loading, setLoading] = useState(true);
+const getQueryString = (value: string | string[] | undefined) => {
+  if (Array.isArray(value)) return value[0] || '';
+  return value || '';
+};
+
+interface HomeProps {
+  staleBooks: Book[];
+  staleCategories: Category[];
+  staleAuthors: Author[];
+  staleTags: Tag[];
+}
+
+const Home: React.FC<HomeProps> = ({ staleBooks, staleCategories, staleAuthors, staleTags }) => {
+  const router = useRouter();
+  const [books, setBooks] = useState<Book[]>(staleBooks);
+  const [categories, setCategories] = useState<Category[]>(staleCategories);
+  const [authors, setAuthors] = useState<Author[]>(staleAuthors);
+  const [loading, setLoading] = useState(false); // Initial data is already loaded
   const [pagination, setPagination] = useState({
-    current: Number(searchParams.get('page')) || 1,
+    current: Number(getQueryString(router.query.page)) || 1,
     pageSize: 12,
-    total: 0,
+    total: 0, // Will be updated by loadData after fresh fetch
   });
-  const [searchInput, setSearchInput] = useState(searchParams.get('q') || '');
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-  const [selectedCategory, setSelectedCategory] = useState<string>(searchParams.get('category') || '');
-  const [selectedAuthor, setSelectedAuthor] = useState<string>(searchParams.get('author') || '');
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(searchParams.get('lang') || '');
+  const [searchInput, setSearchInput] = useState(getQueryString(router.query.q));
+  const [searchQuery, setSearchQuery] = useState(getQueryString(router.query.q));
+  const [selectedCategory, setSelectedCategory] = useState<string>(getQueryString(router.query.category));
+  const [selectedAuthor, setSelectedAuthor] = useState<string>(getQueryString(router.query.author));
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(getQueryString(router.query.lang));
   const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [selectedTagKey, setSelectedTagKey] = useState<string>(searchParams.get('tag') || '');
+  const [tags, setTags] = useState<Tag[]>(staleTags);
+  const [selectedTagKey, setSelectedTagKey] = useState<string>(getQueryString(router.query.tag));
   const [showWelcomeModal, setShowWelcomeModal] = useState<boolean>(false);
-  const [availableFilter, setAvailableFilter] = useState<string>(searchParams.get('available') || '');
+  const [availableFilter, setAvailableFilter] = useState<string>(getQueryString(router.query.available));
 
   const screens = useBreakpoint();
   const isMobile = !screens.md;
 
+  // Client-side fetch for fresh data on mount and when filters/pagination change
   useEffect(() => {
-    // Update URL when filters or page change
+    if (!router.isReady) return;
+
     const params: any = {};
     if (searchQuery) params.q = searchQuery;
     if (selectedCategory) params.category = selectedCategory;
@@ -47,26 +60,38 @@ const Home: React.FC = () => {
     if (selectedTagKey) params.tag = selectedTagKey;
     if (availableFilter) params.available = availableFilter;
     if (pagination.current > 1) params.page = pagination.current;
-    setSearchParams(params, {replace: true});
-    loadData();
-  }, [pagination.current, searchQuery, selectedCategory, selectedAuthor, selectedLanguage, selectedTagKey, availableFilter]);
+
+    const currentQuery = JSON.stringify(router.query);
+    const newQuery = JSON.stringify(params);
+
+    // Only push to router if query actually changes
+    if (currentQuery !== newQuery) {
+      router.push({
+        pathname: router.pathname,
+        query: params,
+      }, undefined, {shallow: true});
+    }
+    loadData(); // Always load data on mount or when dependencies change
+  }, [pagination.current, searchQuery, selectedCategory, selectedAuthor, selectedLanguage, selectedTagKey, availableFilter, router.isReady]);
 
   useEffect(() => {
     const hasSeenWelcomeModal = localStorage.getItem('hasSeenWelcomeModal');
-    if (!hasSeenWelcomeModal) {
+    if (typeof window !== 'undefined' && !hasSeenWelcomeModal) {
       setShowWelcomeModal(true);
       localStorage.setItem('hasSeenWelcomeModal', 'true');
     }
   }, []);
 
   useEffect(() => {
-    // Fetch tags on mount
-    tagsAPI.getTags().then(res => setTags(res.data.sort((a, b) => {
-      if (a.key === 'featured') return -1;
-      if (b.key === 'featured') return 1;
-      return 0;
-    }))).catch(() => setTags([]));
-  }, []);
+    // Fetch tags on mount, but only if not already provided by SSG
+    if (!staleTags || staleTags.length === 0) {
+      tagsAPI.getTags().then(res => setTags(res.data.sort((a, b) => {
+        if (a.key === 'featured') return -1;
+        if (b.key === 'featured') return 1;
+        return 0;
+      }))).catch(() => setTags([]));
+    }
+  }, [staleTags]);
 
   const loadData = async () => {
     try {
@@ -90,8 +115,8 @@ const Home: React.FC = () => {
         ...prev,
         total: booksResponse.data.total
       }));
-      setCategories(categoriesResponse.data);
-      setAuthors(authorsResponse.data);
+      setCategories(categoriesResponse.data); // Keep setting these, as they might not always be complete from stale data
+      setAuthors(authorsResponse.data); // Keep setting these
     } catch (error) {
       console.error('Failed to load data:', error);
       message.error('Failed to load data');
@@ -271,9 +296,9 @@ const Home: React.FC = () => {
                         style={{ width: '100%', maxHeight: '230px', objectFit: 'contain' }}
                       />
                     }
-                    onClick={() => navigate(`/books/${book.id}`)}
+                    onClick={() => router.push(`/books/${book.id}`)}
                   >
-                    <Meta
+              {!isMobile && (<Meta
                       title={
                         <Text
                           strong
@@ -287,13 +312,11 @@ const Home: React.FC = () => {
                         </Text>
                       }
                       description={
-                        !isMobile && (
                           <Text ellipsis style={{ width: '100%' }}>
                             By {book.authors.map(a => a.name).join(', ')}
                           </Text>
-                        )
                       }
-                    />
+                    />)}
                   </Card>
                 </Col>
               ))}
@@ -321,3 +344,21 @@ const Home: React.FC = () => {
 };
 
 export default Home;
+
+export async function getStaticProps() {
+  // Use API methods for SSG
+  const [booksRes, categoriesRes, authorsRes, tagsRes] = await Promise.all([
+    booksAPI.getBooks(),
+    categoriesAPI.getCategories(),
+    authorsAPI.getAuthors(),
+    tagsAPI.getTags(),
+  ]);
+  return {
+    props: {
+      staleBooks: booksRes.data.books,
+      staleCategories: categoriesRes.data,
+      staleAuthors: authorsRes.data,
+      staleTags: tagsRes.data,
+    }
+  };
+}
