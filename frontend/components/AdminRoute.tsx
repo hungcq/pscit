@@ -1,5 +1,5 @@
-import React from 'react';
-import {Navigate, useLocation} from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/router';
 import {useAuth} from '../contexts/AuthContext';
 
 interface AdminRouteProps {
@@ -8,10 +8,16 @@ interface AdminRouteProps {
 
 const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   const { user } = useAuth();
-  const location = useLocation();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      router.replace('/');
+    }
+  }, [user, router]);
 
   if (!user || user.role !== 'admin') {
-    return <Navigate to="/" state={{ from: location }} replace />;
+    return null; // Or a loading spinner
   }
 
   return <>{children}</>;
