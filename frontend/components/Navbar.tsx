@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Badge, Button, Col, Drawer, Grid, Layout, Menu, MenuProps, Row, Typography} from 'antd';
-import { useRouter } from 'next/router';
+import {useRouter} from 'next/router';
 import {useAuth} from '../contexts/AuthContext';
 import {useCart} from '../contexts/CartContext';
 import {
@@ -90,7 +90,7 @@ const Navbar: React.FC = () => {
     }
   ] : [
     {
-      key: '/login/',
+      key: '/login',
       icon: <LoginOutlined/>,
       label: 'Login',
       onClick: () => router.push('/login')
