@@ -1,6 +1,7 @@
 sudo apt install certbot
 # point domain to machine public IP
-sudo certbot certonly --standalone -d api.pscit.hungcq.com -d api.knowledge-repo-rag.hungcq.com -d grafana.hungcq.com
+sudo certbot certonly --standalone -d api.pscit.hungcq.com \
+  -d api.knowledge-repo-rag.hungcq.com -d grafana.hungcq.com -d knowledge-repo.hungcq.com
 
 # concat cert to be used by HAproxy
 cat /etc/letsencrypt/live/api.pscit.hungcq.com/fullchain.pem \
@@ -17,6 +18,8 @@ curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--tls-san 13.215.136.18 --write
 base64 -i k3s.yaml | pbcopy
 
 # setup haproxy
+vi /etc/haproxy/haproxy.cfg
+
 frontend https-in
     bind *:443 ssl crt /root/api.pscit.hungcq.com.pem
     mode http
@@ -26,6 +29,8 @@ frontend https-in
 backend traefik-api
     mode http
     server traefik 127.0.0.1:30000
+
+sudo systemctl restart haproxy
 
 # check traefik port
 get svc -n kube-system
