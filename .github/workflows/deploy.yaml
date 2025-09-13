@@ -38,7 +38,6 @@ jobs:
           echo "${{ secrets.SOPS_AGE_KEY }}" > age.key
           chmod 600 age.key
           SOPS_AGE_KEY_FILE=age.key sops -d k8s/secret.enc.yaml > k8s/secret.yaml
-          rm age.key
       - uses: actions/upload-artifact@v4
         with:
           name: age-key
